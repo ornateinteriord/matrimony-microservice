@@ -1,0 +1,72 @@
+.navbar-main-container {
+  width: 100%;
+}
+
+.navbar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(135deg, #0B192C 0%, #1A365D 50%, #0B192C 100%);
+  color: #fff;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(94, 4, 118, 0.4);
+  font-family: 'Outfit', sans-serif;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mobile-link {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 500;
+  width: 100%;
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.mobile-link:hover {
+  color: #fff;
+}
+
+/* General Input and Button Styles - scoped properly */
+@media (max-width: 900px) {
+  .navbar {
+    justify-content: space-between;
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    height: 60px;
+  }
+}
+
+/* Dialog Styles for Responsiveness */
+@media (max-width: 600px) {
+  .MuiDialog-paper {
+    margin: 10px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .MuiDialogContent-root {
+    padding: 12px;
+  }
+
+  .MuiTextField-root {
+    width: 100% !important;
+  }
+}

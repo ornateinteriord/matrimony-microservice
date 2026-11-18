@@ -1,0 +1,28 @@
+::-webkit-scrollbar {
+    display: none;
+  }
+
+  *{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+     font-family: 'Outfit', sans-serif !important;
+  }
+  
+  html, body {
+    overflow-x: hidden;
+    font-family: 'Outfit', sans-serif !important;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  .footer {
+    margin-top: auto; 
+  }

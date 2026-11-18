@@ -1,0 +1,27 @@
+{
+  "name": "matrimony-microservice",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@11.7.0",
+  "description": "Turborepo monorepo running 3 frontends (Girija-Kalyana, Sangam-sathi, Shree-ganda) and matrimony-service backend concurrently",
+  "workspaces": [
+    "apps/*",
+    "backend/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --filter=girija-kalyana --filter=sangam-sathi --filter=shree-ganda --filter=matrimony-service",
+    "dev:all": "turbo run dev",
+    "dev:concurrently": "concurrently -k -n \"girija,sangam,shree,matrimony\" -c \"cyan,magenta,yellow,green\" \"npm run dev --workspace=girija-kalyana\" \"npm run dev --workspace=sangam-sathi\" \"npm run dev --workspace=shree-ganda\" \"npm run dev --workspace=matrimony-service\"",
+    "build": "turbo run build",
+    "dev:girija": "npm run dev --workspace=girija-kalyana",
+    "dev:sangam": "npm run dev --workspace=sangam-sathi",
+    "dev:shree": "npm run dev --workspace=shree-ganda",
+    "dev:backend": "npm run dev --workspace=matrimony-service",
+    "dev:matrimony": "npm run dev --workspace=matrimony-service"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "turbo": "^2.11.8"
+  }
+}
+

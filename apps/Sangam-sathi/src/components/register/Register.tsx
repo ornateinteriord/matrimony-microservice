@@ -1,0 +1,1013 @@
+import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
+// Cashfree JS SDK v3 is loaded via <script> tag in index.html (window.Cashfree)
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  Divider,
+  Avatar,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
+import rawJsonData from "../Userprofile/profile/eduction/jsondata/data.json";
+
+import Navbar from "../navbar/Navbar";
+import Footer from "../footer/Footer";
+import { toast } from "react-toastify";
+import { useSignupMutation } from "../api/Auth";
+import { post } from "../api/authHooks";
+import { useLocation } from "react-router-dom";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { LoadingComponent } from "../../App";
+import CustomAutocomplete from "../Autocomplete/CustomAutocomplete";
+
+const datas = rawJsonData.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+const Register = () => {
+  const location = useLocation();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { mutate, isPending } = useSignupMutation();
+  const searchParams = new URLSearchParams(location.search);
+  const planType = searchParams.get("type");
+
+  const [citySuggestions, setCitySuggestions] = useState(datas.cities || []);
+  const [talukSuggestions, setTalukSuggestions] = useState([]);
+
+  const getUserRole = useCallback(() => {
+    switch (planType) {
+      case "PremiumUser":
+        return "PremiumUser";
+      case "SilverUser":
+        return "SilverUser";
+      default:
+        return "FreeUser";
+    }
+  }, [planType]);
+
+  const initialFormState = {
+    user_role: getUserRole(),
+    marital_status: "",
+    profilefor: "",
+    gender: "",
+    date_of_birth: "",
+    age: "",
+    educational_qualification: "",
+    occupation: "",
+    income_per_month: "",
+    country: "",
+    mother_tongue: "",
+    name_of_parent: "",
+    parent_name: "",
+    religion: "Hindu",
+    caste: "",
+    address: "",
+    occupation_country: "",
+    state: "",
+    city: "",
+    first_name: "",
+    last_name: "",
+    username: "",
+    mobile_no: "",
+    password: "",
+    confirmPassword: "",
+    refered_by: "",
+    refered_name: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [promoterName, setPromoterName] = useState("");
+  const [promoterError, setPromoterError] = useState("");
+  const [isValidatingPromoter, setIsValidatingPromoter] = useState(false);
+
+  // Determine display amount for selected plan
+  const getPlanAmount = () => {
+    switch (planType) {
+      case "PremiumUser":
+        return 1499;
+      case "SilverUser":
+        return 999;
+      default:
+        return 0;
+    }
+  };
+  const displayAmount = getPlanAmount();
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      user_role: getUserRole(),
+    }));
+  }, [planType]);
+
+  useEffect(() => {
+    if (formData.state) {
+      const filteredCities =
+        datas.cities?.filter((city) =>
+          city.toLowerCase().includes(formData.state.toLowerCase())
+        ) || [];
+      setCitySuggestions(filteredCities);
+    }
+  }, [formData.state]);
+
+  useEffect(() => {
+    if (formData.district) {
+      const selectedDistrict = datas.districts?.find(
+        (d) => d.name.toLowerCase() === formData.district.toLowerCase()
+      );
+      setTalukSuggestions(selectedDistrict?.taluks || []);
+    }
+  }, [formData.district]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "refered_by") {
+      setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+      return;
+    }
+
+    // For mobile number field - only allow numbers up to 10 digits
+    if (name === "mobile_no") {
+      if (value === "" || /^\d{0,10}$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+      return;
+    }
+
+    // For age field - only allow numbers
+    if (name === "age") {
+      if (value === "" || /^\d+$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+      return;
+    }
+
+    if (name === "date_of_birth") {
+      const age = calculateAge(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        age: age.toString(),
+      }));
+    } else if (name === "district") {
+      const selectedDistrict = datas.districts?.find(
+        (d) => d.name.toLowerCase() === value.toLowerCase()
+      );
+      setTalukSuggestions(selectedDistrict?.taluks || []);
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const calculateAge = (dob) => {
+    const birthDate = new Date(dob);
+    const difference = Date.now() - birthDate.getTime();
+    const ageDate = new Date(difference);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  };
+
+  const handleVerifyPromoter = async () => {
+    const code = formData.refered_by?.trim().toUpperCase();
+    if (code !== formData.refered_by) {
+      setFormData((prev) => ({ ...prev, refered_by: code || "" }));
+    }
+    if (!code) {
+      setPromoterError("Please enter a Sponsor Code first");
+      setPromoterName("");
+      return;
+    }
+    setIsValidatingPromoter(true);
+    setPromoterError("");
+    setPromoterName("");
+    setFormData((prev) => ({ ...prev, refered_name: "" }));
+    try {
+      const response = await post("/api/promoter/promocheck", { promocode: code });
+      if (response?.success && response?.data?.promoterName) {
+        setPromoterName(response.data.promoterName);
+        setFormData((prev) => ({ ...prev, refered_name: response.data.promoterName }));
+        toast.success(`Sponsor verified: ${response.data.promoterName}`);
+      } else {
+        setPromoterError(response?.message || "Invalid Sponsor Code");
+        toast.error(response?.message || "Invalid Sponsor Code");
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.message || "Invalid Sponsor Code or inactive promoter";
+      setPromoterError(msg);
+      toast.error(msg);
+    } finally {
+      setIsValidatingPromoter(false);
+    }
+  };
+
+  const handleClear = () => {
+    setFormData(initialFormState);
+    setPromoterName("");
+    setPromoterError("");
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // --- Field Validation ---
+    if (!formData.first_name?.trim()) {
+      toast.error("Please enter your first name");
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(formData.mobile_no)) {
+      toast.error("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    if (!formData.username?.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    if (!formData.password || formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    const planName = getUserRole();
+    let amount = 0;
+    if (planName === "PremiumUser") amount = 1499;
+    else if (planName === "SilverUser") amount = 999;
+
+    // --- Free User: Register directly ---
+    if (amount === 0) {
+      mutate(formData);
+      return;
+    }
+
+    // --- Paid User: Create order → Open Cashfree Checkout ---
+    (async () => {
+      try {
+        setIsProcessingPayment(true);
+
+        // Guard: Make sure Cashfree SDK is loaded (from index.html CDN script)
+        if (typeof window.Cashfree !== "function") {
+          toast.error(
+            "Payment SDK not loaded. Please check your internet connection and refresh the page."
+          );
+          return;
+        }
+
+        const orderId = `REG-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        const BACKEND_URL = import.meta.env.VITE_API_URL || "";
+
+        const payload = {
+          orderId,
+          orderAmount: amount,
+          customerName: `${formData.first_name} ${formData.last_name || ""}`.trim(),
+          customerEmail: formData.username.trim().toLowerCase(),
+          customerPhone: formData.mobile_no,
+          planType: planName,
+          context: "registration",
+          originalAmount: amount,
+        };
+
+        const resp = await axios.post(`${BACKEND_URL}/api/payment/create-order`, payload, {
+          headers: { "Content-Type": "application/json" },
+          timeout: 30000,
+        });
+
+        const data = resp.data || {};
+        const sessionId = data.payment_session_id;
+        const cashfreeEnv = data.cashfree_env === "production" ? "production" : "sandbox";
+
+        if (!sessionId) {
+          toast.error("Could not initiate payment. Please try again.");
+          return;
+        }
+
+        // Open Cashfree hosted checkout page
+        const cashfree = window.Cashfree({ mode: cashfreeEnv });
+        cashfree.checkout({
+          paymentSessionId: sessionId,
+          redirectTarget: "_self", // redirects back to return_url after payment
+        });
+
+      } catch (err) {
+        console.error("Payment error:", err);
+        const message =
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to start payment. Please try again.";
+        toast.error(message);
+      } finally {
+        setIsProcessingPayment(false);
+      }
+    })();
+  };
+
+
+  const isValidAge = (value) => {
+    if (value === "") return true; // Allow empty field
+    return /^\d+$/.test(value); // Check if it's only digits
+  };
+
+  return (
+    <>
+      <Navbar />
+      {isPending && <LoadingComponent />}
+      <Box
+        sx={{
+          minHeight: "100vh",
+          py: 4,
+          px: { xs: 1, sm: 2 },
+          mt: "10px",
+          width: isMobile ? "100%" : "88%",
+          display: "flex",
+          justifyContent: "center",
+          justifySelf: "center",
+          background: "linear-gradient(135deg, #faf5ff 0%, #f9f0ff 100%)",
+          borderRadius: 3,
+        }}
+      >
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: { xs: 2, sm: 4, md: 5 },
+            borderRadius: 3,
+            width: "100%",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1,
+              width: "100%",
+              pb: 2,
+              borderBottom: "2px solid",
+              borderColor: "rgba(94,4,118,0.15)",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                mt: isMobile ? "15px" : "",
+              }}
+            >
+              <Avatar sx={{ bgcolor: "#0B192C" }}>
+                <HowToRegIcon />
+              </Avatar>
+              <Typography
+                variant={isMobile ? "h5" : "h4"}
+                component="h1"
+                sx={{ fontWeight: 500 }}
+              >
+                Register Here!
+              </Typography>
+            </Box>
+
+            {displayAmount > 0 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  background: "linear-gradient(135deg, #0B192C, #1A365D)",
+                  color: "#fff",
+                  py: 1,
+                  px: 2.5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: { xs: "14px", sm: "16px" },
+                  boxShadow: "0 4px 14px rgba(94,4,118,0.35)",
+                }}
+              >
+                <Box component="span" sx={{ opacity: 0.85, fontSize: "13px" }}>Plan:</Box>
+                {getUserRole()}
+                <Box
+                  component="span"
+                  sx={{
+                    ml: 1,
+                    background: "rgba(255,255,255,0.2)",
+                    px: 1.5,
+                    py: 0.3,
+                    borderRadius: 1,
+                    fontSize: "14px",
+                  }}
+                >
+                  ₹{displayAmount}
+                </Box>
+              </Box>
+            )}
+            {displayAmount === 0 && (
+              <Box
+                sx={{
+                  fontSize: { xs: "14px", sm: "16px" },
+                  color: "#555",
+                  py: 0.5,
+                  px: 2,
+                  borderRadius: 2,
+                  fontWeight: 500,
+                  border: "1px solid rgba(94,4,118,0.2)",
+                  background: "rgba(94,4,118,0.04)",
+                }}
+              >
+                Plan: <Box component="span" sx={{ color: "#0B192C", fontWeight: 600 }}>Free</Box>
+              </Box>
+            )}
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 3,
+              mt: 3,
+            }}
+          >
+            <Box
+              sx={{
+                flex: 1,
+                background: "#fff",
+                borderRadius: 3,
+                p: { xs: 2, sm: 3 },
+                boxShadow: "0 2px 16px rgba(94,4,118,0.08)",
+                border: "1px solid rgba(94,4,118,0.08)",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 3,
+                  color: "#0B192C",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  "&::after": {
+                    content: '""',
+                    flex: 1,
+                    height: "1px",
+                    background: "rgba(94,4,118,0.15)",
+                    ml: 1,
+                  },
+                }}
+              >
+                Personal Details
+              </Typography>
+
+              <FormControl fullWidth sx={{ mb: 3 }} required>
+                <InputLabel>Marital Status</InputLabel>
+                <Select
+                  label="Marital Status"
+                  name="marital_status"
+                  value={formData.marital_status}
+                  onChange={handleChange}
+                >
+                  {datas.marritalStatus?.map((item, idx) => (
+                    <MenuItem key={idx} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth sx={{ mb: 3 }} required>
+                <InputLabel>Create Profile For</InputLabel>
+                <Select
+                  label="Create Profile For"
+                  name="profilefor"
+                  value={formData.profilefor}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Self">Self</MenuItem>
+                  <MenuItem value="Son">Son</MenuItem>
+                  <MenuItem value="Daughter">Daughter</MenuItem>
+                  <MenuItem value="Brother">Brother</MenuItem>
+                  <MenuItem value="Sister">Sister</MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth sx={{ mb: 3 }} required>
+                <InputLabel>Gender</InputLabel>
+                <Select
+                  label="Gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="BrideGroom">Male</MenuItem>
+                  <MenuItem value="Bride">Female</MenuItem>
+                </Select>
+              </FormControl>
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Date of Birth"
+                  value={
+                    formData.date_of_birth
+                      ? dayjs(formData.date_of_birth)
+                      : null
+                  }
+                  onChange={(newValue) => {
+                    const dob = newValue
+                      ? newValue.toISOString().split("T")[0]
+                      : "";
+                    const age = dob ? calculateAge(dob) : "";
+                    setFormData((prev) => ({
+                      ...prev,
+                      date_of_birth: dob,
+                      age: age.toString(),
+                    }));
+                  }}
+                  maxDate={dayjs()}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      sx: { mb: 3 },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+
+              <TextField
+                fullWidth
+                label="Age"
+                type="text" // Changed from "number" to "text"
+                sx={{ mb: 3 }}
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                required
+                InputLabelProps={{ shrink: !!formData.age }}
+                error={!isValidAge(formData.age)} // Show error state if not valid
+                helperText={
+                  !isValidAge(formData.age) ? "Please enter a valid number" : ""
+                }
+              />
+              <Typography
+                variant="h6"
+                sx={{ mb: 2, color: "#0B192C", fontWeight: 600 }}
+              >
+                SOCIAL & CAREER DETAILS
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 2,
+                }}
+              >
+                <Box sx={{ flex: "1 1 48%", minWidth: "200px" }}>
+                  <CustomAutocomplete
+                    options={datas.qualificationValues ?? []}
+                    label="Educational Qualification"
+                    name="educational_qualification"
+                    value={formData.educational_qualification}
+                    onChange={handleChange}
+                    required
+                    sx={{ width: "100%", mb: 2 }}
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 48%", minWidth: "200px" }}>
+                  <CustomAutocomplete
+                    options={datas.occupationValues ?? []}
+                    label="Occupation"
+                    name="occupation"
+                    value={formData.occupation}
+                    onChange={handleChange}
+                    required
+                    sx={{ width: "100%", mb: 2 }}
+                  />
+                </Box>
+
+                <Box sx={{ flex: "1 1 48%", minWidth: "200px" }}>
+                  <CustomAutocomplete
+                    options={datas.incomeValues ?? []}
+                    label="Income Per Annum"
+                    name="income_per_month"
+                    value={formData.income_per_month}
+                    onChange={handleChange}
+                    required
+                    sx={{ width: "100%", mb: 2 }}
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 48%", minWidth: "200px" }}>
+                  <CustomAutocomplete
+                    options={datas.countries ?? []}
+                    label="Country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    required
+                    sx={{ width: "100%", mb: 2 }}
+                  />
+                </Box>
+
+                <Box sx={{ flex: "1 1 48%", minWidth: "200px" }}>
+                  <CustomAutocomplete
+                    options={datas.languageValues ?? []}
+                    label="Mother Tongue"
+                    name="mother_tongue"
+                    value={formData.mother_tongue}
+                    onChange={handleChange}
+                    required
+                    sx={{ width: "100%", mb: 2 }}
+                  />
+                </Box>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                background: "#fff",
+                borderRadius: 3,
+                p: { xs: 2, sm: 3 },
+                boxShadow: "0 2px 16px rgba(94,4,118,0.08)",
+                border: "1px solid rgba(94,4,118,0.08)",
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 3,
+                  color: "#0B192C",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  "&::after": {
+                    content: '""',
+                    flex: 1,
+                    height: "1px",
+                    background: "rgba(94,4,118,0.15)",
+                    ml: 1,
+                  },
+                }}
+              >
+                Family Details
+              </Typography>
+
+              <FormControl fullWidth sx={{ mb: 3 }} required>
+                <InputLabel>Select Parents</InputLabel>
+                <Select
+                  label="Select Parents"
+                  name="name_of_parent"
+                  value={formData.name_of_parent}
+                  onChange={handleChange}
+                >
+                  <MenuItem value="Father">Father</MenuItem>
+                  <MenuItem value="Mother">Mother</MenuItem>
+                  <MenuItem value="Guardian">Guardian</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                label="Please enter name"
+                name="parent_name"
+                sx={{ mb: 3 }}
+                value={formData.parent_name}
+                onChange={handleChange}
+                required
+              />
+
+              <TextField
+                fullWidth
+                label="Religion"
+                name="religion"
+                value="Hindu"
+                disabled
+                sx={{ mb: 3 }}
+                required
+              />
+
+              <CustomAutocomplete
+                options={datas.casteValues ?? []}
+                label="Caste"
+                name="caste"
+                value={formData.caste}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+
+              <TextField
+                fullWidth
+                label="Address"
+                name="address"
+                multiline
+                rows={3}
+                sx={{ mb: 3 }}
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+
+              <CustomAutocomplete
+                options={datas.countries ?? []}
+                label="Occupation Country"
+                name="occupation_country"
+                value={formData.occupation_country}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+
+              <CustomAutocomplete
+                options={datas.states || []}
+                label="Select State"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+
+              <CustomAutocomplete
+                options={citySuggestions}
+                label="Select City"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                required
+                sx={{ mb: 3 }}
+              />
+            </Box>
+          </Box>
+
+          <Typography
+            variant="h6"
+            sx={{
+              mt: 3,
+              mb: 2.5,
+              color: "#0B192C",
+              fontWeight: 700,
+              fontSize: "0.9rem",
+              letterSpacing: "1.5px",
+              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              "&::after": {
+                content: '""',
+                flex: 1,
+                height: "1px",
+                background: "rgba(94,4,118,0.15)",
+                ml: 1,
+              },
+            }}
+          >
+            Login Details
+          </Typography>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 2,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                label="First Name"
+                name="first_name"
+                sx={{ mb: 3 }}
+                value={formData.first_name}
+                onChange={handleChange}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Last Name"
+                sx={{ mb: 3 }}
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                required
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                name="username"
+                sx={{ mb: 3 }}
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+              <TextField
+                fullWidth
+                label="Mobile Number"
+                type="text" // Changed from "number" to "text" for better control
+                name="mobile_no"
+                sx={{ mb: 3 }}
+                value={formData.mobile_no}
+                onChange={handleChange}
+                required
+                inputProps={{
+                  maxLength: 10, // Limit to 10 digits for Indian numbers
+                  pattern: "[0-9]*", // Ensures only numbers are entered
+                }}
+                error={
+                  formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no)
+                }
+                helperText={
+                  formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no)
+                    ? "Please enter a valid 10-digit mobile number"
+                    : ""
+                }
+              />
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 2,
+              mb: 4,
+            }}
+          >
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </Box>
+
+          {/* Sponsor Code and Sponsor Name Fields */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: '#333' }}>
+                Sponsor Code:
+              </Typography>
+              <Box display="flex" gap={1}>
+                <TextField
+                  fullWidth
+                  name="refered_by"
+                  value={formData.refered_by || ""}
+                  onChange={handleChange}
+                  placeholder="Promoter ID / Sponsor Code"
+                  inputProps={{ maxLength: 8 }}
+                />
+                <Button
+                  type="button"
+                  variant="contained"
+                  onClick={handleVerifyPromoter}
+                  disabled={isValidatingPromoter || !formData.refered_by}
+                  sx={{
+                    bgcolor: "#0B192C",
+                    color: "#fff",
+                    fontWeight: 600,
+                    "&:hover": { bgcolor: "#1A365D" },
+                    textTransform: "none",
+                    minWidth: "85px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {isValidatingPromoter ? "..." : "Verify"}
+                </Button>
+              </Box>
+              {promoterError && (
+                <Typography variant="caption" sx={{ color: "#d32f2f", fontWeight: 600, display: "block", mt: 0.5 }}>
+                  ✖ {promoterError}
+                </Typography>
+              )}
+            </Box>
+
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: '#333' }}>
+                Sponsor Name:
+              </Typography>
+              <TextField
+                fullWidth
+                name="refered_name"
+                value={promoterName || ""}
+                placeholder="Sponsor Name (Auto-filled on verify)"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: promoterName ? (
+                    <span style={{ color: "#2e7d32", fontWeight: "bold", marginRight: "8px" }}>✔</span>
+                  ) : null
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: promoterName ? "#edf7ed !important" : "#ffffff !important",
+                    "& input": {
+                      color: promoterName ? "#1e4620 !important" : "#555 !important",
+                      fontWeight: promoterName ? 600 : 400
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2,
+              flexDirection: isMobile ? "row" : "row",
+            }}
+          >
+            <input type="hidden" name="user_role" value={formData.user_role} />
+            <Button
+              type="button"
+              variant="outlined"
+              size="large"
+              onClick={handleClear}
+              sx={{
+                fontWeight: 600,
+                color: "#000",
+                border: '1px solid #0B192C',
+                width: { xs: "100%", sm: "50%", md: "20%" },
+                textTransform: "capitalize",
+                "&:hover": {
+                  backgroundColor: "#0B192C",
+                  color: "#fff",
+                },
+              }}
+            >
+              Clear
+            </Button>
+
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={isPending || isProcessingPayment}
+              sx={{
+                background: isPending || isProcessingPayment
+                  ? "#ccc"
+                  : "linear-gradient(135deg, #0B192C 0%, #1A365D 100%)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #1A365D 0%, #0B192C 100%)",
+                  boxShadow: "0 6px 20px rgba(94,4,118,0.4)",
+                  transform: "translateY(-1px)",
+                },
+                transition: "all 0.25s ease",
+                color: "white",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                width: { xs: "100%", sm: "50%", md: "20%" },
+                textTransform: "capitalize",
+                borderRadius: 2,
+              }}
+            >
+              {isProcessingPayment ? 'Redirecting to Payment...' : displayAmount > 0 ? `Pay ₹${displayAmount}` : 'Submit'}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+      <Footer />
+    </>
+  );
+};
+
+export default Register;
