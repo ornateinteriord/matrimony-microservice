@@ -91,4 +91,12 @@ TransactionSchema.pre('save', async function(next) {
   next();
 });
 
+// Indexes for fast lookup and promoter credit checking
+TransactionSchema.index({ registration_no: 1 });
+TransactionSchema.index({ status: 1 });
+TransactionSchema.index({ promocode: 1 });
+TransactionSchema.index({ is_handled: 1 });
+TransactionSchema.index({ registration_no: 1, status: 1 });
+TransactionSchema.index({ promocode: 1, status: 1 });
+
 module.exports = mongoose.model('Transaction', TransactionSchema);

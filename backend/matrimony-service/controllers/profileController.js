@@ -78,6 +78,15 @@ const updateProfile = async (req, res) => {
     const userUpdateObj = { ...others };
     if (typeof status !== 'undefined') userUpdateObj.status = status;
 
+    // Harmonize role and type fields across both models
+    const targetRole = others.user_role || others.type_of_user;
+    if (targetRole) {
+      profileUpdateObj.type_of_user = targetRole;
+      profileUpdateObj.user_role = targetRole;
+      userUpdateObj.type_of_user = targetRole;
+      userUpdateObj.user_role = targetRole;
+    }
+
     // Check profile completeness for otherInfo status
     const requiredFields = ['height', 'pincode', 'gotra', 'rashi', 'nakshatra', 'subcaste', 'bloodgroup', 'skin_type', 'body_type', 'diet', 'drink', 'smoke', 'sunsign', 'brother_younger_unmarried', 'brother_younger_married', 'brother_elder_unmarried', 'brother_elder_married', 'sister_younger_unmarried', 'sister_younger_married', 'sister_elder_unmarried', 'sister_elder_married', 'from_age_preference', 'to_age_preference', 'from_height_preference', 'to_height_preference', 'education_preference', 'caste_preference', 'maritalstatus_preference', 'occupation_country_preference', 'contactinfo', 'any_other_info'];
     const merged = { ...oldProfile?.toObject(), ...others };
@@ -188,19 +197,15 @@ const getAllUserDetails = async (req, res) => {
     const { user_role: userRole, ref_no: loggedInUserId } = req.user;
     const { page, pageSize } = getPaginationParams(req);
 
-    // Using facet for single database call
+    const matchFilter = { ref_no: { $ne: loggedInUserId } };
+    if (casteFilter) {
+      matchFilter.caste = casteFilter;
+    }
+
+    // Direct aggregation on unified user_tbl (no cross-table $lookup needed)
     const [{ metadata, data }] = await UserModel.aggregate([
-      { $match: { ref_no: { $ne: loggedInUserId } } },
-      {
-        $lookup: {
-          from: "registration_tbl",
-          localField: "ref_no",
-          foreignField: "registration_no",
-          as: "profileData"
-        }
-      },
-      { $unwind: { path: "$profileData", preserveNullAndEmptyArrays: true } },
-      ...(casteFilter ? [{ $match: { "profileData.caste": casteFilter } }] : []),
+      { $match: matchFilter },
+      { $addFields: { profileData: "$$ROOT" } },
       {
         $facet: {
           metadata: [
@@ -473,8 +478,14 @@ const getMyMatches = async (req, res) => {
       const toCm = extractCm(myProfile.to_height_preference);
 
       if (fromCm && toCm) {
+        const minCm = Math.min(fromCm, toCm);
+        const maxCm = Math.max(fromCm, toCm);
+        const cmList = [];
+        for (let cm = minCm; cm <= maxCm; cm++) {
+          cmList.push(cm);
+        }
         matchCriteria.height = {
-          $regex: new RegExp(`(${fromCm}|${toCm})cm`)
+          $regex: new RegExp(`(${cmList.join('|')})\\s*cm`, 'i')
         };
       }
     }
@@ -496,23 +507,14 @@ const getMyMatches = async (req, res) => {
       Profile.aggregate([
         { $match: matchCriteria },
         {
-          $lookup: {
-            from: "user_tbl",
-            localField: "registration_no",
-            foreignField: "ref_no",
-            as: "user"
-          }
-        },
-        { $unwind: "$user" },
-        {
           $addFields: {
             user_details: {
-              user_role: "$user.user_role",
-              status: "$user.status",
-              UpdateStatus: "$user.UpdateStatus",
-              counter: "$user.counter",
-              last_loggedin: "$user.last_loggedin",
-              ref_no: "$user.ref_no"
+              user_role: "$user_role",
+              status: "$status",
+              UpdateStatus: "$UpdateStatus",
+              counter: "$counter",
+              last_loggedin: "$last_loggedin",
+              ref_no: "$ref_no"
             },
             mobile_no: {
               $cond: [
@@ -778,6 +780,7 @@ const upgradeUser = async (req, res) => {
       {
         $set: {
           type_of_user: userType,
+          user_role: userType,
           expiry_date: updatedExpiryDate,
           status: "active",
         },
@@ -788,7 +791,7 @@ const upgradeUser = async (req, res) => {
     // 6️⃣ Update user_tbl (find by ref_no == registration_no)
     await UserModel.updateOne(
       { ref_no: registration_no },
-      { $set: { user_role: userType, status: "active" } }
+      { $set: { user_role: userType, type_of_user: userType, status: "active" } }
     );
 
     if (updatedProfile && oldStatus !== "active") {

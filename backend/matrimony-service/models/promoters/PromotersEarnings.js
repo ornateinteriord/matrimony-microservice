@@ -56,6 +56,10 @@ const PromoterEarningsSchema = new mongoose.Schema({
   },
 },{ timestamps: true, collection: "promoters_earnings_tbl" });
 
+PromoterEarningsSchema.index({ referal_by: 1 });
+PromoterEarningsSchema.index({ ref_no: 1 });
+PromoterEarningsSchema.index({ status: 1 });
+
 const PromotersEarningsModel = mongoose.model(
   "promoters_earnings_tbl",
   PromoterEarningsSchema

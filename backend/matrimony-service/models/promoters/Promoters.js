@@ -59,5 +59,8 @@ const PromoterDetailsSchema = new mongoose.Schema(
   { timestamps: true, collection: "promoter_tbl" }
 );
 
+PromoterDetailsSchema.index({ username: 1 }, { sparse: true });
+PromoterDetailsSchema.index({ status: 1 });
+
 const PromotersModel = mongoose.model("promoter_tbl", PromoterDetailsSchema);
 module.exports = PromotersModel;

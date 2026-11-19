@@ -24,8 +24,15 @@ const signUp = async (req, res) => {
     if (existingUser) {
       if ((existingUser.status === "inactive" || existingUser.status === "Pending" || existingUser.status === "pending") && isPaidPlan) {
         // Update existing inactive/pending user with latest form data
-        await UserModel.updateOne({ username }, { $set: { password, user_role, status: "Pending", ...otherDetails } });
-        await profile.updateOne({ email_id: username }, { $set: { type_of_user: user_role, status: "Pending", ...otherDetails } });
+        await UserModel.updateOne({ username }, { 
+          $set: { 
+            password, 
+            user_role, 
+            type_of_user: user_role, 
+            status: "Pending", 
+            ...otherDetails 
+          } 
+        });
 
         try {
           const TransactionModel = require("../../models/Transaction");
@@ -87,36 +94,30 @@ const signUp = async (req, res) => {
     // For new users, set initial status to Pending
     const userStatus = status || "Pending";
 
-    const newUser = new UserModel({
-      user_id: newUserId,
-      username,
-      password,
-      ref_no: newRefNo,
-      user_role,
-      status: userStatus,
-      ...otherDetails,
-    });
-
-    await newUser.save();
-
     const currentDate = new Date();
     const formattedDate = FormatDate(currentDate);
 
-    // For premium users, set initial type_of_user to match their plan but keep status inactive
+    // For premium users, set initial type_of_user to match their plan but keep status inactive/pending
     const typeOfUser = (user_role === "PremiumUser" || user_role === "SilverUser")
       ? user_role
       : "FreeUser";
 
-    const newProfile = new profile({
-      registration_no: newRefNo,
+    const newUser = new UserModel({
+      user_id: newUserId,
+      username,
       email_id: username,
+      password,
+      ref_no: newRefNo,
+      registration_no: newRefNo,
+      user_role,
       type_of_user: typeOfUser,
       status: userStatus,
       registration_date: formattedDate,
       ...otherDetails,
     });
 
-    await newProfile.save();
+    await newUser.save();
+    const newProfile = newUser;
 
     if (newProfile && (newProfile.type_of_user === "SilverUser" || newProfile.type_of_user === "PremiumUser" || otherDetails.refered_by)) {
       try {

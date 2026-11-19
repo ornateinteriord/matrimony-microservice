@@ -36,6 +36,8 @@ const PromoterTransactionSchema = new mongoose.Schema(
   { timestamps: true, collection: "promoters_transaction_tbl" }
 );
 
+PromoterTransactionSchema.index({ promocode: 1 });
+
 const PromoterTransactionModel = mongoose.model(
   "promoters_transaction_tbl",
   PromoterTransactionSchema

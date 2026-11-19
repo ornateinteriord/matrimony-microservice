@@ -26,7 +26,7 @@ const expressInterest = asyncHandler(async (req, res) => {
 
   const existingInterest = await Interest.findOne({
     $or: [
-      { senderuser: senderuser._id, recipientuser: recipient._id },
+      { senderuser: senderuser._id, recipientuser: recipientuser._id },
       { sender, recipient }
     ]
   });

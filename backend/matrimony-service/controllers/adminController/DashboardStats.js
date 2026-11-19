@@ -10,11 +10,11 @@ const getUserCounts = async (req, res) => {
       assistancePendingCount,
       assistanceSuccessCount
     ] = await Promise.all([
-      profile.countDocuments({ type_of_user: 'FreeUser', status: 'active' }),
-      profile.countDocuments({ type_of_user: 'SilverUser',status: 'active' }),
-      profile.countDocuments({ type_of_user: 'PremiumUser', status: 'active' }),
-      UserModel.countDocuments({ user_role: 'Assistance', status: { $in: ['pending', 'inactive'] } }),
-      UserModel.countDocuments({ user_role: 'Assistance', status: 'active' })
+      profile.countDocuments({ type_of_user: 'FreeUser', status: { $in: ['active', 'Active'] } }),
+      profile.countDocuments({ type_of_user: 'SilverUser', status: { $in: ['active', 'Active'] } }),
+      profile.countDocuments({ type_of_user: 'PremiumUser', status: { $in: ['active', 'Active'] } }),
+      profile.countDocuments({ status: { $in: ['pending', 'Pending', 'inactive', 'Inactive'] } }),
+      profile.countDocuments({ status: { $in: ['active', 'Active'] } })
     ]);
 
     const totalPaidUsers = silverUserCount + premiumUserCount;

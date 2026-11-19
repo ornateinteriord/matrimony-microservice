@@ -75,7 +75,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
     }
   }, [urlTab]);
 
-  const decodedToken = TokenService.decodeToken();
+  const decodedToken: any = TokenService.decodeToken();
   const promoterId = decodedToken?.promoter_id || decodedToken?.username;
 
   const { data, isLoading, error, refetch } = useGetMyUsers(promoterId);
@@ -87,13 +87,13 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
   const users: any[] = data?.users || [];
 
   const isPaidUser = (user: any) => {
-    const type = (user?.type_of_user || '').toLowerCase();
-    return type === 'silveruser' || type === 'premiumuser' || (type !== 'freeuser' && type !== '' && type !== 'free');
+    const role = (user?.user_role || user?.type_of_user || '').toLowerCase().trim();
+    return role === 'silveruser' || role === 'premiumuser' || role === 'golduser' || (role !== 'freeuser' && role !== 'free' && role !== '');
   };
 
   const isFreeUser = (user: any) => {
-    const type = (user?.type_of_user || '').toLowerCase();
-    return type === 'freeuser' || type === 'free' || !type;
+    const role = (user?.user_role || user?.type_of_user || '').toLowerCase().trim();
+    return role === 'freeuser' || role === 'free' || !role;
   };
 
   const isUserPending = (user: any) => {
@@ -470,20 +470,25 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
                       </TableCell>
 
                       <TableCell sx={{ py: 1.25 }}>
-                        {paid ? (
-                          <Chip
-                            label={user.type_of_user === 'PremiumUser' ? 'Premium' : user.type_of_user === 'SilverUser' ? 'Silver' : user.type_of_user}
-                            size="small"
-                            sx={{
-                              backgroundColor: user.type_of_user === 'PremiumUser' ? '#fef3c7' : '#e0f2fe',
-                              color: user.type_of_user === 'PremiumUser' ? '#92400e' : '#0369a1',
-                              fontWeight: 600,
-                              fontSize: '0.72rem',
-                              height: 22,
-                              borderRadius: '4px',
-                            }}
-                          />
-                        ) : (
+                        {paid ? (() => {
+                          const role = (user.user_role || user.type_of_user || '').toLowerCase();
+                          const isPremium = role.includes('premium');
+                          const isSilver = role.includes('silver');
+                          return (
+                            <Chip
+                              label={isPremium ? 'Premium' : isSilver ? 'Silver' : (user.user_role || user.type_of_user || 'Paid')}
+                              size="small"
+                              sx={{
+                                backgroundColor: isPremium ? '#fef3c7' : '#e0f2fe',
+                                color: isPremium ? '#92400e' : '#0369a1',
+                                fontWeight: 600,
+                                fontSize: '0.72rem',
+                                height: 22,
+                                borderRadius: '4px',
+                              }}
+                            />
+                          );
+                        })() : (
                           <Chip
                             label="Free User"
                             size="small"

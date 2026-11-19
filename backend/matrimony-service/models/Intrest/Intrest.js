@@ -39,6 +39,9 @@ interestSchema.index({
   name: 'unique_interest'
 });
 
+interestSchema.index({ sender: 1, status: 1 });
+interestSchema.index({ recipient: 1, status: 1 });
+
 
 interestSchema.pre('save', async function(next) {
   if (!this.isNew) {

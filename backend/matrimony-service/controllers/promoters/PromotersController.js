@@ -215,10 +215,6 @@ const getUsersByPromoter = async (req, res) => {
     }
 
     const matchObj = { refered_by: { $regex: new RegExp(`^${resolvedId}$`, "i") } };
-    const casteFilter = getCasteFilter(req);
-    if (casteFilter) {
-      matchObj.caste = casteFilter;
-    }
 
     // Aggregation pipeline
     const users = await ProfileModel.aggregate([
@@ -650,26 +646,36 @@ const getPromoterDashboardData = async (req, res) => {
     const resolvedPromoterId = promoter.promoter_id;
 
     // 2. Fetch referred users
-    const casteFilter = getCasteFilter(req);
     const matchObj = { refered_by: { $regex: new RegExp(`^${resolvedPromoterId}$`, "i") } };
-    if (casteFilter) {
-      matchObj.caste = casteFilter;
-    }
 
     const users = await ProfileModel.find(matchObj, {
       registration_no: 1,
       first_name: 1,
       last_name: 1,
       type_of_user: 1,
+      user_role: 1,
       status: 1,
       created_at: 1,
       registration_date: 1,
     }).sort({ _id: -1 });
 
     const totalUsers = users.length;
-    const freeUsers = users.filter((u) => u.type_of_user === "FreeUser").length;
-    const silverUsers = users.filter((u) => u.type_of_user === "SilverUser").length;
-    const premiumUsers = users.filter((u) => u.type_of_user === "PremiumUser").length;
+    const isSilv = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "silveruser" || r === "silver";
+    };
+    const isPrem = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "premiumuser" || r === "premium";
+    };
+    const isFree = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "freeuser" || r === "free" || (!isSilv(u) && !isPrem(u));
+    };
+
+    const freeUsers = users.filter(isFree).length;
+    const silverUsers = users.filter(isSilv).length;
+    const premiumUsers = users.filter(isPrem).length;
     const activeUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "active").length;
     const pendingUsers = users.filter((u) => {
       const s = (u.status || "").toLowerCase().trim();

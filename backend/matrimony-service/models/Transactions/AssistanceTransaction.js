@@ -16,6 +16,9 @@ const AssistanceTransactionSchema = new mongoose.Schema(
   { timestamps: true, collection: "assistance_transaction_tbl" }
 );
 
+AssistanceTransactionSchema.index({ registration_no: 1 });
+AssistanceTransactionSchema.index({ status: 1 });
+
 const AssistanceTransactionModel = mongoose.model(
   "assistance_transaction_tbl",
   AssistanceTransactionSchema

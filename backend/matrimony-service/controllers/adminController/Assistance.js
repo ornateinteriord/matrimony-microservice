@@ -6,11 +6,15 @@ const { getPaginationParams } = require("../../utils/pagination");
 const AssistancePending = async (req, res) => {
   try {
     const { page, pageSize } = getPaginationParams(req);
+    const { type_of_user } = req.body || {};
     
     const filter = {
-      status: { $in: ['inactive', 'pending'] },
-      type_of_user: "Assistance"
+      status: { $in: ['inactive', 'Inactive', 'pending', 'Pending'] }
     };
+
+    if (type_of_user && type_of_user !== 'all') {
+      filter.type_of_user = type_of_user;
+    }
 
     const totalRecords = await profile.countDocuments(filter);
     
@@ -37,11 +41,15 @@ const AssistancePending = async (req, res) => {
 const assistanceSuccess = async (req, res) => {
   try {
     const { page, pageSize } = getPaginationParams(req);
+    const { type_of_user } = req.body || {};
     
     const filter = {
-      status: 'active',
-      type_of_user: "Assistance"
+      status: { $in: ['active', 'Active'] }
     };
+
+    if (type_of_user && type_of_user !== 'all') {
+      filter.type_of_user = type_of_user;
+    }
 
     const totalRecords = await profile.countDocuments(filter);
     
