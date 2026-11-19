@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -8,7 +8,12 @@ import {
   Avatar,
   Chip,
   CircularProgress,
-  useTheme
+  useTheme,
+  Paper,
+  TextField,
+  Button,
+  Tooltip,
+  IconButton
 } from '@mui/material';
 import {
   Event,
@@ -41,8 +46,14 @@ import {
   Lock,
   Notifications,
   Email,
-  Verified
+  Verified,
+  ContentCopy,
+  WhatsApp,
+  PersonAdd,
+  Check,
+  Link as LinkIcon
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
 import { useGetPromoterDashboard } from '../../api/Promoter';
 import TokenService from '../../token/tokenService';
 
@@ -68,6 +79,29 @@ const DashboardContent = () => {
     totalEarnings: 0,
     paidAmount: 0,
     pendingAmount: 0
+  };
+
+  const [copied, setCopied] = useState(false);
+  const promoCode = promoter?.promoter_id || promoterId || "";
+  const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=${promoCode}` : "";
+
+  const handleCopyLink = () => {
+    if (!promoCode || promoCode === "N/A") {
+      toast.error("Promoter code not available yet.");
+      return;
+    }
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    toast.success("Referral link copied to clipboard!");
+    setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleShareWhatsApp = () => {
+    if (!promoCode || promoCode === "N/A") return;
+    const text = encodeURIComponent(
+      `Hello! Register on Sangam Sathi Matrimony to find your perfect partner. Use my referral code ${promoCode} or click here: ${referralLink}`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
   };
 
   const getIconComponent = (iconName, props = {}) => {
@@ -208,9 +242,25 @@ const DashboardContent = () => {
             <Typography variant="body1" sx={{ color: '#2e7d32', fontWeight: 'bold' }}>
               Your Promo / Referral Code
             </Typography>
-            <Typography variant="h5" sx={{ color: '#1b5e20', fontWeight: 'bold', letterSpacing: '1px', mt: 1 }}>
-              {promoter?.promoter_id || "N/A"}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mt: 1 }}>
+              <Typography variant="h5" sx={{ color: '#1b5e20', fontWeight: 'bold', letterSpacing: '1px' }}>
+                {promoter?.promoter_id || "N/A"}
+              </Typography>
+              {promoCode && (
+                <Tooltip title="Copy Promo Code">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      navigator.clipboard.writeText(promoCode);
+                      toast.success(`Copied Code: ${promoCode}`);
+                    }}
+                    sx={{ color: '#1b5e20' }}
+                  >
+                    <ContentCopy fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           </CardContent>
         </Card>
 
@@ -271,6 +321,98 @@ const DashboardContent = () => {
           </CardContent>
         </Card>
       </Box>
+
+      {/* Referral Link */}
+      <Card
+        sx={{
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          border: '1px solid #e2e8f0',
+          backgroundColor: '#ffffff',
+          my: 2.5,
+          p: { xs: 2, sm: 2.5 },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'flex-start', md: 'center' },
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 600 }}>
+              Your Referral Link
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                fontWeight: 600,
+                color: '#0B192C',
+                fontFamily: 'monospace',
+                fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                mt: 0.5,
+                wordBreak: 'break-all',
+              }}
+            >
+              {referralLink}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleCopyLink}
+              startIcon={copied ? <Check /> : <ContentCopy />}
+              sx={{
+                backgroundColor: copied ? '#16a34a' : '#0B192C',
+                color: '#fff',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+                px: 2,
+                '&:hover': { backgroundColor: copied ? '#15803d' : '#1e293b' },
+              }}
+            >
+              {copied ? 'Copied' : 'Copy Link'}
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="success"
+              onClick={handleShareWhatsApp}
+              startIcon={<WhatsApp />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+                px: 2,
+              }}
+            >
+              WhatsApp
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => window.open(referralLink, '_blank')}
+              sx={{
+                color: '#0B192C',
+                borderColor: '#cbd5e1',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+                px: 2,
+                '&:hover': { borderColor: '#0B192C', backgroundColor: 'rgba(11, 25, 44, 0.04)' },
+              }}
+            >
+              Add User
+            </Button>
+          </Box>
+        </Box>
+      </Card>
 
       <Divider sx={{ height: '1px', my: 3 }} />
 
