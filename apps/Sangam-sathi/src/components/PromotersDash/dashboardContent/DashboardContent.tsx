@@ -54,10 +54,12 @@ import {
   Link as LinkIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { useGetPromoterDashboard } from '../../api/Promoter';
 import TokenService from '../../token/tokenService';
 
 const DashboardContent = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const decodedToken = TokenService.decodeToken();
   const promoterId = decodedToken?.promoter_id;
@@ -149,18 +151,24 @@ const DashboardContent = () => {
       value: stats.totalUsers ?? 0,
       color: "#4caf50",
       icon: "Groups",
+      link: "/PromotAdmin/my-referrals?tab=all",
+      actionText: "View all users →",
     },
     {
-      title: "Active / Paid Members",
+      title: "Active Users",
       value: stats.activeUsers ?? 0,
       color: "#2196f3",
       icon: "CheckCircle",
+      link: "/PromotAdmin/my-referrals?tab=active",
+      actionText: "View active →",
     },
     {
       title: "Pending Approval",
       value: stats.pendingUsers ?? 0,
       color: "#ff9800",
       icon: "Pending",
+      link: "/PromotAdmin/my-referrals?tab=pending",
+      actionText: "Review pending →",
     },
     {
       title: "My Total Earnings",
@@ -448,31 +456,36 @@ const DashboardContent = () => {
           {statCards.map((item, index) => (
             <Card
               key={index}
+              onClick={() => {
+                if (item.link) navigate(item.link);
+              }}
               sx={{
-                flex: '1 1 300px',
-                maxWidth: { xs: '100%', sm: 'calc(50% - 24px)', md: 'calc(33.333% - 24px)' },
-                minWidth: '260px',
+                flex: '1 1 260px',
+                maxWidth: { xs: '100%', sm: 'calc(50% - 24px)', md: 'calc(33.333% - 24px)', lg: 'calc(25% - 24px)' },
+                minWidth: '240px',
                 minHeight: '130px',
                 borderRadius: '12px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                border: '1px solid #e2e8f0',
                 borderLeft: `5px solid ${item.color}`,
                 backgroundColor: '#ffffff',
-                transition: 'all 0.3s ease',
-                '&:hover': {
+                cursor: item.link ? 'pointer' : 'default',
+                transition: 'all 0.25s ease',
+                '&:hover': item.link ? {
                   transform: 'translateY(-4px)',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                },
+                  boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+                  borderColor: item.color,
+                } : {},
               }}
             >
               <CardContent sx={{ p: 2.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                   <Avatar
                     sx={{
                       backgroundColor: `${item.color}20`,
                       color: item.color,
-                      mr: 2,
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                     }}
                   >
                     {getIconComponent(item.icon)}
@@ -482,23 +495,39 @@ const DashboardContent = () => {
                     sx={{
                       color: item.color,
                       fontWeight: 'bold',
-                      fontSize: '1.6rem',
+                      fontSize: '1.5rem',
                     }}
                   >
                     {item.value}
                   </Typography>
                 </Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 600,
-                    textAlign: 'start',
-                    fontSize: '1rem'
-                  }}
-                >
-                  {item.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#475569',
+                      fontWeight: 600,
+                      textAlign: 'start',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    {item.title}
+                  </Typography>
+                  {item.link && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: item.color,
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        whiteSpace: 'nowrap',
+                        ml: 1
+                      }}
+                    >
+                      {item.actionText}
+                    </Typography>
+                  )}
+                </Box>
               </CardContent>
             </Card>
           ))}

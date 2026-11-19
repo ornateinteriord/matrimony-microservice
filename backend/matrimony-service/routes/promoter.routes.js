@@ -3,7 +3,7 @@ const router = express.Router();
 const PromotersModel = require('../models/promoters/Promoters');
 const authenticateToken = require('../middleware/auth.middleware');
 const checkRole = require('../middleware/roles.middleware');
-const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile } = require('../controllers/promoters/PromotersController');
+const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile, activateFreeUserByPromoter } = require('../controllers/promoters/PromotersController');
 const { searchUsersByInput } = require('../controllers/profileController');
 
 // Public route to register new promoter
@@ -33,6 +33,9 @@ router.post('/image-verification/:promoter_id', authenticateToken, checkRole("pr
 
 // Upgrade user image verification status by promoter
 router.put('/upgrade-user/:regno', authenticateToken, checkRole("promoter"), updatePromoterUserImageVerification);
+
+// Activate free user profile by promoter (Sangam-Sathi & Girija-Kalyana only)
+router.put('/activate-user/:registration_no', authenticateToken, checkRole("promoter"), activateFreeUserByPromoter);
 
 // Check promocode validity
 router.post('/promocheck', async (req, res) => {

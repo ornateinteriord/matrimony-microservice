@@ -67,6 +67,7 @@ const Profile = lazy(() => import('./components/Userprofile/profile/Profile'));
 const PreWelcome = lazy(() => import('./components/PreWelcome/PreWelcome'));
 const PromoterLogin = lazy(() => import('./components/PromotersDash/Auth/PromoterLogin'));
 const PromoterRegister = lazy(() => import('./components/PromotersDash/Auth/PromoterRegister'));
+const MyReferrals = lazy(() => import('./components/PromotersDash/myReferals/MyReferrals'));
 
 
 export const LoadingComponent = () => {
@@ -146,6 +147,7 @@ const App = () => {
                   <Route path="admin-profile" element={<AdminProfileDialog />} />
                   <Route path="profilepage" element={<ProfilePage />} />
                   <Route path="refer" element={<ReferInvitePage />} />
+                  <Route path="my-referrals" element={<MyReferrals />} />
                   <Route path="pending" element={<Pending />} />
                   <Route path="success" element={<Success />} />
                   <Route path="expired" element={<Expired />} />

@@ -54,10 +54,12 @@ import {
   Link as LinkIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { useGetPromoterDashboard } from '../../api/Promoter';
 import TokenService from '../../token/tokenService';
 
 const DashboardContent = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const decodedToken = TokenService.decodeToken();
   const promoterId = decodedToken?.promoter_id || decodedToken?.username;
@@ -149,18 +151,24 @@ const DashboardContent = () => {
       value: stats.totalUsers ?? 0,
       color: "#2e7d32",
       icon: "Groups",
+      link: "/PromotAdmin/my-referrals?tab=all",
+      actionText: "View all users →",
     },
     {
-      title: "Active / Paid Members",
+      title: "Active Users",
       value: stats.activeUsers ?? 0,
       color: "#0288d1",
       icon: "CheckCircle",
+      link: "/PromotAdmin/my-referrals?tab=active",
+      actionText: "View active →",
     },
     {
       title: "Pending Approval",
       value: stats.pendingUsers ?? 0,
       color: "#e65c00",
       icon: "Pending",
+      link: "/PromotAdmin/my-referrals?tab=pending",
+      actionText: "Review pending →",
     },
     {
       title: "My Total Earnings",
@@ -452,6 +460,9 @@ const DashboardContent = () => {
           {statCards.map((item, index) => (
             <Card
               key={index}
+              onClick={() => {
+                if (item.link) navigate(item.link);
+              }}
               sx={{
                 flex: '1 1 300px',
                 maxWidth: { xs: '100%', sm: 'calc(50% - 24px)', md: 'calc(33.333% - 24px)' },
@@ -461,11 +472,12 @@ const DashboardContent = () => {
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 borderLeft: `5px solid ${item.color}`,
                 backgroundColor: '#ffffff',
+                cursor: item.link ? 'pointer' : 'default',
                 transition: 'all 0.3s ease',
-                '&:hover': {
+                '&:hover': item.link ? {
                   transform: 'translateY(-4px)',
                   boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
-                },
+                } : {},
               }}
             >
               <CardContent sx={{ p: 2.5 }}>

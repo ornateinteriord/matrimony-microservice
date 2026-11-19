@@ -13,6 +13,7 @@ import AdminProfileDialog from './components/Adminprofile/AdminProfile';
 
 import ProfilePage from './components/PromotersDash/ProfilePage/ProfilePage';
 import ReferInvitePage from './components/PromotersDash/RefferInvite/RefferInvitePage';
+import MyReferrals from './components/PromotersDash/myReferals/MyReferrals';
 
 import Pending from './components/PromotersDash/myReferals/Pending';
 import Success from './components/PromotersDash/myReferals/Success';
@@ -222,6 +223,7 @@ const App = () => {
               <Route path="admin-profile" element={<AdminProfileDialog />} />
               <Route path="profilepage" element={<ProfilePage/>}/>
               <Route path="refer" element={<ReferInvitePage/>}/>
+              <Route path="my-referrals" element={<MyReferrals />} />
               <Route path="pending" element={<Pending />} />
               <Route path="success" element={<Success />} />
               <Route path="expired" element={<Expired />} />

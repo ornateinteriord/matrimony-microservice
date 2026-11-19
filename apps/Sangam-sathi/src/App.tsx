@@ -73,6 +73,7 @@ const CompleteProfile = lazy(() => import('./components/Userprofile/CompleteProf
 const SentInterests = lazy(() => import('./components/PromotersDash/UserInterests/SentInterests'));
 const ReceivedInterests = lazy(() => import('./components/PromotersDash/UserInterests/ReceivedInterests'));
 const SearchProfiles = lazy(() => import('./components/PromotersDash/SearchProfiles/SearchProfiles'));
+const MyReferrals = lazy(() => import('./components/PromotersDash/myReferals/MyReferrals'));
 const PromoterImageVerification = lazy(() => import('./components/PromotersDash/ImageVerification/PromoterImageVerification'));
 const PromoterLogin = lazy(() => import('./components/PromotersDash/Auth/PromoterLogin'));
 const PromoterRegister = lazy(() => import('./components/PromotersDash/Auth/PromoterRegister'));
@@ -145,6 +146,7 @@ const App = () => {
                   <Route path="admin-profile" element={<AdminProfileDialog />} />
                   <Route path="profilepage" element={<ProfilePage />} />
                   <Route path="refer" element={<ReferInvitePage />} />
+                  <Route path="my-referrals" element={<MyReferrals />} />
                   <Route path="pending" element={<Pending />} />
                   <Route path="success" element={<Success />} />
                   <Route path="expired" element={<Expired />} />

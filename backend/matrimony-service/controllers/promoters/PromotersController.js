@@ -670,10 +670,13 @@ const getPromoterDashboardData = async (req, res) => {
     const freeUsers = users.filter((u) => u.type_of_user === "FreeUser").length;
     const silverUsers = users.filter((u) => u.type_of_user === "SilverUser").length;
     const premiumUsers = users.filter((u) => u.type_of_user === "PremiumUser").length;
-    const activeUsers = users.filter((u) => u.status === "active").length;
-    const pendingUsers = users.filter((u) => u.status === "Pending" || u.status === "pending" || u.type_of_user === "FreeUser").length;
-    const expiredUsers = users.filter((u) => u.status === "Expired" || u.status === "expired").length;
-    const inactiveUsers = users.filter((u) => u.status === "inactive" || u.status === "inActive").length;
+    const activeUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "active").length;
+    const pendingUsers = users.filter((u) => {
+      const s = (u.status || "").toLowerCase().trim();
+      return s === "pending" || s === "approval pending" || s === "approval_pending";
+    }).length;
+    const expiredUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "expired").length;
+    const inactiveUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "inactive").length;
 
     // 3. Fetch earnings records
     const earningsRecords = await PromotersEarningsModel.find({
@@ -802,6 +805,104 @@ const updatePromoterProfile = async (req, res) => {
   }
 };
 
+const activateFreeUserByPromoter = async (req, res) => {
+  try {
+    const { registration_no } = req.params;
+    const project = (req.headers['x-project'] || req.headers['x-project-name'] || '').toLowerCase().replace(/[-_\s]/g, '');
+
+    // Allow in sangamsathi and girijakalyana only
+    if (project && !project.includes('sangam') && !project.includes('girija')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Promoter activation of users is only supported for Sangam-Sathi and Girija-Kalyana',
+      });
+    }
+
+    if (!registration_no) {
+      return res.status(400).json({ success: false, message: 'Registration number is required' });
+    }
+
+    const profile = await ProfileModel.findOne({ registration_no });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'User profile not found' });
+    }
+
+    // Verify promoter ownership
+    const promoterId = req.user?.promoter_id || req.user?.username;
+    if (promoterId && profile.refered_by) {
+      const isOwner = profile.refered_by.trim().toLowerCase() === promoterId.trim().toLowerCase();
+      if (!isOwner) {
+        const promoterDoc = await PromotersModel.findOne({
+          $or: [
+            { username: promoterId },
+            { promoter_id: promoterId }
+          ]
+        });
+        const matched = promoterDoc && (
+          (profile.refered_by || '').toLowerCase() === (promoterDoc.promoter_id || '').toLowerCase() ||
+          (profile.refered_by || '').toLowerCase() === (promoterDoc.username || '').toLowerCase()
+        );
+        if (!matched) {
+          return res.status(403).json({
+            success: false,
+            message: 'You can only activate users who registered using your referral code',
+          });
+        }
+      }
+    }
+
+    // Only allow for FreeUser
+    const userType = profile.type_of_user || '';
+    if (userType !== 'FreeUser' && userType.toLowerCase() !== 'free') {
+      return res.status(400).json({
+        success: false,
+        message: 'Promoters are only permitted to activate Free Users. Paid membership accounts (Silver/Premium) require Admin verification.',
+      });
+    }
+
+    if ((profile.status || '').toLowerCase().trim() === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is already active',
+      });
+    }
+
+    // Activate the profile
+    const updatedProfile = await ProfileModel.findOneAndUpdate(
+      { registration_no },
+      { $set: { status: 'active' } },
+      { new: true }
+    );
+
+    await UserModel.findOneAndUpdate(
+      { ref_no: registration_no },
+      { $set: { status: 'active' } }
+    );
+
+    // Send active email notification
+    try {
+      const { getActiveMessage } = require('../../utils/EmailMessages');
+      const { sendMail } = require('../../utils/EmailService');
+      const projectName = req.projectName || process.env.PROJECT_NAME || 'Girija-Kalyana';
+      const { activatedSubject, activatedMessage } = getActiveMessage(updatedProfile, projectName);
+      if (activatedSubject && activatedMessage && updatedProfile.email_id) {
+        await sendMail(updatedProfile.email_id, activatedSubject, activatedMessage, projectName);
+      }
+    } catch (emailErr) {
+      console.error('Error sending activation email:', emailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `User ${updatedProfile.first_name || ''} (${registration_no}) has been activated successfully!`,
+      user: updatedProfile,
+    });
+  } catch (error) {
+    console.error('activateFreeUserByPromoter error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while activating user', error: error.message });
+  }
+};
+
 module.exports = {
   getPromoters,
   getPromotersEarnings,
@@ -817,4 +918,5 @@ module.exports = {
   updatePromoterUserImageVerification,
   getPromoterDashboardData,
   updatePromoterProfile,
+  activateFreeUserByPromoter,
 };
