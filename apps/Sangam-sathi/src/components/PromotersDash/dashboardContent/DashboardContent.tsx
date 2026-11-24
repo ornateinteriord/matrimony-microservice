@@ -51,12 +51,14 @@ import {
   WhatsApp,
   PersonAdd,
   Check,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Key
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useGetPromoterDashboard } from '../../api/Promoter';
 import TokenService from '../../token/tokenService';
+import GenerateLoginLinkDialog from './GenerateLoginLinkDialog';
 
 const DashboardContent = ({ sidebarData }: { sidebarData?: any } = {}) => {
   const navigate = useNavigate();
@@ -84,6 +86,7 @@ const DashboardContent = ({ sidebarData }: { sidebarData?: any } = {}) => {
   };
 
   const [copied, setCopied] = useState(false);
+  const [loginLinkDialogOpen, setLoginLinkDialogOpen] = useState(false);
   const promoCode = promoter?.promoter_id || promoterId || "";
   const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=${promoCode}` : "";
 
@@ -418,7 +421,91 @@ const DashboardContent = ({ sidebarData }: { sidebarData?: any } = {}) => {
             >
               Add User
             </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => setLoginLinkDialogOpen(true)}
+              startIcon={<Key />}
+              sx={{
+                backgroundColor: '#7b1fa2',
+                color: '#fff',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderRadius: '8px',
+                px: 2,
+                '&:hover': { backgroundColor: '#6a1b9a' },
+              }}
+            >
+              Generate User Login Link
+            </Button>
           </Box>
+        </Box>
+      </Card>
+
+      {/* Quick Assisted Login Card */}
+      <Card
+        sx={{
+          borderRadius: '12px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          border: '1px solid #e9d5ff',
+          backgroundColor: '#faf5ff',
+          my: 2,
+          p: { xs: 2, sm: 2.2 },
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            alignItems: { xs: 'flex-start', md: 'center' },
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '10px',
+                backgroundColor: '#7b1fa2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                flexShrink: 0,
+              }}
+            >
+              <Key />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#4a148c' }}>
+                Assisted 1-Click Login Link Generator
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#6b21a8', fontSize: '0.85rem' }}>
+                Help non-tech-savvy users log in directly without entering credentials. Generates a secure, 15-day single-use link.
+              </Typography>
+            </Box>
+          </Box>
+
+          <Button
+            variant="contained"
+            onClick={() => setLoginLinkDialogOpen(true)}
+            startIcon={<Key />}
+            sx={{
+              backgroundColor: '#7b1fa2',
+              color: '#fff',
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: '8px',
+              px: 2.5,
+              py: 1,
+              whiteSpace: 'nowrap',
+              '&:hover': { backgroundColor: '#6a1b9a' },
+            }}
+          >
+            Generate Login Link
+          </Button>
         </Box>
       </Card>
 
@@ -533,6 +620,12 @@ const DashboardContent = ({ sidebarData }: { sidebarData?: any } = {}) => {
           ))}
         </Box>
       )}
+
+      {/* Dialog for Generating One-Time User Login Link */}
+      <GenerateLoginLinkDialog
+        open={loginLinkDialogOpen}
+        onClose={() => setLoginLinkDialogOpen(false)}
+      />
     </>
   );
 };

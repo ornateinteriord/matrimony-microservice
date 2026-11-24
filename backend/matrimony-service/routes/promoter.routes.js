@@ -4,10 +4,14 @@ const PromotersModel = require('../models/promoters/Promoters');
 const authenticateToken = require('../middleware/auth.middleware');
 const checkRole = require('../middleware/roles.middleware');
 const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile, activateFreeUserByPromoter } = require('../controllers/promoters/PromotersController');
+const { generateLoginLink } = require('../controllers/authController/AuthController');
 const { searchUsersByInput } = require('../controllers/profileController');
 
 // Public route to register new promoter
 router.post('/register', addPromoter);
+
+// Generate instant one-time login link for user (15 days expiry)
+router.post('/generate-login-link', authenticateToken, checkRole("promoter"), generateLoginLink);
 
 // Get real dashboard stats and promoter profile
 router.get('/dashboard/:promoter_id', authenticateToken, checkRole("promoter"), getPromoterDashboardData);
