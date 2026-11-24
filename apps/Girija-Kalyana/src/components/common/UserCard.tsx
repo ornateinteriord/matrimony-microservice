@@ -168,7 +168,7 @@ const UserCard = ({
             lineHeight: 1.3,
           }}
         >
-          {profile?.first_name} {profile?.last_name}
+          {profile?.full_name || profile?.fullname || `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User"}
         </Typography>
 
         {/* Age pill */}

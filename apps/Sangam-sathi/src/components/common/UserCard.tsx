@@ -92,7 +92,7 @@ const UserCard: React.FC<UserCardProps> = ({
           zIndex: 1
         }}>
           <Typography sx={{ fontWeight: 800, fontSize: "1.15rem", color: "#ffffff", lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {profile?.first_name} {profile?.last_name}
+            {profile?.full_name || profile?.fullname || `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User"}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
             <Typography sx={{ fontSize: "0.75rem", color: "#D97706", fontWeight: 700, background: "rgba(217,119,6,0.18)", px: 1, py: 0.2, borderRadius: "4px" }}>

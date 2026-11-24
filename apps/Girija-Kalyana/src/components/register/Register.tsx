@@ -115,8 +115,8 @@ const Register = () => {
     name_of_parent: "",
     parent_name: "",
     parents: [
-      { relation: "Father", name: "" },
-      { relation: "Mother", name: "" },
+      { relation: "Father", name: "", contact: "" },
+      { relation: "Mother", name: "", contact: "" },
     ],
     religion: "Hindu",
     caste: "",
@@ -124,10 +124,12 @@ const Register = () => {
     occupation_country: "",
     state: "",
     city: "",
+    full_name: "",
     first_name: "",
     last_name: "",
     username: "",
     mobile_no: "",
+    mobile_numbers: [""],
     password: "",
     confirmPassword: "",
   };
@@ -147,8 +149,8 @@ const Register = () => {
     name_of_parent: "",
     parent_name: "",
     parents: [
-      { relation: "Father", name: "" },
-      { relation: "Mother", name: "" },
+      { relation: "Father", name: "", contact: "" },
+      { relation: "Mother", name: "", contact: "" },
     ],
     religion: "Hindu",
     caste: "",
@@ -156,10 +158,12 @@ const Register = () => {
     occupation_country: "",
     state: "",
     city: "",
+    full_name: "",
     first_name: "",
     last_name: "",
     username: "",
     mobile_no: "",
+    mobile_numbers: [""],
     password: "",
     confirmPassword: "",
   }));
@@ -197,8 +201,23 @@ const Register = () => {
     // For mobile number field - only allow numbers up to 10 digits
     if (name === "mobile_no") {
       if (value === "" || /^\d{0,10}$/.test(value)) {
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((prev: any) => {
+          const numbers = [...(prev.mobile_numbers || [""])];
+          numbers[0] = value;
+          return { ...prev, mobile_no: value, mobile_numbers: numbers };
+        });
       }
+      return;
+    }
+
+    if (name === "full_name") {
+      const parts = value.trim().split(/\s+/);
+      setFormData((prev: any) => ({
+        ...prev,
+        full_name: value,
+        first_name: parts[0] || "",
+        last_name: parts.slice(1).join(" ") || "",
+      }));
       return;
     }
 
@@ -228,10 +247,43 @@ const Register = () => {
     }
   };
 
-  const handleParentChange = (index: number, field: "relation" | "name", val: string) => {
+  const handleMobileNumberChange = (index: number, value: string) => {
+    if (value === "" || /^\d{0,10}$/.test(value)) {
+      setFormData((prev: any) => {
+        const numbers = [...(prev.mobile_numbers || [""])];
+        numbers[index] = value;
+        return {
+          ...prev,
+          mobile_numbers: numbers,
+          mobile_no: numbers[0] || "",
+        };
+      });
+    }
+  };
+
+  const handleAddMobileNumber = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      mobile_numbers: [...(prev.mobile_numbers || [prev.mobile_no || ""]), ""],
+    }));
+  };
+
+  const handleRemoveMobileNumber = (index: number) => {
+    setFormData((prev: any) => {
+      const numbers = (prev.mobile_numbers || [""]).filter((_: any, i: number) => i !== index);
+      const finalNumbers = numbers.length > 0 ? numbers : [""];
+      return {
+        ...prev,
+        mobile_numbers: finalNumbers,
+        mobile_no: finalNumbers[0] || "",
+      };
+    });
+  };
+
+  const handleParentChange = (index: number, field: "relation" | "name" | "contact", val: string) => {
     setFormData((prev: any) => {
       const updated = [...(prev.parents || [])];
-      if (!updated[index]) updated[index] = { relation: "Father", name: "" };
+      if (!updated[index]) updated[index] = { relation: "Father", name: "", contact: "" };
       updated[index][field] = val;
 
       const validParents = updated.filter((p: any) => p.name?.trim());
@@ -255,7 +307,7 @@ const Register = () => {
         : "Guardian";
       return {
         ...prev,
-        parents: [...current, { relation: defaultNext, name: "" }],
+        parents: [...current, { relation: defaultNext, name: "", contact: "" }],
       };
     });
   };
@@ -263,7 +315,7 @@ const Register = () => {
   const handleRemoveParent = (index: number) => {
     setFormData((prev: any) => {
       const updated = (prev.parents || []).filter((_: any, i: number) => i !== index);
-      const finalParents = updated.length > 0 ? updated : [{ relation: "Father", name: "" }];
+      const finalParents = updated.length > 0 ? updated : [{ relation: "Father", name: "", contact: "" }];
       const validParents = finalParents.filter((p: any) => p.name?.trim());
       const parentNames = validParents.map((p: any) => `${p.relation}: ${p.name.trim()}`).join(", ");
       return {
@@ -294,15 +346,57 @@ const Register = () => {
       return;
     }
 
-    if (!/^[0-9]{10}$/.test(formData.mobile_no)) {
-      toast.error("Please enter a valid 10-digit mobile number");
+    if (!formData.full_name?.trim()) {
+      toast.error("Please enter your full name");
       return;
+    }
+
+    const primaryMobile = (formData.mobile_numbers?.[0] || formData.mobile_no || "").trim();
+    if (!/^[0-9]{10}$/.test(primaryMobile)) {
+      toast.error("Please enter a valid 10-digit primary mobile number");
+      return;
+    }
+
+    if (Array.isArray(formData.mobile_numbers)) {
+      for (let i = 1; i < formData.mobile_numbers.length; i++) {
+        const num = (formData.mobile_numbers[i] || "").trim();
+        if (num && !/^[0-9]{10}$/.test(num)) {
+          toast.error(`Mobile number #${i + 1} must be a valid 10-digit number`);
+          return;
+        }
+      }
+    }
+
+    if (Array.isArray(formData.parents)) {
+      for (let i = 0; i < formData.parents.length; i++) {
+        const pContact = (formData.parents[i]?.contact || "").trim();
+        if (pContact && !/^[0-9]{10}$/.test(pContact)) {
+          toast.error(`${formData.parents[i]?.relation || 'Parent'} contact must be a valid 10-digit number`);
+          return;
+        }
+      }
     }
 
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
+
+    const nameParts = formData.full_name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    const validMobileNumbers = (formData.mobile_numbers || [primaryMobile]).map((n: string) => n.trim()).filter(Boolean);
+
+    const submissionData = {
+      ...formData,
+      full_name: formData.full_name.trim(),
+      fullname: formData.full_name.trim(),
+      first_name: firstName,
+      last_name: lastName,
+      mobile_no: primaryMobile,
+      mobile_numbers: validMobileNumbers,
+      refered_by: sponsor.code || undefined,
+    };
 
     // For paid plans, show payment dialog instead of direct registration
     const isPaidPlan = planType === "PremiumUser" || planType === "SilverUser" ||
@@ -313,10 +407,7 @@ const Register = () => {
     } else {
       // For free users, proceed with normal registration
       try {
-        mutate({
-          ...formData,
-          refered_by: sponsor.code || undefined,
-        }, {
+        mutate(submissionData, {
           onSuccess: () => {
             toast.success("Registration successful");
           },
@@ -342,13 +433,18 @@ const Register = () => {
       const planTypeCode = planType === "PremiumUser" ? 'premium' : 'silver';
 
       const promoToUse = sponsor.code || promocode || null;
+      const primaryMobile = (formData.mobile_numbers?.[0] || formData.mobile_no || "").trim();
+      const nameParts = (formData.full_name || "").trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const validMobileNumbers = (formData.mobile_numbers || [primaryMobile]).map((n: string) => n.trim()).filter(Boolean);
 
       const orderResponse = await post("/api/payment/create-order", {
         orderId,
         orderAmount: finalAmount,
-        customerName: formData.first_name + " " + formData.last_name,
+        customerName: formData.full_name.trim(),
         customerEmail: formData.username,
-        customerPhone: formData.mobile_no,
+        customerPhone: primaryMobile,
         planType: planTypeCode,
         promocode: promoToUse,
         originalAmount,
@@ -362,6 +458,12 @@ const Register = () => {
       // Step 2: Order created successfully — now register user as inactive
       const registrationResponse = await post("/api/auth/signup", {
         ...formData,
+        full_name: formData.full_name.trim(),
+        fullname: formData.full_name.trim(),
+        first_name: firstName,
+        last_name: lastName,
+        mobile_no: primaryMobile,
+        mobile_numbers: validMobileNumbers,
         refered_by: sponsor.code || undefined,
         status: "inactive"
       });
@@ -887,13 +989,14 @@ const Register = () => {
                   </Button>
                 </Box>
 
-                {(formData.parents || [{ relation: "Father", name: "" }]).map((parentItem: any, pIdx: number) => (
+                {(formData.parents || [{ relation: "Father", name: "", contact: "" }]).map((parentItem: any, pIdx: number) => (
                   <Box
                     key={`parent-field-${pIdx}`}
                     sx={{
                       display: "flex",
+                      flexDirection: { xs: "column", sm: "row" },
                       gap: 1.5,
-                      alignItems: "center",
+                      alignItems: { xs: "stretch", sm: "center" },
                       mb: 1.5,
                       p: 1.5,
                       border: "1px solid #e2e8f0",
@@ -901,7 +1004,7 @@ const Register = () => {
                       backgroundColor: "#f8fafc",
                     }}
                   >
-                    <FormControl size="small" sx={{ width: { xs: "120px", sm: "140px" } }}>
+                    <FormControl size="small" sx={{ width: { xs: "100%", sm: "130px" } }}>
                       <InputLabel>Relation</InputLabel>
                       <Select
                         label="Relation"
@@ -925,12 +1028,30 @@ const Register = () => {
                       onChange={(e) => handleParentChange(pIdx, "name", e.target.value)}
                     />
 
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={`${parentItem.relation || "Parent"} Contact (Optional)`}
+                      placeholder="10-digit number"
+                      value={parentItem.contact || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "" || /^\d{0,10}$/.test(val)) {
+                          handleParentChange(pIdx, "contact", val);
+                        }
+                      }}
+                      inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
+                      error={Boolean(parentItem.contact && !/^[0-9]{10}$/.test(parentItem.contact))}
+                      helperText={parentItem.contact && !/^[0-9]{10}$/.test(parentItem.contact) ? "10 digits required" : ""}
+                    />
+
                     {(formData.parents || []).length > 1 && (
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => handleRemoveParent(pIdx)}
                         title="Remove"
+                        sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -1014,24 +1135,14 @@ const Register = () => {
             <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
-                label="First Name"
-                name="first_name"
+                label="Full Name"
+                name="full_name"
+                placeholder="Enter full name"
                 sx={{ mb: 3 }}
-                value={formData.first_name}
+                value={formData.full_name || ""}
                 onChange={handleChange}
                 required
               />
-              <TextField
-                fullWidth
-                label="Last Name"
-                sx={{ mb: 3 }}
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                required
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
                 label="Email"
@@ -1042,28 +1153,74 @@ const Register = () => {
                 onChange={handleChange}
                 required
               />
-              <TextField
-                fullWidth
-                label="Mobile Number"
-                type="text" // Changed from "number" to "text" for better control
-                name="mobile_no"
-                sx={{ mb: 3 }}
-                value={formData.mobile_no}
-                onChange={handleChange}
-                required
-                inputProps={{
-                  maxLength: 10, // Limit to 10 digits for Indian numbers
-                  pattern: "[0-9]*", // Ensures only numbers are entered
-                }}
-                error={
-                  formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no)
-                }
-                helperText={
-                  formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no)
-                    ? "Please enter a valid 10-digit mobile number"
-                    : ""
-                }
-              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#334155" }}>
+                    Mobile Number(s)
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddMobileNumber}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                      borderRadius: "4px",
+                      py: 0.3,
+                      px: 1,
+                      "&:hover": { borderColor: "primary.dark", backgroundColor: "rgba(112, 15, 43, 0.05)" },
+                    }}
+                  >
+                    Add Mobile
+                  </Button>
+                </Box>
+
+                {(formData.mobile_numbers && formData.mobile_numbers.length > 0
+                  ? formData.mobile_numbers
+                  : [formData.mobile_no || ""]
+                ).map((mobVal: string, mobIdx: number) => (
+                  <Box
+                    key={`mob-num-${mobIdx}`}
+                    sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1.5 }}
+                  >
+                    <TextField
+                      fullWidth
+                      label={mobIdx === 0 ? "Mobile Number" : `Additional Mobile ${mobIdx}`}
+                      type="text"
+                      placeholder="10-digit mobile number"
+                      value={mobVal}
+                      onChange={(e) => handleMobileNumberChange(mobIdx, e.target.value)}
+                      required={mobIdx === 0}
+                      inputProps={{
+                        maxLength: 10,
+                        pattern: "[0-9]*",
+                      }}
+                      error={Boolean(mobVal && !/^[0-9]{10}$/.test(mobVal))}
+                      helperText={
+                        mobVal && !/^[0-9]{10}$/.test(mobVal)
+                          ? "Please enter a valid 10-digit mobile number"
+                          : ""
+                      }
+                    />
+                    {mobIdx > 0 && (
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleRemoveMobileNumber(mobIdx)}
+                        title="Remove Number"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                ))}
+              </Box>
             </Box>
           </Box>
 

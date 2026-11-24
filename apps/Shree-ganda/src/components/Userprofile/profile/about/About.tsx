@@ -20,7 +20,8 @@ import { calculateAge } from "../../../../utils/common";
 
 const About = () => {
   const registerNo = TokenService.getRegistrationNo();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
+    full_name: '',
     first_name: '',
     last_name: '',
     date_of_birth: '',
@@ -45,6 +46,7 @@ const About = () => {
     if (userProfile) {
       setFormData({
         ...userProfile,
+        full_name: userProfile.full_name || userProfile.fullname || `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim(),
         date_of_birth: userProfile.date_of_birth?.split('T')[0] || ""
       });
     }
@@ -59,13 +61,22 @@ const About = () => {
     if (userProfile) {
       setFormData({
         ...userProfile,
+        full_name: userProfile.full_name || userProfile.fullname || `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim(),
         date_of_birth: userProfile.date_of_birth?.split('T')[0] || ""
       });
     }
   };
 
   const handleSave = () => {
-    updateProfile(formData);
+    const fn = (formData.full_name || `${formData.first_name || ""} ${formData.last_name || ""}`.trim()).trim();
+    const parts = fn.split(/\s+/);
+    updateProfile({
+      ...formData,
+      full_name: fn,
+      fullname: fn,
+      first_name: parts[0] || "",
+      last_name: parts.slice(1).join(" ") || ""
+    });
   };
 
   return (
@@ -94,8 +105,23 @@ const About = () => {
               Personal Details
             </Typography>
             <Stack spacing={2}>
-              <TextField label="First Name" name="first_name" value={formData.first_name} onChange={handleChange} disabled={isUpdating} fullWidth />
-              <TextField label="Last Name" name="last_name" value={formData.last_name} onChange={handleChange} disabled={isUpdating} fullWidth />
+              <TextField
+                label="Full Name"
+                name="full_name"
+                value={formData.full_name || `${formData.first_name || ""} ${formData.last_name || ""}`.trim()}
+                onChange={(e) => {
+                  const fn = e.target.value;
+                  const parts = fn.trim().split(/\s+/);
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    full_name: fn,
+                    first_name: parts[0] || "",
+                    last_name: parts.slice(1).join(" ") || ""
+                  }));
+                }}
+                disabled={isUpdating}
+                fullWidth
+              />
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   label="Date of Birth"

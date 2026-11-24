@@ -18,7 +18,7 @@ export const promoterSidebarConfig: SidebarConfig = {
     },
     {
       id: "promoter-refer",
-      title: "Refer / Invite",
+      title: "Refer",
       path: "/PromotAdmin/refer",
       icon: "Share",
     },
@@ -100,7 +100,7 @@ const sidebarData = {
       path: "/PromotAdmin/profilepage"
     },
     {
-      text: "Refer / Invite",
+      text: "Refer",
       icon: "Share",
       path: "/PromotAdmin/refer"
     },

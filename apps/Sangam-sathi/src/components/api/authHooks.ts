@@ -53,9 +53,11 @@ api.interceptors.response.use(
       url.includes("/api/auth/signup") ||
       url.includes("/api/promoter/register");
 
+    // Only redirect and clear token on 401 Unauthorized (unauthenticated/expired session)
+    // 403 Forbidden indicates permission/business denial and should NOT log the user out
     if (
       !isAuthEndpoint &&
-      (error.response?.status === 401 || error.response?.status === 403) &&
+      error.response?.status === 401 &&
       !originalRequest?._retry
     ) {
       originalRequest._retry = true;

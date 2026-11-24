@@ -1,6 +1,5 @@
 import React from "react";
-import { Button, Chip, Typography } from "@mui/material";
-import { ModeComment } from "@mui/icons-material";
+import { Button, Chip, Typography, Tooltip, Box } from "@mui/material";
 import { getRelativeTime } from "./common/date";
 import { ViewImagesComponent } from "../components/Admin/imageVarify/ImageVerificationdata";
 
@@ -9,201 +8,383 @@ export const customStyles = {
   headCells: {
     style: {
       fontFamily: "Outfit sans-serif",
-      fontSize: "18px",
-      fontWeight: "bold",
+      fontSize: "14px",
+      fontWeight: "600",
+      color: "#1e293b",
+      backgroundColor: "#f8fafc",
+      paddingLeft: "16px",
+      paddingRight: "16px",
+      borderBottom: "1px solid #e2e8f0",
     },
   },
   cells: {
     style: {
       fontFamily: "Outfit sans-serif",
-      fontSize: "17px",
+      fontSize: "14px",
+      color: "#334155",
+      paddingLeft: "16px",
+      paddingRight: "16px",
+    },
+  },
+  rows: {
+    style: {
+      minHeight: "56px",
+      "&:hover": {
+        backgroundColor: "#f8fafc",
+      },
     },
   },
 };
 
 export const getPromoterTableColumns = (handleDetailsClick) => [
-    {
-      name: "Promoter's Name",
-      selector: row => row.promoter_name,
-      sortable: true,
-    },
-    {
-      name: "Promoter's Code",
-      selector: row => row.promoter_id,
-    },
-    {
-      name: "Free Users",
-      selector: row => row.freeCount,
-    },
-    {
-      name: "Silver Users",
-      selector: row => row.silverCount,
-    },
-    {
-      name: "Premium Users",
-      selector: row => row.premiumCount,
-    },
-    {
-      name: "Total Users",
-      selector: row => row.totalCount,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
-        <Button 
-          disabled={row.totalCount === 0} 
-          onClick={() => {
-            handleDetailsClick(row)
-          }} 
-          variant="contained" 
-          size="small" 
-          sx={{ textTransform: 'capitalize' }}
-        >
-          Details
-        </Button>
-      ),
-    },
-  ];
+  {
+    name: "Promoter's Name",
+    selector: row => row.promoter_name,
+    sortable: true,
+  },
+  {
+    name: "Promoter's Code",
+    selector: row => row.promoter_id,
+  },
+  {
+    name: "Free Users",
+    selector: row => row.freeCount,
+  },
+  {
+    name: "Silver Users",
+    selector: row => row.silverCount,
+  },
+  {
+    name: "Premium Users",
+    selector: row => row.premiumCount,
+  },
+  {
+    name: "Total Users",
+    selector: row => row.totalCount,
+  },
+  {
+    name: "Action",
+    cell: (row) => (
+      <Button
+        disabled={row.totalCount === 0}
+        onClick={() => {
+          handleDetailsClick(row)
+        }}
+        variant="contained"
+        size="small"
+        sx={{ textTransform: 'capitalize' }}
+      >
+        Details
+      </Button>
+    ),
+  },
+];
 export const getPromoterUserListTable = () => [
-    {
-      name: "Registration No",
-      selector: row => row.registration_no,
-      sortable: true,
-      width : '10%'
-    },
-    {
-      name: "Name",
-      selector: row => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-       width : '20%'
-    },
-    {
-      name: "Email Id",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-       width : '30%'
-    },
-    {
-      name: "Gender",
-      selector: row => row?.gender,
-      sortable: true,
-       width : '15%'
-    },
-    {
-      name: "User Type",
-      selector: row => row.type_of_user,
-      sortable: true,
-       width : '15%'
-    },
-    {
-      name: "Status",
-      cell: row => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-       width : '10%'
-    },
-  ];
+  {
+    name: "Registration No",
+    selector: row => row.registration_no,
+    sortable: true,
+    width: '10%'
+  },
+  {
+    name: "Name",
+    selector: row => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+    width: '20%'
+  },
+  {
+    name: "Email Id",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+    width: '30%'
+  },
+  {
+    name: "Gender",
+    selector: row => row?.gender,
+    sortable: true,
+    width: '15%'
+  },
+  {
+    name: "User Type",
+    selector: row => row.type_of_user,
+    sortable: true,
+    width: '15%'
+  },
+  {
+    name: "Status",
+    cell: row => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+    width: '10%'
+  },
+];
 export const getPendingandSuccessUserDataColumns = () => [
-    {
-      name: "Registration No",
-      selector: (row) => row.id,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      sortable: true,
-    },
-    {
-      name: "Email",
-      selector: (row) => row.email,
-    },
-    {
-      name: "Phone",
-      selector: (row) => row.phone,
-    },
-    {
-      name: "Caste",
-      selector: () => "-",
-    },
-    {
-      name: "User Type",
-      selector: () => "Free/Silver User",
-    },
-  ];
+  {
+    name: "Registration No",
+    selector: (row) => row.id,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: (row) => row.name,
+    sortable: true,
+  },
+  {
+    name: "Email",
+    selector: (row) => row.email,
+  },
+  {
+    name: "Phone",
+    selector: (row) => row.phone,
+  },
+  {
+    name: "Caste",
+    selector: () => "-",
+  },
+  {
+    name: "User Type",
+    selector: () => "Free/Silver User",
+  },
+];
 
-export const getImageVerificationColumns = (upgradeUserMutation,handleStatusUpdate) => [
-    {
-      name: "Registration No",
-      selector: (row) => row.registration_no,
-      sortable: false,
+export const getImageVerificationColumns = (upgradeUserMutation, handleStatusUpdate) => [
+  {
+    name: "Registration No",
+    selector: (row) => row.registration_no || row.ref_no,
+    sortable: true,
+    minWidth: "160px",
+    grow: 1,
+    cell: (row) => (
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 600,
+          color: "#0f172a",
+          fontFamily: "Outfit sans-serif",
+          fontSize: "14px",
+        }}
+      >
+        {row.registration_no || row.ref_no || "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    name: "Name",
+    selector: (row) => row.first_name,
+    sortable: true,
+    minWidth: "160px",
+    grow: 1,
+    cell: (row) => (
+      <Typography
+        variant="body2"
+        sx={{
+          fontWeight: 500,
+          color: "#334155",
+          fontFamily: "Outfit sans-serif",
+          fontSize: "14px",
+        }}
+      >
+        {[row.first_name, row.last_name].filter(Boolean).join(" ") || "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    name: "Email ID",
+    selector: (row) => row?.username || row?.email_id,
+    sortable: true,
+    minWidth: "220px",
+    grow: 1.5,
+    cell: (row) => {
+      const email = row?.email_id || row?.username || "N/A";
+      return (
+        <Tooltip title={email} arrow placement="top">
+          <Typography
+            variant="body2"
+            sx={{
+              color: "#475569",
+              maxWidth: "200px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontFamily: "Outfit sans-serif",
+              fontSize: "13px",
+            }}
+          >
+            {email}
+          </Typography>
+        </Tooltip>
+      );
     },
-    {
-      name: "Name",
-      selector: (row) => row.first_name,
-      sortable: true,
+  },
+  {
+    name: "Gender",
+    selector: (row) => row.gender,
+    sortable: true,
+    minWidth: "120px",
+    cell: (row) => (
+      <Typography
+        variant="body2"
+        sx={{
+          color: "#475569",
+          fontFamily: "Outfit sans-serif",
+          fontSize: "13px",
+        }}
+      >
+        {row.gender || "-"}
+      </Typography>
+    ),
+  },
+  {
+    name: "User Type",
+    selector: (row) => row.user_role || row.type_of_user,
+    sortable: true,
+    minWidth: "130px",
+    cell: (row) => {
+      const role = row.user_role || row.type_of_user || "FreeUser";
+      const isPremium = role.toLowerCase().includes("premium");
+      const isSilver = role.toLowerCase().includes("silver");
+      return (
+        <Chip
+          label={role}
+          size="small"
+          variant="outlined"
+          sx={{
+            fontWeight: 500,
+            fontSize: "12px",
+            fontFamily: "Outfit sans-serif",
+            borderColor: isPremium ? "#8b5cf6" : isSilver ? "#0284c7" : "#cbd5e1",
+            color: isPremium ? "#7c3aed" : isSilver ? "#0369a1" : "#475569",
+            backgroundColor: isPremium ? "#f5f3ff" : isSilver ? "#f0f9ff" : "#f8fafc",
+          }}
+        />
+      );
     },
-    {
-      name: "Email ID",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
+  },
+  {
+    name: "Image Status",
+    selector: (row) => row.image_verification,
+    sortable: true,
+    minWidth: "140px",
+    cell: (row) => {
+      const isAct = (row.image_verification || "").toLowerCase() === "active";
+      return (
+        <Chip
+          label={isAct ? "Active" : "Pending"}
+          size="small"
+          sx={{
+            fontWeight: 600,
+            fontSize: "12px",
+            fontFamily: "Outfit sans-serif",
+            textTransform: "capitalize",
+            backgroundColor: isAct ? "#ecfdf5" : "#fffbeb",
+            color: isAct ? "#059669" : "#d97706",
+            border: `1px solid ${isAct ? "#a7f3d0" : "#fde68a"}`,
+          }}
+        />
+      );
     },
-    {
-      name: "Gender",
-      selector: (row) =>row.gender ,
-      sortable: true,
-    },
-    {
-      name: "User Type",
-      selector: (row) =>row.user_role ,
-      sortable: true,
-    },
-    {
-      name: "Image Status",
-      cell: row => (
-        <Typography color={row.image_verification === "active" ? "green" : "orange"}>
-          {row.image_verification}
-        </Typography>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
+  },
+  {
+    name: "Action",
+    minWidth: "140px",
+    cell: (row) => {
+      const regNo = row.registration_no || row.ref_no;
+      const isPendingMutation =
+        upgradeUserMutation?.isPending &&
+        upgradeUserMutation?.variables?.regno === regNo;
+      const isActive = (row.image_verification || "").toLowerCase() === "active";
+      const imgUrl =
+        row.image ||
+        (Array.isArray(row.images) && row.images.length > 0
+          ? row.images[0]
+          : null);
+      const hasImage = Boolean(
+        imgUrl &&
+        typeof imgUrl === "string" &&
+        imgUrl.trim() !== "" &&
+        imgUrl !== "null" &&
+        imgUrl !== "undefined"
+      );
+      const isDisabled = isPendingMutation || !hasImage;
+
+      const actionButton = (
         <Button
           variant="contained"
-          sx={{backgroundColor:row.image_verification ==="active" ?"orange":"green","&:hover":{backgroundColor:row.image_verification ==="active" ?"orange":"green"}}}
           size="small"
-          onClick={() => handleStatusUpdate(row.registration_no, row.image_verification)}
-          disabled={
-            (upgradeUserMutation.isPending && upgradeUserMutation.variables?.regno === row.registration_no) || !row.image
-          }
+          disabled={isDisabled}
+          onClick={() => handleStatusUpdate(regNo, row.image_verification)}
+          sx={{
+            textTransform: "capitalize",
+            fontSize: "12px",
+            fontWeight: 600,
+            fontFamily: "Outfit sans-serif",
+            borderRadius: "6px",
+            boxShadow: "none",
+            minWidth: "85px",
+            backgroundColor: isActive ? "#d97706" : "#10b981",
+            "&:hover": {
+              backgroundColor: isActive ? "#b45309" : "#059669",
+              boxShadow: "none",
+            },
+            "&.Mui-disabled": {
+              backgroundColor: "#e2e8f0",
+              color: "#94a3b8",
+            },
+          }}
         >
-          {upgradeUserMutation.isPending && upgradeUserMutation.variables?.regno === row.registration_no
-            ? "Processing..."
-            : row.image_verification === "active"
-            ? "pending"
-            : "active"}
+          {isPendingMutation
+            ? "Updating..."
+            : isActive
+              ? "Revoke"
+              : "Approve"}
         </Button>
-      ),
+      );
+
+      if (!hasImage) {
+        return (
+          <Tooltip title="No image uploaded to verify" arrow placement="top">
+            <span>{actionButton}</span>
+          </Tooltip>
+        );
+      }
+
+      return actionButton;
     },
-    {
-  name: "Image",
-  cell: (row) => (
-      row.image?(<ViewImagesComponent
-        image={row.image} 
-        id={row.registration_no} 
-        loading={upgradeUserMutation.isLoading}
-      />):(<Typography variant="body2" color="textSecondary">
-        Not Uploaded
-      </Typography>)
-   
-  ),
-}
-  ];
+  },
+  {
+    name: "Image",
+    minWidth: "130px",
+    cell: (row) => {
+      const imgUrl =
+        row.image ||
+        (Array.isArray(row.images) && row.images.length > 0
+          ? row.images[0]
+          : null);
+      return imgUrl ? (
+        <ViewImagesComponent
+          image={imgUrl}
+          id={row.registration_no || row.ref_no}
+          loading={upgradeUserMutation?.isLoading}
+        />
+      ) : (
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#94a3b8",
+            fontStyle: "italic",
+            fontSize: "12px",
+            fontFamily: "Outfit sans-serif",
+          }}
+        >
+          Not Uploaded
+        </Typography>
+      );
+    },
+  },
+];
 
 export const getRenewalsColumns = (handleRenew) => [
   {
@@ -231,25 +412,25 @@ export const getRenewalsColumns = (handleRenew) => [
     selector: (row) => row.expiry_date,
     sortable: true,
   },
-{
-  name: "Status",
-  cell: (row) => (
-  <Chip
-  label={(row.status || "").toUpperCase()}
-  sx={{
-    backgroundColor: '#f5f5f5',
-    color: row.status === 'expired'
-      ? '#c62828'
-      : row.status === 'pending'
-        ? '#f57f17'
-        : 'inherit',
-  }}
-  size="small"
-/>
+  {
+    name: "Status",
+    cell: (row) => (
+      <Chip
+        label={(row.status || "").toUpperCase()}
+        sx={{
+          backgroundColor: '#f5f5f5',
+          color: row.status === 'expired'
+            ? '#c62828'
+            : row.status === 'pending'
+              ? '#f57f17'
+              : 'inherit',
+        }}
+        size="small"
+      />
 
-  ),
-},
- {
+    ),
+  },
+  {
     name: "Renewal",
     cell: (row) => (
       <Button
@@ -258,7 +439,7 @@ export const getRenewalsColumns = (handleRenew) => [
         onClick={() => handleRenew(row)}
         disabled={!row.can_renew || !row.renewal_eligible}
         sx={{
-          backgroundColor:"#0e870eff",
+          backgroundColor: "#0e870eff",
           minWidth: '80px',
           textTransform: 'none',
           fontWeight: 'bold',
@@ -275,97 +456,97 @@ export const getRenewalsColumns = (handleRenew) => [
   },
 ];
 
-export const getResetPasswordColumns = (handleOpenDialog) =>  [
-    {
-      name: "Registration No",
-      selector: (row) => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => row.first_name,
-      sortable: true,
-    },
-    {
-      name: "Username",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Password",
-      selector: (row) => row.password,
-    },
-    {
-      name: "Status",
-      cell: (row) => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Actions",
-      cell: (row) => (
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{
-            textTransform: "capitalize",
-            background: "#34495e",
-          }}
-          onClick={() => handleOpenDialog(row)}
-        >
-          Change Password
-        </Button>
-      ),
-    },
-  ];
+export const getResetPasswordColumns = (handleOpenDialog) => [
+  {
+    name: "Registration No",
+    selector: (row) => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: (row) => row.first_name,
+    sortable: true,
+  },
+  {
+    name: "Username",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Password",
+    selector: (row) => row.password,
+  },
+  {
+    name: "Status",
+    cell: (row) => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+  {
+    name: "Actions",
+    cell: (row) => (
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{
+          textTransform: "capitalize",
+          background: "#34495e",
+        }}
+        onClick={() => handleOpenDialog(row)}
+      >
+        Change Password
+      </Button>
+    ),
+  },
+];
 
 
-  export const getPromotersUserDataColumns = (handleAction) => [
-    {
-      name: "Promoter Name",
-      selector: (row) => row.name,
-      sortable: true,
-    },
-    {
-      name: "Promocode",
-      selector: (row) => "-",
-      sortable: true,
-    },
-    {
-      name: "Mobile",
-      selector: (row) => row.phone,
-      sortable: true,
-    },
-    {
-      name: "Assistance Users",
-      selector: (row) =>"-",
-      sortable: true,
-    },
-    {
-      name: "Total Users",
-      selector: (row) => "-",
-      sortable: true,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{
-            textTransform: "capitalize",
-            background: "#34495e",
-          }}
-          onClick={() => handleAction(row)}
-        >
-          Perform Action
-        </Button>
-      ),
-    },
-  ];
+export const getPromotersUserDataColumns = (handleAction) => [
+  {
+    name: "Promoter Name",
+    selector: (row) => row.name,
+    sortable: true,
+  },
+  {
+    name: "Promocode",
+    selector: (row) => "-",
+    sortable: true,
+  },
+  {
+    name: "Mobile",
+    selector: (row) => row.phone,
+    sortable: true,
+  },
+  {
+    name: "Assistance Users",
+    selector: (row) => "-",
+    sortable: true,
+  },
+  {
+    name: "Total Users",
+    selector: (row) => "-",
+    sortable: true,
+  },
+  {
+    name: "Action",
+    cell: (row) => (
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{
+          textTransform: "capitalize",
+          background: "#34495e",
+        }}
+        onClick={() => handleAction(row)}
+      >
+        Perform Action
+      </Button>
+    ),
+  },
+];
 
 export const getPromotersDataColumns = (handleStatusChange) => [
   {
@@ -394,15 +575,15 @@ export const getPromotersDataColumns = (handleStatusChange) => [
     sortable: true,
   },
   {
-  name: "Status",
-  cell: (row) => (
-    <Typography color={row.status === "active" ? "green" : row.status === "inactive" ? "red" : "orange"}>
-      {row.status === "active" ? "Active" : row.status === "inactive" ? "Inactive" : "Pending"}
-    </Typography>
-  ),
-  sortable: true,
-},
-   {
+    name: "Status",
+    cell: (row) => (
+      <Typography color={row.status === "active" ? "green" : row.status === "inactive" ? "red" : "orange"}>
+        {row.status === "active" ? "Active" : row.status === "inactive" ? "Inactive" : "Pending"}
+      </Typography>
+    ),
+    sortable: true,
+  },
+  {
     name: "Change Status",
     cell: (row) => (
       <Button
@@ -416,61 +597,61 @@ export const getPromotersDataColumns = (handleStatusChange) => [
   },
 ];
 
-export const getUserTableColumns = (formatUserRole) =>  [
-    {
-      name: "Sl.No",
-      selector: (row, index) => index + 1,
-      sortable: true,
-      width: "80px"
-    },
-    {
-      name: "Username",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Reference No",
-      selector: row => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Membership",
-      cell: row => {
-        const role = row?.user_role || row?.type_of_user;
-        return (
+export const getUserTableColumns = (formatUserRole) => [
+  {
+    name: "Sl.No",
+    selector: (row, index) => index + 1,
+    sortable: true,
+    width: "80px"
+  },
+  {
+    name: "Username",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Reference No",
+    selector: row => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Membership",
+    cell: row => {
+      const role = row?.user_role || row?.type_of_user;
+      return (
         <Typography
           sx={{
-            color: role === 'PremiumUser' ? '#FFD700' : 
-                  role === 'SilverUser' ? '#C0C0C0' : 
-                  role === 'FreeUser' ? '#4CAF50' :
+            color: role === 'PremiumUser' ? '#FFD700' :
+              role === 'SilverUser' ? '#C0C0C0' :
+                role === 'FreeUser' ? '#4CAF50' :
                   role === 'Assistance' ? '#3498db' : '#333',
           }}
         >
           {formatUserRole(role)}
         </Typography>
       )
-      },
-      sortable: true,
     },
-    {
-      name: "Status",
-      cell: row => (
-        <Typography
-          sx={{
-            color: row.status === 'active' ? '#4CAF50' : '#F44336'
-          }}
-        >
-          {row.status?.charAt(0).toUpperCase() + row.status?.slice(1)}
-        </Typography>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Last Login",
-      selector: row => row.last_loggedin ? getRelativeTime(row.last_loggedin) : 'Never',
-      sortable: true,
-    },
-  ];
+    sortable: true,
+  },
+  {
+    name: "Status",
+    cell: row => (
+      <Typography
+        sx={{
+          color: row.status === 'active' ? '#4CAF50' : '#F44336'
+        }}
+      >
+        {row.status?.charAt(0).toUpperCase() + row.status?.slice(1)}
+      </Typography>
+    ),
+    sortable: true,
+  },
+  {
+    name: "Last Login",
+    selector: row => row.last_loggedin ? getRelativeTime(row.last_loggedin) : 'Never',
+    sortable: true,
+  },
+];
 
 export const getPromotersEarningsColumns = (handleDetailsClick) => [
   {
@@ -514,44 +695,44 @@ export const getPromotersEarningsColumns = (handleDetailsClick) => [
   },
 ];
 export const getTransactionDetailsDialogColumns = () => [
-            {
-                name: "Ref No",
-                selector: (row) => row.ref_no || "N/A",
-                sortable: true,
-            },
-            {
-                name: "Email",
-                selector: (row) => row.emailid || "N/A",
-                sortable: true,
-            },
-            {
-                name: "Mobile",
-                selector: (row) => row.mobile || "N/A",
-                sortable: true,
-            },
-            {
-                name: "Amount",
-                selector: (row) => `₹${row.amount_earned || 0}`,
-                sortable: true,
-            },
-            {
-                name: "Transaction No",
-                selector: (row) => row.transaction_no || "N/A",
-                sortable: true,
-            },
-            {
-                name: "Transaction Date",
-                selector: (row) => row.transaction_date || "N/A",
-                sortable: true,
-            },
-            {
-                name: "User Type",
-                selector: (row) => row.usertype || "N/A",
-                sortable: true,
-            },
-        ];
+  {
+    name: "Ref No",
+    selector: (row) => row.ref_no || "N/A",
+    sortable: true,
+  },
+  {
+    name: "Email",
+    selector: (row) => row.emailid || "N/A",
+    sortable: true,
+  },
+  {
+    name: "Mobile",
+    selector: (row) => row.mobile || "N/A",
+    sortable: true,
+  },
+  {
+    name: "Amount",
+    selector: (row) => `₹${row.amount_earned || 0}`,
+    sortable: true,
+  },
+  {
+    name: "Transaction No",
+    selector: (row) => row.transaction_no || "N/A",
+    sortable: true,
+  },
+  {
+    name: "Transaction Date",
+    selector: (row) => row.transaction_date || "N/A",
+    sortable: true,
+  },
+  {
+    name: "User Type",
+    selector: (row) => row.usertype || "N/A",
+    sortable: true,
+  },
+];
 
- export const getPromotersTransactionsColumns = () => [
+export const getPromotersTransactionsColumns = () => [
   {
     name: "Promo Code",
     selector: (row) => row.promocode || "-",
@@ -590,173 +771,175 @@ export const getTransactionDetailsDialogColumns = () => [
 ];
 
 export const getUserUpgradeColumns = (handleUpgrade) => [
-    {
-      name: "Registration No",
-      selector: row => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: row => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-    },
-    {
-      name: "Email Id",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "User Type",
-      selector: row => row.type_of_user,
-      sortable: true,
-    },
-    {
-      name: "Status",
-      cell: row => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Upgrade",
-      cell: row => (
-        <Button
-          variant="contained"
-          size="small"
-          onClick={() => handleUpgrade(row)}
-        >
-          Upgrade
-        </Button>
-      ),
-    },
-  ];
+  {
+    name: "Registration No",
+    selector: row => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: row => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+  },
+  {
+    name: "Email Id",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "User Type",
+    selector: row => row.type_of_user,
+    sortable: true,
+  },
+  {
+    name: "Status",
+    cell: row => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+  {
+    name: "Upgrade",
+    cell: row => (
+      <Button
+        variant="contained"
+        size="small"
+        onClick={() => handleUpgrade(row)}
+      >
+        Upgrade
+      </Button>
+    ),
+  },
+];
 export const getUserDataColumns = (upgradeUserMutation, handleUpgrade) => [
-    {
-      name: "Registration No",
-      selector: row => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: row => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-    },
-    {
-      name: "Email Id",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Gender",
-      selector: row => row.gender,
-      sortable: true,
-    },
-    {
-      name: "User Type",
-      selector: row => row.type_of_user,
-      sortable: true,
-    },
-    {
-      name: "Status",
-      cell: row => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Upgrade",
-      cell: row => (
-        <Button
-          variant="contained"
-          size="small"
-          disabled={upgradeUserMutation.isPending && upgradeUserMutation.variables?.regno === row.registration_no}
-          sx={{ textTransform: "capitalize",   backgroundColor: row.status === "active" ? "#f44336" : "#4caf50","&:hover": {
-      backgroundColor: row.status === "active" ? "#d32f2f" : "#388e3c", 
-    }, }}
-          onClick={() => handleUpgrade(row.registration_no, row.status)}
-        >
-          {upgradeUserMutation.isPending && 
-            upgradeUserMutation.variables?.regno === row.registration_no
-            ? "Processing..."
-            : row.status === "active"
+  {
+    name: "Registration No",
+    selector: row => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: row => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+  },
+  {
+    name: "Email Id",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Gender",
+    selector: row => row.gender,
+    sortable: true,
+  },
+  {
+    name: "User Type",
+    selector: row => row.type_of_user,
+    sortable: true,
+  },
+  {
+    name: "Status",
+    cell: row => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+  {
+    name: "Upgrade",
+    cell: row => (
+      <Button
+        variant="contained"
+        size="small"
+        disabled={upgradeUserMutation.isPending && upgradeUserMutation.variables?.regno === row.registration_no}
+        sx={{
+          textTransform: "capitalize", backgroundColor: row.status === "active" ? "#f44336" : "#4caf50", "&:hover": {
+            backgroundColor: row.status === "active" ? "#d32f2f" : "#388e3c",
+          },
+        }}
+        onClick={() => handleUpgrade(row.registration_no, row.status)}
+      >
+        {upgradeUserMutation.isPending &&
+          upgradeUserMutation.variables?.regno === row.registration_no
+          ? "Processing..."
+          : row.status === "active"
             ? "Deactivate"
             : "Activate"}
-        </Button>
-      ),
-    },
-  ];
+      </Button>
+    ),
+  },
+];
 
-  export const getAssistancePendingColumns = () => [
-    {
-      name: "Registration No",
-      selector: row => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: row => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-    },
-    {
-      name: "Email",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Phone",
-      selector: row => row.mobile_no,
-      sortable: true,
-    },
-    {
-      name: "Caste",
-      selector: row => row.caste,
-      sortable: true,
-    },
-    {
-      name: "User Type",
-      selector: row => row.type_of_user,
-      sortable: true,
-    },
+export const getAssistancePendingColumns = () => [
+  {
+    name: "Registration No",
+    selector: row => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: row => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+  },
+  {
+    name: "Email",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Phone",
+    selector: row => row.mobile_no,
+    sortable: true,
+  },
+  {
+    name: "Caste",
+    selector: row => row.caste,
+    sortable: true,
+  },
+  {
+    name: "User Type",
+    selector: row => row.type_of_user,
+    sortable: true,
+  },
 
-  ];
+];
 
-  export const getAssistanceSuccessColumns = () => [
-    {
-      name: "Registration No",
-      selector: row => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: row => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-    },
-    {
-      name: "Email",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Phone",
-      selector: row => row.mobile_no,
-      sortable: true,
-    },
-    {
-      name: "Caste",
-      selector: row => row.caste,
-      sortable: true,
-    },
-    {
-      name: "User Type",
-      selector: row => row.type_of_user,
-      sortable: true,
-    },
+export const getAssistanceSuccessColumns = () => [
+  {
+    name: "Registration No",
+    selector: row => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: row => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+  },
+  {
+    name: "Email",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Phone",
+    selector: row => row.mobile_no,
+    sortable: true,
+  },
+  {
+    name: "Caste",
+    selector: row => row.caste,
+    sortable: true,
+  },
+  {
+    name: "User Type",
+    selector: row => row.type_of_user,
+    sortable: true,
+  },
 
-  ];
+];
 
 
 export const getOnlineTransactionColumns = (showActive) => [
@@ -802,230 +985,230 @@ export const getOnlineTransactionColumns = (showActive) => [
 ];
 
 
-  export const getAssistanceOnlineTransactionDataColumns = () => [
-    {
-      name: "Date",
-      selector: (row) => row.date,
-      sortable: true,
-    },
-    {
-      name: "UserName",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Registration No",
-      selector: (row) => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Bank Reference Number",
-      selector: (row) => row.bank_ref_no,
-      sortable: true,
-    },
-    {
-      name: "Mode Of Payment",
-      selector: (row) => row.mode,
-      sortable: true,
-    },
-    {
-      name: "Amount",
-      selector: (row) => row.amount,
-      sortable: true,
-    },
-    {
-      name: "Status",
-      cell: (row) => (
-        <Typography color={row.status === "TXN_SUCCESS" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-  ];
+export const getAssistanceOnlineTransactionDataColumns = () => [
+  {
+    name: "Date",
+    selector: (row) => row.date,
+    sortable: true,
+  },
+  {
+    name: "UserName",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Registration No",
+    selector: (row) => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Bank Reference Number",
+    selector: (row) => row.bank_ref_no,
+    sortable: true,
+  },
+  {
+    name: "Mode Of Payment",
+    selector: (row) => row.mode,
+    sortable: true,
+  },
+  {
+    name: "Amount",
+    selector: (row) => row.amount,
+    sortable: true,
+  },
+  {
+    name: "Status",
+    cell: (row) => (
+      <Typography color={row.status === "TXN_SUCCESS" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+];
 
 
-  export const getReceiptVoucherColumns = () => [
-    {
-      name: "ID",
-      selector: (row) => row.id,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      sortable: true,
-    },
-    {
-      name: "Username",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Email",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Phone",
-      selector: (row) => row.phone,
-      sortable: true,
-    },
-    {
-      name: "City",
-      selector: (row) => row.address.city,
-      sortable: true,
-    },
-  ];
+export const getReceiptVoucherColumns = () => [
+  {
+    name: "ID",
+    selector: (row) => row.id,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: (row) => row.name,
+    sortable: true,
+  },
+  {
+    name: "Username",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Email",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Phone",
+    selector: (row) => row.phone,
+    sortable: true,
+  },
+  {
+    name: "City",
+    selector: (row) => row.address.city,
+    sortable: true,
+  },
+];
 
 
-  export const getUserReportsColumns = () => [
-    {
-      name: "Activation Date",
-      selector: (row) => row.registration_date,
-      sortable: true,
-    },
-    {
-      name: "Registration No",
-      selector: (row) => row.registration_no,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => `${row.first_name} ${row.last_name}`,
-      sortable: true,
-    },
-    {
-      name: "Gender",
-      selector: (row) => row.gender,
-      sortable: true,
-    },
-    {
-      name: "Status",
-      cell: (row) => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-  ];
+export const getUserReportsColumns = () => [
+  {
+    name: "Activation Date",
+    selector: (row) => row.registration_date,
+    sortable: true,
+  },
+  {
+    name: "Registration No",
+    selector: (row) => row.registration_no,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: (row) => `${row.first_name} ${row.last_name}`,
+    sortable: true,
+  },
+  {
+    name: "Gender",
+    selector: (row) => row.gender,
+    sortable: true,
+  },
+  {
+    name: "Status",
+    cell: (row) => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+];
 
-  export const getRenewalsReportColumns = () => [
-    {
-      name: "Transaction Date",
-      selector: () => "09-10-2024",
-      sortable: true,
-    },
-    {
-      name: "Registration No",
-      selector: (row) => row.id,
-      sortable: true,
-    },
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      sortable: true,
-    },
-    {
-      name: "Gender",
-      selector: () => "-",
-      sortable: false,
-    },
-    {
-      name: "Status",
-      cell: (row, index) => (
-        <Typography
-          variant="body2"
-          color={index % 2 === 0 ? "success.main" : "error.main"}
-        >
-          {index % 2 === 0 ? "Active" : "Expires"}
-        </Typography>
-      ),
-      sortable: true,
-    },
-  ];
+export const getRenewalsReportColumns = () => [
+  {
+    name: "Transaction Date",
+    selector: () => "09-10-2024",
+    sortable: true,
+  },
+  {
+    name: "Registration No",
+    selector: (row) => row.id,
+    sortable: true,
+  },
+  {
+    name: "Name",
+    selector: (row) => row.name,
+    sortable: true,
+  },
+  {
+    name: "Gender",
+    selector: () => "-",
+    sortable: false,
+  },
+  {
+    name: "Status",
+    cell: (row, index) => (
+      <Typography
+        variant="body2"
+        color={index % 2 === 0 ? "success.main" : "error.main"}
+      >
+        {index % 2 === 0 ? "Active" : "Expires"}
+      </Typography>
+    ),
+    sortable: true,
+  },
+];
 
-  export const getReceiptsReportColumns = () => [
-    {
-      name: "Date",
-      selector: () => "03-01-2025",
-      sortable: true,
-    },
-    {
-      name: "Registration No",
-      selector: (row) => row.id,
-      sortable: true,
-    },
-    {
-      name: "UserName",
-      selector: row => row?.username || row?.email_id,
-      sortable: true,
-    },
-    {
-      name: "Bank Reference Number",
-      selector: (row) => row.phone,
-      sortable: true,
-    },
-    {
-      name: "Mode of Payment",
-      selector: () => "-",
-      sortable: false,
-    },
-    {
-      name: "Amount",
-      selector: () => "Rs.",
-      sortable: false,
-    },
-    {
-      name: "Status",
-      cell: (row) => (
-        <Typography
-          color={row.id % 2 === 0 ? "success.main" : "error.main"}
-          sx={{ fontFamily: "Outfit sans-serif", fontSize: "17px" }}
-        >
-          {row.id % 2 === 0 ? "Success" : "Pending"}
-        </Typography>
-      ),
-      sortable: true,
-    },
-  ];
+export const getReceiptsReportColumns = () => [
+  {
+    name: "Date",
+    selector: () => "03-01-2025",
+    sortable: true,
+  },
+  {
+    name: "Registration No",
+    selector: (row) => row.id,
+    sortable: true,
+  },
+  {
+    name: "UserName",
+    selector: row => row?.username || row?.email_id,
+    sortable: true,
+  },
+  {
+    name: "Bank Reference Number",
+    selector: (row) => row.phone,
+    sortable: true,
+  },
+  {
+    name: "Mode of Payment",
+    selector: () => "-",
+    sortable: false,
+  },
+  {
+    name: "Amount",
+    selector: () => "Rs.",
+    sortable: false,
+  },
+  {
+    name: "Status",
+    cell: (row) => (
+      <Typography
+        color={row.id % 2 === 0 ? "success.main" : "error.main"}
+        sx={{ fontFamily: "Outfit sans-serif", fontSize: "17px" }}
+      >
+        {row.id % 2 === 0 ? "Success" : "Pending"}
+      </Typography>
+    ),
+    sortable: true,
+  },
+];
 
-  export const getNotificationDataColumns = () => [
-    {
-      name: "News ID",
-      selector: (row) => row.news_id,
-      sortable: true,
-    },
-    {
-      name: "News Details",
-      selector: (row) => row.news_details,
-      sortable: false,
-    },
-    {
-      name: "From Date",
-      selector: (row) => row.from_date,
-      sortable: true,
-    },
-    {
-      name: "To Date",
-      selector: (row) => row.to_date,
-      sortable: true,
-    },
-    {
-      name: "Type Of News",
-      selector: (row) => row.news_type,
-      sortable: false,
-    },
-    {
-      name: "Status",
-      cell: (row) => (
-        <Typography color={row.status === "active" ? "green" : "red"}>
-          {row.status}
-        </Typography>
-      ),
-      sortable: true,
-    },
-  ];
+export const getNotificationDataColumns = () => [
+  {
+    name: "News ID",
+    selector: (row) => row.news_id,
+    sortable: true,
+  },
+  {
+    name: "News Details",
+    selector: (row) => row.news_details,
+    sortable: false,
+  },
+  {
+    name: "From Date",
+    selector: (row) => row.from_date,
+    sortable: true,
+  },
+  {
+    name: "To Date",
+    selector: (row) => row.to_date,
+    sortable: true,
+  },
+  {
+    name: "Type Of News",
+    selector: (row) => row.news_type,
+    sortable: false,
+  },
+  {
+    name: "Status",
+    cell: (row) => (
+      <Typography color={row.status === "active" ? "green" : "red"}>
+        {row.status}
+      </Typography>
+    ),
+    sortable: true,
+  },
+];
 
 

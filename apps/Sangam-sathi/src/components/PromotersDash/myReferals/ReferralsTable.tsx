@@ -95,12 +95,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
   // Helper checks
   const isPaidUser = (user: any) => {
     const role = (user?.user_role || user?.type_of_user || '').toLowerCase().trim();
-    return role === 'silveruser' || role === 'premiumuser' || role === 'golduser' || (role !== 'freeuser' && role !== 'free' && role !== '');
+    return role.includes('silver') || role.includes('premium') || role.includes('gold');
   };
 
   const isFreeUser = (user: any) => {
-    const role = (user?.user_role || user?.type_of_user || '').toLowerCase().trim();
-    return role === 'freeuser' || role === 'free' || !role;
+    return !isPaidUser(user);
   };
 
   const isUserPending = (user: any) => {
@@ -220,8 +219,13 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
   };
 
   const handleConfirmActivate = () => {
-    if (!selectedUserToActivate?.registration_no) return;
-    activateUserMutation.mutate(selectedUserToActivate.registration_no, {
+    const regNo = selectedUserToActivate?.registration_no || selectedUserToActivate?.ref_no;
+    if (!regNo) return;
+    activateUserMutation.mutate({
+      registration_no: regNo,
+      _id: selectedUserToActivate?._id,
+      user_id: selectedUserToActivate?.user_id
+    }, {
       onSuccess: (res: any) => {
         toast.success(res?.message || 'Free user activated successfully!');
         setActivateDialogOpen(false);
@@ -678,7 +682,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
             <strong>
               {selectedUserToActivate?.first_name} {selectedUserToActivate?.last_name}
             </strong>{' '}
-            ({selectedUserToActivate?.registration_no})?
+            ({selectedUserToActivate?.registration_no || selectedUserToActivate?.ref_no})?
           </DialogContentText>
           <Alert severity="info" sx={{ mt: 2, fontSize: '0.8rem' }}>
             This will immediately mark the profile as <strong>Active</strong> and send an activation notification email to the user.

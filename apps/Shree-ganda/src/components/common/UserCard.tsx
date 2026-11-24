@@ -135,7 +135,7 @@ const UserCard = ({
         }}
       >
         <Typography fontWeight="500px" sx={{ color: "#000", mb: 0.5 }}>
-          {profile?.first_name} {profile?.last_name}
+          {profile?.full_name || profile?.fullname || `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "User"}
         </Typography>
         <Typography color="rgba(0, 0, 0, 0.6)">{age || "N/A"} yrs</Typography>
 

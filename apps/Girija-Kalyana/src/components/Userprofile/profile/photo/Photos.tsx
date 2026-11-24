@@ -3,8 +3,6 @@ import {
   Box,
   Button,
   Typography,
-  Card,
-  CardMedia,
   DialogTitle,
   Dialog,
   DialogContent,
@@ -12,26 +10,55 @@ import {
   DialogActions,
   Chip,
   IconButton,
-  Grid,
   CircularProgress,
   Paper,
-  Tooltip,
+  Alert,
 } from "@mui/material";
 import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
-  Delete as DeleteIcon,
   CloudUpload as UploadIcon,
-  CheckCircle as VerifiedIcon,
   Add as AddIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import toast from "react-hot-toast";
+import axios from "axios";
+import { get } from "../../../api/authHooks";
 import {
   useGetMemberDetails,
-  useImageKitUpload,
   useUpdateProfile,
 } from "../../../api/User";
 import TokenService from "../../../token/tokenService";
+
+const uploadSingleToImageKit = async (file: File, username?: string): Promise<string> => {
+  // 1. Get fresh signature for this file from backend
+  const authRes: any = await get("/image-kit-auth");
+  const { signature, expire, token, publicKey } = authRes?.data || authRes;
+  if (!signature || !expire || !token) {
+    throw new Error("Missing ImageKit authorization credentials from server");
+  }
+
+  // 2. Prepare form data
+  const data = new FormData();
+  data.append("file", file);
+  data.append("fileName", `${username || "photo"}_${Date.now()}_${file.name.replace(/\s+/g, "_")}`);
+  data.append("publicKey", publicKey || (import.meta as any).env.VITE_IMAGEKIT_PUBLIC_KEY);
+  data.append("signature", signature);
+  data.append("expire", expire);
+  data.append("token", token);
+  data.append("folder", "/profile-images");
+
+  // 3. Upload to ImageKit API
+  const uploadRes = await axios.post(
+    "https://upload.imagekit.io/api/v1/files/upload",
+    data
+  );
+
+  if (uploadRes.data && uploadRes.data.url) {
+    return uploadRes.data.url;
+  }
+  throw new Error("No URL returned from ImageKit");
+};
 
 const Photos: React.FC = () => {
   const registerNo = TokenService.getRegistrationNo();
@@ -39,11 +66,12 @@ const Photos: React.FC = () => {
 
   const { data: userProfile, refetch: getMember, isLoading } = useGetMemberDetails(registerNo);
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
-  const imagekit = useImageKitUpload(userProfile?.registration_no);
 
   const [imageList, setImageList] = useState<string[]>([]);
   const [primaryImage, setPrimaryImage] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState<string>("");
+  const [uploadErrors, setUploadErrors] = useState<{ fileName: string; reason: string }[]>([]);
   const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
 
   // Initialize photo list from profile
@@ -62,46 +90,76 @@ const Photos: React.FC = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    if (!file.type.match("image.*")) {
-      toast.error("Please select a valid image file");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
-      return;
+    const fileList = Array.from(files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
 
     setIsUploading(true);
+    setUploadErrors([]);
+    setUploadProgressMsg(`Uploading ${fileList.length} photo(s)...`);
 
-    imagekit.mutate(file, {
-      onSuccess: (data) => {
-        setIsUploading(false);
-        if (data.url) {
-          const newUrl = data.url;
-          setImageList((prev) => {
-            const next = [...prev, newUrl];
-            // If no primary image set, make this new photo primary
-            if (!primaryImage) {
-              setPrimaryImage(newUrl);
-            }
-            return next;
-          });
-          toast.success("Photo uploaded to gallery. Click 'Save Changes' to update your profile.");
-        } else {
-          toast.error("Failed to retrieve uploaded image URL");
+    // Use Promise.allSettled to process each image independently
+    const results = await Promise.allSettled(
+      fileList.map(async (file) => {
+        if (!file.type.match(/^image\//)) {
+          throw new Error(`Invalid format (${file.type || "unknown"}). Only images are supported.`);
         }
-      },
-      onError: (err) => {
-        setIsUploading(false);
-        toast.error("Failed to upload photo");
-        console.error("Upload error:", err);
-      },
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error(`Size ${(file.size / (1024 * 1024)).toFixed(1)}MB exceeds 10MB limit.`);
+        }
+        const url = await uploadSingleToImageKit(file, userProfile?.registration_no);
+        return { file, url };
+      })
+    );
+
+    setIsUploading(false);
+    setUploadProgressMsg("");
+
+    const succeededUrls: string[] = [];
+    const failedList: { fileName: string; reason: string }[] = [];
+
+    results.forEach((res, index) => {
+      const file = fileList[index];
+      if (res.status === "fulfilled") {
+        succeededUrls.push(res.value.url);
+      } else {
+        const err = res.reason;
+        const errorMsg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Upload failed";
+        failedList.push({
+          fileName: file.name,
+          reason: errorMsg,
+        });
+      }
     });
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    // If any succeeded, display them immediately in the gallery
+    if (succeededUrls.length > 0) {
+      setImageList((prev) => {
+        const next = [...prev, ...succeededUrls];
+        if (!primaryImage && next.length > 0) {
+          setPrimaryImage(next[0]);
+        }
+        return next;
+      });
+
+      if (failedList.length === 0) {
+        toast.success(`Successfully uploaded ${succeededUrls.length} photo(s). Remember to click 'Save Changes'.`);
+      } else {
+        toast.success(`Uploaded ${succeededUrls.length} photo(s) successfully.`);
+      }
+    }
+
+    // If any failed, show detailed reasons
+    if (failedList.length > 0) {
+      setUploadErrors(failedList);
+      failedList.forEach((item) => {
+        toast.error(`"${item.fileName}": ${item.reason}`, { duration: 6000 });
+      });
     }
   };
 
@@ -120,7 +178,6 @@ const Photos: React.FC = () => {
     const updatedList = imageList.filter((_, idx) => idx !== deleteTargetIndex);
     setImageList(updatedList);
 
-    // If the deleted photo was primary, assign the first available photo or empty string
     if (primaryImage === removedUrl) {
       setPrimaryImage(updatedList[0] || "");
     }
@@ -179,7 +236,7 @@ const Photos: React.FC = () => {
       >
         <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b", fontSize: "1.15rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a", fontSize: "1.15rem" }}>
               Profile Photo Gallery
             </Typography>
             <Typography variant="body2" sx={{ color: "#64748b", mt: 0.5, fontSize: "0.85rem" }}>
@@ -193,6 +250,7 @@ const Photos: React.FC = () => {
               ref={fileInputRef}
               onChange={handleSelectFiles}
               accept="image/*"
+              multiple
               style={{ display: "none" }}
             />
             <Button
@@ -213,7 +271,7 @@ const Photos: React.FC = () => {
                 },
               }}
             >
-              {isUploading ? "Uploading..." : "Add Photo"}
+              {isUploading ? "Uploading..." : "Add Photos"}
             </Button>
 
             <Button
@@ -236,6 +294,37 @@ const Photos: React.FC = () => {
         </Box>
       </Paper>
 
+      {/* Uploading progress notification */}
+      {isUploading && (
+        <Alert
+          severity="info"
+          icon={<CircularProgress size={18} sx={{ color: "#700F2B" }} />}
+          sx={{ mb: 2.5, borderRadius: "6px" }}
+        >
+          {uploadProgressMsg || "Uploading photos to ImageKit... Please wait."}
+        </Alert>
+      )}
+
+      {/* Upload errors list */}
+      {uploadErrors.length > 0 && (
+        <Alert
+          severity="error"
+          onClose={() => setUploadErrors([])}
+          sx={{ mb: 2.5, borderRadius: "6px" }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+            {uploadErrors.length} photo(s) failed to upload:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2.5, m: 0, fontSize: "0.85rem" }}>
+            {uploadErrors.map((err, i) => (
+              <li key={i}>
+                <strong>{err.fileName}</strong>: {err.reason}
+              </li>
+            ))}
+          </Box>
+        </Alert>
+      )}
+
       {/* Gallery Grid */}
       {imageList.length === 0 ? (
         <Paper
@@ -247,6 +336,11 @@ const Photos: React.FC = () => {
             border: "2px dashed #cbd5e1",
             backgroundColor: "#f8fafc",
             cursor: "pointer",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              borderColor: "#700F2B",
+              backgroundColor: "#f1f5f9",
+            },
           }}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -255,114 +349,179 @@ const Photos: React.FC = () => {
             No photos added yet
           </Typography>
           <Typography variant="body2" sx={{ color: "#94a3b8", mt: 0.5 }}>
-            Click here to upload clear, high-resolution portrait photos (Max size 10MB)
+            Click here to select and upload multiple portrait photos at once (Max size 10MB per image)
           </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={2.5}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(3, 1fr)",
+              sm: "repeat(4, 1fr)",
+              md: "repeat(5, 1fr)",
+              lg: "repeat(6, 1fr)",
+            },
+            gap: 2,
+            width: "100%",
+          }}
+        >
           {imageList.map((photoUrl, idx) => {
             const isPrimary = primaryImage === photoUrl;
 
             return (
-              <Grid item xs={12} sm={6} md={4} key={`photo-${idx}`}>
-                <Card
-                  sx={{
-                    borderRadius: "6px",
-                    border: isPrimary ? "2px solid #700F2B" : "1px solid #e2e8f0",
-                    boxShadow: isPrimary ? "0 4px 12px rgba(112, 15, 43, 0.15)" : "0 1px 3px rgba(0,0,0,0.06)",
-                    position: "relative",
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
+              <Box
+                key={`photo-${idx}`}
+                sx={{
+                  position: "relative",
+                  aspectRatio: "1 / 1",
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  border: isPrimary ? "3px solid #700F2B" : "1px solid #cbd5e1",
+                  boxShadow: isPrimary ? "0 4px 12px rgba(112, 15, 43, 0.2)" : "0 1px 3px rgba(0,0,0,0.08)",
+                  backgroundColor: "#f1f5f9",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  },
+                }}
+              >
+                <img
+                  src={photoUrl}
+                  alt={`Photo ${idx + 1}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
                   }}
+                />
+
+                {/* Primary Photo Badge */}
+                {isPrimary && (
+                  <Chip
+                    icon={<StarIcon sx={{ fontSize: "12px !important", color: "#ffffff !important" }} />}
+                    label="Primary"
+                    size="small"
+                    sx={{
+                      position: "absolute",
+                      top: 6,
+                      left: 6,
+                      backgroundColor: "#700F2B",
+                      color: "#ffffff",
+                      fontWeight: 700,
+                      fontSize: "0.65rem",
+                      height: 20,
+                      borderRadius: "4px",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                      zIndex: 2,
+                    }}
+                  />
+                )}
+
+                {/* Cross / Delete Icon on Top-Right Side of Image */}
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePromptDelete(idx);
+                  }}
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    backgroundColor: "rgba(15, 23, 42, 0.75)",
+                    color: "#ffffff",
+                    width: 26,
+                    height: 26,
+                    p: 0,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      backgroundColor: "#ef4444",
+                      color: "#ffffff",
+                      transform: "scale(1.1)",
+                    },
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.35)",
+                    zIndex: 2,
+                  }}
+                  title="Remove photo"
                 >
-                  {/* Photo Media */}
-                  <Box sx={{ position: "relative", height: 260, backgroundColor: "#f1f5f9" }}>
-                    <CardMedia
-                      component="img"
-                      src={photoUrl}
-                      alt={`Photo ${idx + 1}`}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                      }}
-                    />
+                  <CloseIcon sx={{ fontSize: 16 }} />
+                </IconButton>
 
-                    {/* Primary Badge */}
-                    {isPrimary && (
-                      <Chip
-                        icon={<StarIcon sx={{ fontSize: "14px !important", color: "#ffffff !important" }} />}
-                        label="Primary Photo"
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          top: 10,
-                          left: 10,
-                          backgroundColor: "#700F2B",
-                          color: "#ffffff",
-                          fontWeight: 700,
-                          fontSize: "0.72rem",
-                          borderRadius: "4px",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
-                        }}
-                      />
-                    )}
-
-                    {/* Delete action */}
-                    <IconButton
-                      size="small"
-                      onClick={() => handlePromptDelete(idx)}
+                {/* Bottom Action for Non-Primary Photos */}
+                {!isPrimary && (
+                  <Box
+                    onClick={() => handleSetPrimary(photoUrl)}
+                    sx={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      py: 0.5,
+                      px: 0.5,
+                      backgroundColor: "rgba(15, 23, 42, 0.72)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 0.5,
+                      transition: "background-color 0.2s ease",
+                      "&:hover": { backgroundColor: "rgba(15, 23, 42, 0.95)" },
+                      zIndex: 2,
+                    }}
+                    title="Click to make primary profile photo"
+                  >
+                    <StarBorderIcon sx={{ fontSize: 13, color: "#ffffff" }} />
+                    <Typography
+                      variant="caption"
                       sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        backgroundColor: "rgba(255, 255, 255, 0.9)",
-                        color: "#ef4444",
-                        "&:hover": { backgroundColor: "#ffffff", color: "#b91c1c" },
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+                        color: "#ffffff",
+                        fontSize: "0.68rem",
+                        fontWeight: 600,
+                        userSelect: "none",
                       }}
-                      title="Delete photo"
                     >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-
-                  {/* Footer Card Action */}
-                  <Box sx={{ p: 1.5, backgroundColor: "#ffffff", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 600 }}>
-                      Photo {idx + 1} of {imageList.length}
+                      Set Primary
                     </Typography>
-
-                    {isPrimary ? (
-                      <Typography variant="caption" sx={{ color: "#700F2B", fontWeight: 700 }}>
-                        ★ Shown on Card
-                      </Typography>
-                    ) : (
-                      <Button
-                        size="small"
-                        startIcon={<StarBorderIcon fontSize="small" />}
-                        onClick={() => handleSetPrimary(photoUrl)}
-                        sx={{
-                          textTransform: "none",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          color: "#475569",
-                          borderRadius: "4px",
-                          py: 0.25,
-                          px: 1,
-                          "&:hover": { color: "#700F2B", backgroundColor: "rgba(112, 15, 43, 0.05)" },
-                        }}
-                      >
-                        Set as Primary
-                      </Button>
-                    )}
                   </Box>
-                </Card>
-              </Grid>
+                )}
+              </Box>
             );
           })}
-        </Grid>
+
+          {/* Add More Photo Tile in Grid */}
+          <Box
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            sx={{
+              aspectRatio: "1 / 1",
+              borderRadius: "8px",
+              border: "2px dashed #cbd5e1",
+              backgroundColor: "#f8fafc",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: isUploading ? "not-allowed" : "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                borderColor: "#700F2B",
+                backgroundColor: "#f1f5f9",
+              },
+            }}
+          >
+            {isUploading ? (
+              <CircularProgress size={24} sx={{ color: "#700F2B" }} />
+            ) : (
+              <>
+                <AddIcon sx={{ fontSize: 28, color: "#64748b", mb: 0.5 }} />
+                <Typography variant="caption" sx={{ color: "#475569", fontWeight: 600, fontSize: "0.75rem" }}>
+                  Add More
+                </Typography>
+              </>
+            )}
+          </Box>
+        </Box>
       )}
 
       {/* Delete Confirmation Dialog */}

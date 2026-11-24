@@ -1,6 +1,6 @@
 const Profile = require("../models/profile");
 const UserModel = require("../models/user");
-const TransactionModel = require("../models/Transactions/OnlineTransaction")
+const TransactionModel = require("../models/Transactions/OnlineTransaction");
 const { blurAndGetURL } = require("../utils/ImageBlur");
 const { processUserImages } = require("../utils/SecureImageHandler");
 const BlurredImages = require("../models/blurredImages");
@@ -14,18 +14,40 @@ const getProfileByRegistrationNo = async (req, res) => {
   try {
     const { registration_no } = req.params;
 
-    const profile = await Profile.findOne({ registration_no });
+    const user = await UserModel.findOne({
+      $or: [{ registration_no }, { ref_no: registration_no }]
+    }).lean();
 
-    if (!profile) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "Profile not found with the given registration number",
       });
     }
 
+    const regNo = user.registration_no || user.ref_no || registration_no;
+    const profileObj = {
+      ...user,
+      registration_no: regNo,
+      ref_no: regNo,
+      type_of_user: user.type_of_user || user.user_role || "FreeUser",
+      user_role: user.user_role || user.type_of_user || "FreeUser",
+    };
+
+    if (!profileObj.full_name) {
+      const calculatedFullName = `${profileObj.first_name || ""} ${profileObj.last_name || ""}`.trim();
+      profileObj.full_name = calculatedFullName;
+      profileObj.fullname = calculatedFullName;
+    }
+    if (!profileObj.mobile_numbers || profileObj.mobile_numbers.length === 0) {
+      if (profileObj.mobile_no) {
+        profileObj.mobile_numbers = [profileObj.mobile_no];
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: profile,
+      data: profileObj,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -35,20 +57,32 @@ const getProfileByRegistrationNo = async (req, res) => {
 const DeleteImage = async (req, res) => {
   try {
     const { registration_no } = req.params;
-    const profile = await Profile.findOne({ registration_no });
-
     if (!registration_no) {
       return res.status(404).json({
         success: false,
         message: "Registration number is required",
       });
     }
+
+    const filter = {
+      $or: [{ registration_no }, { ref_no: registration_no }]
+    };
+    const profile = await UserModel.findOne(filter);
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found",
+      });
+    }
+
     if (!profile.image || profile.image === "") {
       return res.status(400).json({
         success: false,
         message: "No image found to delete for this profile",
       });
     }
+
     profile.image = "";
     profile.image_verification = "pending"; // Reset image verification status
     await profile.save();
@@ -60,67 +94,124 @@ const DeleteImage = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 const updateProfile = async (req, res) => {
   try {
     const { registration_no } = req.params;
     const { _id, image, status, isProfileUpdate, ...others } = req.body;
-    const oldProfile = await Profile.findOne({ registration_no });
-    const oldImageVerification = oldProfile ? oldProfile.image_verification : undefined;
 
-    // Build update object for both models
-    const profileUpdateObj = { ...others };
-    if (image) profileUpdateObj.image = image;
-    if (typeof status !== 'undefined') profileUpdateObj.status = status;
+    if (others.full_name || others.fullname) {
+      const rawFn = (others.full_name || others.fullname).trim();
+      const parts = rawFn.split(/\s+/);
+      others.first_name = parts[0] || "";
+      others.last_name = parts.slice(1).join(" ") || "";
+      others.full_name = rawFn;
+      others.fullname = rawFn;
+    } else if (others.first_name || others.last_name) {
+      const combined = `${others.first_name || ""} ${others.last_name || ""}`.trim();
+      others.full_name = combined;
+      others.fullname = combined;
+    }
 
-    const userUpdateObj = { ...others };
-    if (typeof status !== 'undefined') userUpdateObj.status = status;
+    if (others.mobile_numbers && Array.isArray(others.mobile_numbers)) {
+      const validNumbers = others.mobile_numbers.map(n => String(n).trim()).filter(Boolean);
+      others.mobile_numbers = validNumbers;
+      if (!others.mobile_no && validNumbers.length > 0) {
+        others.mobile_no = validNumbers[0];
+      }
+    } else if (others.mobile_no && !others.mobile_numbers) {
+      others.mobile_numbers = [String(others.mobile_no).trim()];
+    }
 
-    const profile = await Profile.findOneAndUpdate(
-      { registration_no },
-      { $set: profileUpdateObj },
+    if (Array.isArray(others.parents)) {
+      others.parents = others.parents.map(p => {
+        if (!p) return p;
+        const rel = (p.relation || "").toLowerCase();
+        let contact = p.contact || p.mobile_no || "";
+        if (!contact && rel.includes("father") && others.father_contact) {
+          contact = others.father_contact;
+        }
+        if (!contact && rel.includes("mother") && others.mother_contact) {
+          contact = others.mother_contact;
+        }
+        return {
+          ...p,
+          contact: contact || undefined,
+          mobile_no: contact || undefined
+        };
+      });
+    }
+
+    const filter = {
+      $or: [{ registration_no }, { ref_no: registration_no }]
+    };
+
+    const oldProfile = await UserModel.findOne(filter);
+    if (!oldProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found with the given registration number",
+      });
+    }
+
+    const oldImageVerification = oldProfile.image_verification;
+
+    // Build unified update object for user_tbl
+    const updateObj = { ...others };
+    if (image) updateObj.image = image;
+    if (typeof status !== 'undefined') updateObj.status = status;
+
+    const targetRole = others.user_role || others.type_of_user;
+    if (targetRole) {
+      updateObj.type_of_user = targetRole;
+      updateObj.user_role = targetRole;
+    }
+
+    // Check profile completeness for otherInfo status
+    const requiredFields = ['height', 'pincode', 'gotra', 'rashi', 'nakshatra', 'subcaste', 'bloodgroup', 'skin_type', 'body_type', 'diet', 'drink', 'smoke', 'sunsign', 'brother_younger_unmarried', 'brother_younger_married', 'brother_elder_unmarried', 'brother_elder_married', 'sister_younger_unmarried', 'sister_younger_married', 'sister_elder_unmarried', 'sister_elder_married', 'from_age_preference', 'to_age_preference', 'from_height_preference', 'to_height_preference', 'education_preference', 'caste_preference', 'maritalstatus_preference', 'occupation_country_preference', 'contactinfo', 'any_other_info'];
+    const mergedData = { ...(oldProfile.toObject ? oldProfile.toObject() : oldProfile), ...others };
+    if (requiredFields.every(f => String(mergedData[f] ?? '').trim())) updateObj.otherInfo = 'Complete';
+
+    const updatedUser = await UserModel.findOneAndUpdate(
+      filter,
+      { $set: updateObj },
       { new: true }
     );
 
-    await UserModel.findOneAndUpdate(
-      { ref_no: registration_no },
-      { $set: userUpdateObj }
-    );
-    if (profile) {
+    if (updatedUser) {
       try {
         if (
           typeof oldImageVerification !== 'undefined' &&
           oldImageVerification === 'pending' &&
-          profile.image_verification === 'active'
+          updatedUser.image_verification === 'active'
         ) {
-          const { imageVerifiedMessage, imageVerifiedSubject } = getImageVerifiedMessage(profile);
-          await sendMail(profile.email_id, imageVerifiedSubject, imageVerifiedMessage);
+          const { imageVerifiedMessage, imageVerifiedSubject } = getImageVerifiedMessage(updatedUser);
+          await sendMail(updatedUser.email_id || updatedUser.username, imageVerifiedSubject, imageVerifiedMessage);
         }
 
         if (
           status &&
-          oldProfile &&
           oldProfile.status &&
           oldProfile.status !== status
         ) {
           let subject, message;
 
           if (isProfileUpdate === true) {
-            const { activatedSubject, activatedMessage } = getActiveMessage(profile);
+            const { activatedSubject, activatedMessage } = getActiveMessage(updatedUser);
             if (!activatedSubject || !activatedMessage) {
               throw new Error("Activation email content is missing!");
             }
             subject = activatedSubject;
             message = activatedMessage;
           } else if (isProfileUpdate === false) {
-            const { deactivatedSubject, deactivatedMessage } = getDeactiveMessage(profile);
+            const { deactivatedSubject, deactivatedMessage } = getDeactiveMessage(updatedUser);
             subject = deactivatedSubject;
             message = deactivatedMessage;
           }
 
           if (subject && message) {
-            await sendMail(profile.email_id, subject, message);
+            await sendMail(updatedUser.email_id || updatedUser.username, subject, message);
           }
         }
       } catch (error) {
@@ -128,47 +219,28 @@ const updateProfile = async (req, res) => {
       }
 
       if (
-        profile.status?.toLowerCase() === "active" ||
-        profile.image_verification?.toLowerCase() === "active" ||
+        updatedUser.status?.toLowerCase() === "active" ||
+        updatedUser.image_verification?.toLowerCase() === "active" ||
         status?.toLowerCase() === "active" ||
         req.body.status?.toLowerCase() === "active"
       ) {
-        console.log("=== [CONSLODE LOG: UPDATE PROFILE ACTIVATION] Admin activated user:", profile.registration_no, ". Triggering creditPromoterOnAdminAction ===");
-        await creditPromoterOnAdminAction(profile, Date.now().toString(), profile.type_of_user);
+        console.log("=== [CONSLODE LOG: UPDATE PROFILE ACTIVATION] Admin activated user:", updatedUser.registration_no || updatedUser.ref_no, ". Triggering creditPromoterOnAdminAction ===");
+        await creditPromoterOnAdminAction(updatedUser, Date.now().toString(), updatedUser.type_of_user);
       }
     }
 
-    if (!profile) {
-      return res.status(404).json({
-        success: false,
-        message: "Profile not found with the given registration number",
-      });
-    }
-
-    const userUpdate = await UserModel.findOneAndUpdate(
-      { ref_no: registration_no },
-      { $set: others },
-      { new: true }
-    );
-
-    if (!userUpdate) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found with the given registration number",
-      });
-    }
-
     if (image) {
-      const blurredUrl = await blurAndGetURL(image, registration_no); // generate blurred image
+      const blurredUrl = await blurAndGetURL(image, updatedUser.registration_no || updatedUser.ref_no || registration_no);
       await BlurredImages.findOneAndUpdate(
-        { user_id: profile.registration_no },
+        { user_id: updatedUser.registration_no || updatedUser.ref_no || registration_no },
         { $set: { blurredImage: blurredUrl } },
         { upsert: true, new: true }
       );
     }
+
     res.status(200).json({
       success: true,
-      data: { profile, user: userUpdate },
+      data: { profile: updatedUser, user: updatedUser },
       message: "Profile Updated Successfully.",
     });
   } catch (error) {
@@ -181,56 +253,66 @@ const getAllUserDetails = async (req, res) => {
     const { user_role: userRole, ref_no: loggedInUserId } = req.user;
     const { page, pageSize } = getPaginationParams(req);
 
-    // Using facet for single database call
+    const matchFilter = { ref_no: { $ne: loggedInUserId } };
+
+    // Direct aggregation on unified user_tbl (no cross-table $lookup needed)
     const [{ metadata, data }] = await UserModel.aggregate([
       {
         $facet: {
           metadata: [
-            { $match: { ref_no: { $ne: loggedInUserId } } },
+            { $match: matchFilter },
             { $count: "totalRecords" }
           ],
           data: [
-            { $match: { ref_no: { $ne: loggedInUserId } } },
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: { path: "$profileData", preserveNullAndEmptyArrays: true } },
+            { $match: matchFilter },
             {
               $addFields: {
+                full_name: {
+                  $cond: [
+                    { $and: ["$full_name", { $ne: ["$full_name", ""] }] },
+                    "$full_name",
+                    {
+                      $trim: {
+                        input: {
+                          $concat: [
+                            { $ifNull: ["$first_name", ""] },
+                            " ",
+                            { $ifNull: ["$last_name", ""] }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
                 mobile_no: {
                   $cond: [
                     { $eq: [userRole, "FreeUser"] },
                     null,
-                    "$profileData.mobile_no"
+                    "$mobile_no"
                   ]
                 },
                 email_id: {
                   $cond: [
                     { $eq: [userRole, "FreeUser"] },
                     null,
-                    "$profileData.email_id"
+                    "$email_id"
                   ]
                 },
-                // 🔹 Add sorting priority for type_of_user
+                // Add sorting priority for type_of_user
                 type_priority: {
                   $switch: {
                     branches: [
-                      { case: { $eq: ["$profileData.type_of_user", "PremiumUser"] }, then: 1 },
-                      { case: { $eq: ["$profileData.type_of_user", "SilverUser"] }, then: 2 },
-                      { case: { $eq: ["$profileData.type_of_user", "FreeUser"] }, then: 3 }
+                      { case: { $eq: ["$type_of_user", "PremiumUser"] }, then: 1 },
+                      { case: { $eq: ["$type_of_user", "SilverUser"] }, then: 2 },
+                      { case: { $eq: ["$type_of_user", "FreeUser"] }, then: 3 }
                     ],
                     default: 4
                   }
                 },
-                // 🔹 Parse registration_date as date for proper sorting
+                // Parse registration_date as date for proper sorting
                 registration_date_parsed: {
                   $dateFromString: {
-                    dateString: "$profileData.registration_date",
+                    dateString: "$registration_date",
                     format: "%m/%d/%Y",
                     onError: new Date(0),
                     onNull: new Date(0)
@@ -238,31 +320,13 @@ const getAllUserDetails = async (req, res) => {
                 }
               }
             },
-            {
-              $replaceRoot: {
-                newRoot: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    "$profileData",
-                    {
-                      user_role: "$user_role",
-                      status: "$status",
-                      UpdateStatus: "$UpdateStatus",
-                      counter: "$counter",
-                      last_loggedin: "$last_loggedin",
-                      ref_no: "$ref_no"
-                    }
-                  ]
-                }
-              }
-            },
-            // 🔹 Sort by latest registration and creation timestamp (recent first)
+            // Sort by latest registration and creation timestamp (recent first)
             { $sort: { registration_date_parsed: -1, _id: -1 } },
             {
               $project: {
                 ...(userRole?.toLowerCase() !== "admin" && { password: 0 }),
-                profileData: 0,
-                _id: 0,
+                registration_date_parsed: 0,
+                type_priority: 0,
                 __v: 0
               }
             },
@@ -296,7 +360,6 @@ const getAllUserDetails = async (req, res) => {
   }
 };
 
-
 const getProfilesRenewal = async (req, res) => {
   try {
     const { page = 0, pageSize = 50, search } = req.query;
@@ -305,7 +368,6 @@ const getProfilesRenewal = async (req, res) => {
 
     let filterConditions = {
       user_role: { $ne: "admin" },
-       user_role: { $ne: "FreeUser" },
       $or: [
         { status: "Pending" },
         { status: "pending" },
@@ -320,6 +382,7 @@ const getProfilesRenewal = async (req, res) => {
         {
           $or: [
             { registration_no: { $regex: search, $options: "i" } },
+            { ref_no: { $regex: search, $options: "i" } },
             { first_name: { $regex: search, $options: "i" } },
             { username: { $regex: search, $options: "i" } },
             { email_id: { $regex: search, $options: "i" } },
@@ -333,27 +396,19 @@ const getProfilesRenewal = async (req, res) => {
       UserModel.aggregate([
         { $match: filterConditions },
         {
-          $lookup: {
-            from: "registration_tbl",
-            localField: "ref_no",
-            foreignField: "registration_no",
-            as: "profile",
-          },
-        },
-        { $unwind: { path: "$profile", preserveNullAndEmptyArrays: false } },
-        {
           $project: {
             username: 1,  
             user_role: 1,
             status: 1,
-            registration_no: "$profile.registration_no",
-            first_name: "$profile.first_name",
-            email_id: "$profile.email_id",
-            gender: "$profile.gender",
-            expiry_date: "$profile.expiry_date",
-            mobile_no: "$profile.mobile_no",
-            plan_type: "$profile.plan_type",
-            created_at: "$profile.created_at",
+            registration_no: { $ifNull: ["$registration_no", "$ref_no"] },
+            ref_no: { $ifNull: ["$ref_no", "$registration_no"] },
+            first_name: 1,
+            email_id: { $ifNull: ["$email_id", "$username"] },
+            gender: 1,
+            expiry_date: 1,
+            mobile_no: 1,
+            plan_type: { $ifNull: ["$plan_type", "$type_of_user", "$user_role"] },
+            created_at: { $ifNull: ["$created_at", "$createdAt", "$registration_date"] },
           },
         },
         { $sort: { expiry_date: 1 } },
@@ -401,14 +456,15 @@ const getProfilesRenewal = async (req, res) => {
   }
 };
 
-
 const getMyMatches = async (req, res) => {
   try {
     const userRegNo = req.user.ref_no;
     const userRole = req.user.user_role;
     const { page = 0, pageSize = 10 } = getPaginationParams(req);
 
-    const myProfile = await Profile.findOne({ registration_no: userRegNo }).lean();
+    const myProfile = await UserModel.findOne({
+      $or: [{ registration_no: userRegNo }, { ref_no: userRegNo }]
+    }).lean();
 
     if (!myProfile) {
       return res.status(404).json({
@@ -417,10 +473,13 @@ const getMyMatches = async (req, res) => {
       });
     }
 
-    // Build match criteria
+    // Build match criteria directly on user_tbl
     const matchCriteria = {
-      registration_no: { $ne: userRegNo },
-      status: "active"
+      $and: [
+        { registration_no: { $ne: userRegNo } },
+        { ref_no: { $ne: userRegNo } },
+        { status: "active" }
+      ]
     };
 
     // Gender filter
@@ -471,27 +530,18 @@ const getMyMatches = async (req, res) => {
     }
 
     const [totalRecords, matches] = await Promise.all([
-      Profile.countDocuments(matchCriteria),
-      Profile.aggregate([
+      UserModel.countDocuments(matchCriteria),
+      UserModel.aggregate([
         { $match: matchCriteria },
-        {
-          $lookup: {
-            from: "user_tbl",
-            localField: "registration_no",
-            foreignField: "ref_no",
-            as: "user"
-          }
-        },
-        { $unwind: "$user" },
         {
           $addFields: {
             user_details: {
-              user_role: "$user.user_role",
-              status: "$user.status",
-              UpdateStatus: "$user.UpdateStatus",
-              counter: "$user.counter",
-              last_loggedin: "$user.last_loggedin",
-              ref_no: "$user.ref_no"
+              user_role: { $ifNull: ["$user_role", "$type_of_user", "FreeUser"] },
+              status: "$status",
+              UpdateStatus: "$UpdateStatus",
+              counter: "$counter",
+              last_loggedin: "$last_loggedin",
+              ref_no: { $ifNull: ["$ref_no", "$registration_no"] }
             },
             mobile_no: {
               $cond: [
@@ -504,16 +554,16 @@ const getMyMatches = async (req, res) => {
               $cond: [
                 { $eq: [req.user.user_role, "FreeUser"] },
                 null,
-                "$email_id"
+                { $ifNull: ["$email_id", "$username"] }
               ]
             },
             // Add priority for sorting
             type_priority: {
               $switch: {
                 branches: [
-                  { case: { $eq: ["$type_of_user", "PremiumUser"] }, then: 1 },
-                  { case: { $eq: ["$type_of_user", "SilverUser"] }, then: 2 },
-                  { case: { $eq: ["$type_of_user", "FreeUser"] }, then: 3 }
+                  { case: { $regexMatch: { input: { $ifNull: ["$type_of_user", "$user_role"] }, regex: /premium/i } }, then: 1 },
+                  { case: { $regexMatch: { input: { $ifNull: ["$type_of_user", "$user_role"] }, regex: /silver/i } }, then: 2 },
+                  { case: { $regexMatch: { input: { $ifNull: ["$type_of_user", "$user_role"] }, regex: /free/i } }, then: 3 }
                 ],
                 default: 4
               }
@@ -531,14 +581,12 @@ const getMyMatches = async (req, res) => {
         },
         {
           $project: {
-            _id: 0,
             ...(userRole?.toLowerCase() !== "admin" && { password: 0 }),
-            user: 0,
             __v: 0
           }
         },
         // Sort by user type first, then by latest registration
-        { $sort: { type_priority: 1, registration_date_parsed: -1 } },
+        { $sort: { type_priority: 1, registration_date_parsed: -1, _id: -1 } },
         { $skip: page * pageSize },
         { $limit: pageSize }
       ]).exec()
@@ -600,7 +648,10 @@ const searchUsersByInput = async (req, res) => {
       { first_name: fullRegex },
       { last_name: fullRegex },
       { email_id: fullRegex },
-      { registration_no: fullRegex }
+      { username: fullRegex },
+      { registration_no: fullRegex },
+      { ref_no: fullRegex },
+      { mobile_no: fullRegex }
     );
 
     if (words.length > 1) {
@@ -634,39 +685,35 @@ const searchUsersByInput = async (req, res) => {
       }
     }
 
-    let profiles = await Profile.find({ $or: searchConditions });
-    const regNos = profiles.map((p) => p.registration_no);
-    const users = await UserModel.find({ ref_no: { $in: regNos } }).lean();
+    // Direct single query on unified user_tbl
+    const users = await UserModel.find({ $or: searchConditions }).lean();
 
-    const merged = profiles.map((profile) => {
-      const user = users.find((u) => u.ref_no === profile.registration_no) || {};
-      let mobile_no = profile.mobile_no;
-      let email_id = profile.email_id;
+    const mappedUsers = users.map((user) => {
+      let mobile_no = user.mobile_no;
+      let email_id = user.email_id || user.username;
       if (req.user.user_role === "FreeUser") {
         mobile_no = null;
         email_id = null;
       }
-      // Create base object without password
-      const mergedObject = {
-        ...profile.toObject(),
-        user_role: user.type_of_user,
+      const regNo = user.registration_no || user.ref_no || "";
+      const userObj = {
+        ...user,
+        registration_no: regNo,
+        ref_no: regNo,
+        user_role: user.user_role || user.type_of_user || "FreeUser",
+        type_of_user: user.type_of_user || user.user_role || "FreeUser",
         mobile_no,
-        status: user.status,
-        image: profile.image,
-        image_verification: profile.image_verification,
-        secure_image: profile.secure_image,
         email_id,
-        ref_no: profile.registration_no,
       };
 
-      if (req.user.user_role?.toLowerCase() === "admin") {
-        mergedObject.password = user.password;
+      if (req.user.user_role?.toLowerCase() !== "admin") {
+        delete userObj.password;
       }
 
-      return mergedObject;
+      return userObj;
     });
 
-    const processed = await processUserImages(merged, req.user.ref_no, req.user.user_role);
+    const processed = await processUserImages(mappedUsers, req.user.ref_no, req.user.user_role);
 
     if (!processed || processed.length === 0) {
       return res.status(200).json({
@@ -694,7 +741,11 @@ const upgradeUser = async (req, res) => {
     const { registration_no } = req.params;
     const { userType, amountPaid, paidType, referenceNumber } = req.body;
 
-    const profile = await Profile.findOne({ registration_no });
+    const filter = {
+      $or: [{ registration_no }, { ref_no: registration_no }]
+    };
+
+    const profile = await UserModel.findOne(filter);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -702,11 +753,13 @@ const upgradeUser = async (req, res) => {
       });
     }
 
+    const effectiveRegNo = profile.registration_no || profile.ref_no || registration_no;
+
     let targetUserType = userType || "PremiumUser";
     const lowerType = (targetUserType || "").toLowerCase();
-    if (lowerType === "silveruser" || lowerType === "silver" || lowerType === "paidsilver" || lowerType.includes("silver")) {
+    if (lowerType.includes("silver")) {
       targetUserType = "SilverUser";
-    } else if (lowerType === "premiumuser" || lowerType === "premium" || lowerType === "paidpremium" || lowerType.includes("premium")) {
+    } else if (lowerType.includes("premium")) {
       targetUserType = "PremiumUser";
     }
 
@@ -730,10 +783,13 @@ const upgradeUser = async (req, res) => {
     const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;
     const nextId = Number(lastId) + 1;
 
-    await TransactionModel.updateMany({ registration_no }, { $set: { is_handled: true } });
+    await TransactionModel.updateMany(
+      { $or: [{ registration_no: effectiveRegNo }, { registration_no }] },
+      { $set: { is_handled: true } }
+    );
 
     const newTransaction = new TransactionModel({
-      registration_no,
+      registration_no: effectiveRegNo,
       transaction_id: nextId,
       transcation_id: nextId,
       PG_id: Date.now().toString(),
@@ -749,11 +805,13 @@ const upgradeUser = async (req, res) => {
 
     const oldStatus = profile.status;
 
-    const updatedProfile = await Profile.findOneAndUpdate(
-      { registration_no },
+    // Single unified update directly on user_tbl
+    const updatedUser = await UserModel.findOneAndUpdate(
+      filter,
       {
         $set: {
           type_of_user: targetUserType,
+          user_role: targetUserType,
           expiry_date: updatedExpiryDate,
           status: "active",
         },
@@ -761,34 +819,28 @@ const upgradeUser = async (req, res) => {
       { new: true }
     );
 
-    // 6️⃣ Update user_tbl (find by ref_no == registration_no)
-    await UserModel.updateOne(
-      { ref_no: registration_no },
-      { $set: { user_role: targetUserType, status: "active" } }
-    );
-
-    if (updatedProfile && oldStatus !== "active") {
+    if (updatedUser && oldStatus !== "active") {
       try {
-        const { activatedSubject, activatedMessage } = getActiveMessage(updatedProfile);
+        const { activatedSubject, activatedMessage } = getActiveMessage(updatedUser);
         if (activatedSubject && activatedMessage) {
-          await sendMail(updatedProfile.email_id, activatedSubject, activatedMessage);
+          await sendMail(updatedUser.email_id || updatedUser.username, activatedSubject, activatedMessage);
         }
       } catch (emailErr) {
         console.error("Failed to send activation email during admin upgrade:", emailErr.message);
       }
     }
 
-    if (updatedProfile) {
-      console.log("=== [CONSLODE LOG: UPGRADE USER ACTIVATION] Admin upgraded user:", updatedProfile.registration_no, ". Triggering creditPromoterOnAdminAction ===");
-      await creditPromoterOnAdminAction(updatedProfile, Date.now().toString(), userType);
+    if (updatedUser) {
+      console.log("=== [CONSLODE LOG: UPGRADE USER ACTIVATION] Admin upgraded user:", effectiveRegNo, ". Triggering creditPromoterOnAdminAction ===");
+      await creditPromoterOnAdminAction(updatedUser, Date.now().toString(), userType);
     }
 
     return res.status(200).json({
       success: true,
       message: "User upgraded successfully",
       data: {
-        registration_no,
-        userType,
+        registration_no: effectiveRegNo,
+        userType: targetUserType,
         expiry_date: updatedExpiryDate,
         status: "active",
       },
@@ -805,98 +857,35 @@ const upgradeUser = async (req, res) => {
 const getAllUserImageVerification = async (req, res) => {
   try {
     const { page, pageSize } = getPaginationParams(req);
+    const filter = {
+      image_verification: { $in: ["pending", "Pending"] },
+    };
 
-    const [{ metadata, data }] = await UserModel.aggregate([
-      {
-        $facet: {
-          metadata: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            { $count: "totalRecords" }
-          ],
-          data: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            {
-              $addFields: {
-                registration_date_parsed: {
-                  $dateFromString: {
-                    dateString: "$profileData.registration_date",
-                    format: "%m/%d/%Y",
-                    onError: new Date(0),
-                    onNull: new Date(0)
-                  }
-                }
-              }
-            },
-            {
-              $replaceRoot: {
-                newRoot: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    "$profileData",
-                    {
-                      user_role: "$user_role",
-                      status: "$status",
-                      ref_no: "$ref_no"
-                    }
-                  ]
-                }
-              }
-            },
-            { $sort: { registration_date_parsed: -1, _id: -1 } },
-            {
-              $project: {
-                _id: 0,
-                ref_no: 1,
-                registration_no: 1,
-                first_name: 1,
-                last_name: 1,
-                email_id: 1,
-                gender: 1,
-                user_role: 1,
-                image: 1,
-                image_verification: 1,
-                registration_date: 1
-              }
-            },
-            { $skip: page * pageSize },
-            { $limit: pageSize }
-          ]
-        }
-      }
-    ]).exec();
+    const totalRecords = await UserModel.countDocuments(filter);
+    const content = await UserModel.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(page * pageSize)
+      .limit(pageSize)
+      .select({
+        ref_no: 1,
+        registration_no: 1,
+        first_name: 1,
+        last_name: 1,
+        email_id: 1,
+        gender: 1,
+        user_role: 1,
+        image: 1,
+        image_verification: 1,
+        registration_date: 1,
+      })
+      .lean();
 
     return res.status(200).json({
       success: true,
-      content: data,
+      content,
       currentPage: page,
       pageSize,
-      totalRecords: metadata?.[0]?.totalRecords || 0
+      totalRecords,
     });
   } catch (error) {
     console.error("getAllUserImageVerification error:", error);
@@ -912,7 +901,9 @@ const changePassword = async (req, res) => {
     const { registration_no } = req.params;
     const { oldPassword, newPassword } = req.body;
 
-    const user = await UserModel.findOne({ ref_no: registration_no });
+    const user = await UserModel.findOne({
+      $or: [{ ref_no: registration_no }, { registration_no }]
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -947,16 +938,16 @@ const submitQrPayment = async (req, res) => {
     const { registration_no, user_id, planName, amount } = req.body;
 
     let query = {};
-    if (registration_no) query.registration_no = registration_no;
-    else if (user_id) query._id = user_id;
+    if (registration_no) query = { $or: [{ registration_no }, { ref_no: registration_no }] };
+    else if (user_id) query = { _id: user_id };
     else return res.status(400).json({ success: false, message: "User identification required" });
 
-    const profile = await Profile.findOne(query);
-    if (!profile) {
+    const user = await UserModel.findOne(query);
+    if (!user) {
       return res.status(404).json({ success: false, message: "User profile not found" });
     }
 
-    const regNo = profile.registration_no;
+    const regNo = user.registration_no || user.ref_no || registration_no;
 
     const lastTrans = await TransactionModel.findOne({}).sort({ transaction_id: -1, transcation_id: -1 }).lean();
     const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;

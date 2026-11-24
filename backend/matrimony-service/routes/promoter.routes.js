@@ -3,12 +3,15 @@ const router = express.Router();
 const PromotersModel = require('../models/promoters/Promoters');
 const authenticateToken = require('../middleware/auth.middleware');
 const checkRole = require('../middleware/roles.middleware');
-const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile, activateFreeUserByPromoter } = require('../controllers/promoters/PromotersController');
+const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile, activateFreeUserByPromoter, referUserByPromoter } = require('../controllers/promoters/PromotersController');
 const { generateLoginLink } = require('../controllers/authController/AuthController');
 const { searchUsersByInput } = require('../controllers/profileController');
 
 // Public route to register new promoter
 router.post('/register', addPromoter);
+
+// Refer user by email & phone on user_tbl
+router.post('/refer-user', authenticateToken, checkRole("promoter"), referUserByPromoter);
 
 // Generate instant one-time login link for user (15 days expiry)
 router.post('/generate-login-link', authenticateToken, checkRole("promoter"), generateLoginLink);

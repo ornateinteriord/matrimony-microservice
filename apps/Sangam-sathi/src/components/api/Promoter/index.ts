@@ -81,11 +81,12 @@ export const useGetPromoterSearchProfiles = (input?: any) => {
 
 export const useGetPromoterImageVerification = () => {
   return useMutation<any, any, any>({
-    mutationFn: async ({ promoter_id, page, pageSize }: any) => {
+    mutationFn: async ({ promoter_id, page, pageSize, status }: any) => {
       if (!promoter_id) throw new Error("promoter_id is required");
       const response = await post(`/api/promoter/image-verification/${promoter_id}`, {
         page,
         pageSize,
+        status,
       });
       if (response?.success) {
         return response;
@@ -102,6 +103,9 @@ export const useUpgradePromoterUserStatus = () => {
       const response = await put(`/api/promoter/upgrade-user/${regno}`, {
         image_verification,
       });
+      if (response && response.success === false) {
+        throw new Error(response.message || "Failed to update status");
+      }
       return response;
     },
   });
@@ -122,8 +126,24 @@ export const usePromoterRegister = () => {
 export const useActivateFreeUser = () => {
   const queryClient = useQueryClient();
   return useMutation<any, any, any>({
-    mutationFn: async (registration_no: any) => {
-      const response = await put(`/api/promoter/activate-user/${registration_no}`, {});
+    mutationFn: async (payload: any) => {
+      const regNo = typeof payload === "string" ? payload : (payload?.registration_no || payload?.ref_no);
+      const body = typeof payload === "object" ? payload : {};
+      const response = await put(`/api/promoter/activate-user/${regNo}`, body);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["promoterDashboard"] });
+    },
+  });
+};
+
+export const useReferUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, any, { email: string; phone: string }>({
+    mutationFn: async ({ email, phone }: { email: string; phone: string }) => {
+      const response = await post("/api/promoter/refer-user", { email, phone });
       return response;
     },
     onSuccess: () => {

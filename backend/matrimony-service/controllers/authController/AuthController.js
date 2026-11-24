@@ -16,6 +16,55 @@ const signUp = async (req, res) => {
   try {
     const { username, password, user_role, status, ...otherDetails } = req.body;
 
+    // Process Full Name splitting and synchronization
+    const rawFullName = (otherDetails.full_name || otherDetails.fullname || otherDetails.name || "").trim();
+    let firstName = otherDetails.first_name || "";
+    let lastName = otherDetails.last_name || "";
+
+    if (rawFullName) {
+      const parts = rawFullName.split(/\s+/);
+      if (!firstName) firstName = parts[0] || "";
+      if (!lastName) lastName = parts.slice(1).join(" ") || "";
+    }
+
+    const resolvedFullName = rawFullName || `${firstName} ${lastName}`.trim();
+
+    otherDetails.first_name = firstName;
+    otherDetails.last_name = lastName;
+    otherDetails.full_name = resolvedFullName;
+    otherDetails.fullname = resolvedFullName;
+
+    // Mobile numbers processing
+    if (otherDetails.mobile_numbers && Array.isArray(otherDetails.mobile_numbers)) {
+      const validNumbers = otherDetails.mobile_numbers.map(n => String(n).trim()).filter(Boolean);
+      otherDetails.mobile_numbers = validNumbers;
+      if (!otherDetails.mobile_no && validNumbers.length > 0) {
+        otherDetails.mobile_no = validNumbers[0];
+      }
+    } else if (otherDetails.mobile_no) {
+      otherDetails.mobile_numbers = [String(otherDetails.mobile_no).trim()];
+    }
+
+    // Process parents' contact if father_contact/mother_contact provided
+    if (Array.isArray(otherDetails.parents)) {
+      otherDetails.parents = otherDetails.parents.map(p => {
+        if (!p) return p;
+        const rel = (p.relation || "").toLowerCase();
+        let contact = p.contact || p.mobile_no || "";
+        if (!contact && rel.includes("father") && otherDetails.father_contact) {
+          contact = otherDetails.father_contact;
+        }
+        if (!contact && rel.includes("mother") && otherDetails.mother_contact) {
+          contact = otherDetails.mother_contact;
+        }
+        return {
+          ...p,
+          contact: contact || undefined,
+          mobile_no: contact || undefined
+        };
+      });
+    }
+
     if (otherDetails.refered_by && typeof otherDetails.refered_by === 'string') {
       otherDetails.refered_by = otherDetails.refered_by.trim().toUpperCase();
     }
@@ -86,16 +135,21 @@ const signUp = async (req, res) => {
     }
 
     // Calculate candidateUserId and candidateRefNo with collision verification
-    const lastUser = await UserModel.aggregate([
-      { $match: { user_id: { $type: "number" } } },
-      { $sort: { user_id: -1 } },
-      { $limit: 1 },
-    ]);
-    let candidateUserId = lastUser.length && !isNaN(lastUser[0].user_id) ? lastUser[0].user_id + 1 : 1;
+    // 1. Determine highest existing user_id
+    const maxUserById = await UserModel.findOne({ user_id: { $type: "number" } })
+      .sort({ user_id: -1 })
+      .select({ user_id: 1 })
+      .lean();
+    let candidateUserId = (maxUserById && !isNaN(maxUserById.user_id)) ? maxUserById.user_id + 1 : 1;
 
+    // 2. Determine highest existing S-number in ref_no or registration_no
+    const maxUserByRef = await UserModel.findOne({ ref_no: /^S\d+/ })
+      .sort({ ref_no: -1 })
+      .select({ ref_no: 1 })
+      .lean();
     let candidateNum = candidateUserId;
-    if (lastUser.length && lastUser[0].ref_no) {
-      const extracted = parseInt(String(lastUser[0].ref_no).replace(/\D/g, ''));
+    if (maxUserByRef && maxUserByRef.ref_no) {
+      const extracted = parseInt(String(maxUserByRef.ref_no).replace(/\D/g, ''));
       if (!isNaN(extracted) && extracted >= candidateNum) {
         candidateNum = extracted + 1;
       }
@@ -105,7 +159,7 @@ const signUp = async (req, res) => {
     // Loop until both candidateUserId and candidateRefNo are guaranteed unique
     let hasCollision = true;
     let attempts = 0;
-    while (hasCollision && attempts < 200) {
+    while (hasCollision && attempts < 500) {
       attempts++;
       const existing = await UserModel.findOne({
         $or: [
@@ -118,14 +172,14 @@ const signUp = async (req, res) => {
       if (!existing) {
         hasCollision = false;
       } else {
-        candidateUserId++;
+        if (existing.user_id === candidateUserId) candidateUserId++;
         candidateNum++;
         candidateRefNo = `S${String(candidateNum).padStart(4, "0")}`;
       }
     }
 
-    const newUserId = candidateUserId;
-    const newRefNo = candidateRefNo;
+    let newUserId = candidateUserId;
+    let newRefNo = candidateRefNo;
 
     // For new users, set initial status to Pending
     const userStatus = status || "Pending";
@@ -138,21 +192,37 @@ const signUp = async (req, res) => {
       ? user_role
       : "FreeUser";
 
-    const newUser = new UserModel({
-      user_id: newUserId,
-      username,
-      email_id: username,
-      password,
-      ref_no: newRefNo,
-      registration_no: newRefNo,
-      user_role,
-      type_of_user: typeOfUser,
-      status: userStatus,
-      registration_date: formattedDate,
-      ...otherDetails,
-    });
-
-    await newUser.save();
+    let newUser = null;
+    let saveAttempts = 0;
+    while (!newUser && saveAttempts < 5) {
+      saveAttempts++;
+      try {
+        const userToSave = new UserModel({
+          user_id: newUserId,
+          username,
+          email_id: username,
+          password,
+          ref_no: newRefNo,
+          registration_no: newRefNo,
+          user_role,
+          type_of_user: typeOfUser,
+          status: userStatus,
+          registration_date: formattedDate,
+          ...otherDetails,
+        });
+        await userToSave.save();
+        newUser = userToSave;
+      } catch (saveErr) {
+        if (saveErr.code === 11000 && (saveErr.keyPattern?.ref_no || saveErr.keyPattern?.registration_no || saveErr.keyPattern?.user_id || saveErr.message?.includes('ref_no') || saveErr.message?.includes('user_id'))) {
+          console.warn(`[SIGNUP CONCURRENCY] Collision on ${newRefNo} or user_id ${newUserId}. Incrementing sequence...`);
+          newUserId++;
+          candidateNum++;
+          newRefNo = `S${String(candidateNum).padStart(4, "0")}`;
+        } else {
+          throw saveErr;
+        }
+      }
+    }
     const newProfile = newUser;
 
     if (newProfile && (newProfile.type_of_user === "SilverUser" || newProfile.type_of_user === "PremiumUser" || otherDetails.refered_by)) {
@@ -214,8 +284,11 @@ const signUp = async (req, res) => {
     const profileData = {
       first_name: otherDetails.first_name,
       last_name: otherDetails.last_name,
+      full_name: resolvedFullName,
+      fullname: resolvedFullName,
       email_id: username,
       mobile_no: otherDetails.mobile_no,
+      mobile_numbers: otherDetails.mobile_numbers,
       age: otherDetails.age,
       city: otherDetails.city,
       type_of_user: newUser.user_role,
@@ -307,6 +380,7 @@ const login = async (req, res) => {
       : "promoter";
 
     const profileData = await profile.findOne({ registration_no: authUser.ref_no });
+    const userFullName = profileData?.full_name || profileData?.fullname || `${profileData?.first_name || authUser?.first_name || ""} ${profileData?.last_name || authUser?.last_name || ""}`.trim();
 
     const token = jwt.sign(
       {
@@ -315,13 +389,16 @@ const login = async (req, res) => {
         user_role: userRole,
         ref_no: authUser.ref_no,
         promoter_id: promoter ? promoter.promoter_id : undefined,
-        first_name: profileData?.first_name,
-        last_name: profileData?.last_name,
-        email_id: profileData?.email_id,
-        mobile_no: profileData?.mobile_no,
-        age: profileData?.age,
-        city: profileData?.city,
-        type_of_user: profileData?.type_of_user,
+        first_name: profileData?.first_name || authUser?.first_name,
+        last_name: profileData?.last_name || authUser?.last_name,
+        full_name: userFullName,
+        fullname: userFullName,
+        email_id: profileData?.email_id || authUser?.email_id,
+        mobile_no: profileData?.mobile_no || authUser?.mobile_no,
+        mobile_numbers: profileData?.mobile_numbers || authUser?.mobile_numbers,
+        age: profileData?.age || authUser?.age,
+        city: profileData?.city || authUser?.city,
+        type_of_user: profileData?.type_of_user || authUser?.type_of_user,
         status: authUser.status || profileData?.status,
       },
       process.env.JWT_SECRET,
@@ -349,13 +426,16 @@ const login = async (req, res) => {
         username: authUser.username,
         user_role: userRole,
         ref_no: authUser.ref_no,
-        first_name: profileData?.first_name,
-        last_name: profileData?.last_name,
-        email_id: profileData?.email_id,
-        mobile_no: profileData?.mobile_no,
-        age: profileData?.age,
-        city: profileData?.city,
-        type_of_user: profileData?.type_of_user,
+        first_name: profileData?.first_name || authUser?.first_name,
+        last_name: profileData?.last_name || authUser?.last_name,
+        full_name: userFullName,
+        fullname: userFullName,
+        email_id: profileData?.email_id || authUser?.email_id,
+        mobile_no: profileData?.mobile_no || authUser?.mobile_no,
+        mobile_numbers: profileData?.mobile_numbers || authUser?.mobile_numbers,
+        age: profileData?.age || authUser?.age,
+        city: profileData?.city || authUser?.city,
+        type_of_user: profileData?.type_of_user || authUser?.type_of_user,
         status: authUser.status || profileData?.status,
       },
       message: "Login successful",

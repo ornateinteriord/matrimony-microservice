@@ -55,7 +55,7 @@ const DetailRow: React.FC<{ label: string; value?: string | number | null; icon?
         <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 500, display: "block", textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.5px" }}>
           {label}
         </Typography>
-        <Typography variant="body2" sx={{ color: "#1e293b", fontWeight: 600, fontSize: "0.9rem", mt: 0.2 }}>
+        <Typography variant="body2" sx={{ color: "#1e293b", fontWeight: 600, fontSize: "0.9rem", mt: 0.2, wordBreak: "break-word" }}>
           {displayValue}
         </Typography>
       </Box>
@@ -77,6 +77,8 @@ const SectionCard: React.FC<{ title: string; icon: React.ReactNode; children: Re
       border: "1px solid #e2e8f0",
       backgroundColor: "#ffffff",
       boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+      width: "100%",
+      boxSizing: "border-box",
     }}
   >
     <Box sx={{ display: "flex", alignItems: "center", mb: 2, pb: 1, borderBottom: "2px solid #f1f5f9" }}>
@@ -135,12 +137,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const isSilver = role.includes("silver");
   const tierName = isPremium ? "Premium Member" : isSilver ? "Silver Member" : "Free Member";
 
-  const fullName = `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim() || "Matrimony Member";
+  const fullName = userProfile.full_name || userProfile.fullname || `${userProfile.first_name || ""} ${userProfile.last_name || ""}`.trim() || "Matrimony Member";
   const regNo = userProfile.registration_no || userProfile.ref_no || "N/A";
   const location = [userProfile.city, userProfile.state, userProfile.country].filter(Boolean).join(", ") || "Location Not Specified";
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: "auto", pb: 5 }}>
+    <Box sx={{ maxWidth: 1200, width: "100%", mx: "auto", pb: 5 }}>
       {/* Hero Header Card */}
       <Paper
         elevation={0}
@@ -280,106 +282,136 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <Divider sx={{ my: 2 }} />
 
           {/* Quick Key Attributes Grid */}
-          <Grid container spacing={2}>
-            <Grid item xs={6} sm={4} md={2}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, 1fr)",
+                sm: "repeat(3, 1fr)",
+                md: "repeat(6, 1fr)",
+              },
+              gap: 2,
+              width: "100%",
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Age / Height</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.age ? `${userProfile.age} yrs` : "—"} {userProfile.height ? `• ${userProfile.height}` : ""}
               </Typography>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Religion / Caste</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.religion || "Hindu"} {userProfile.caste ? `• ${userProfile.caste}` : ""}
               </Typography>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Mother Tongue</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.mother_tounge || userProfile.mother_tongue || "—"}
               </Typography>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Education</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.educational_qualification || "—"}
               </Typography>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Occupation</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.occupation || "—"}
               </Typography>
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="caption" sx={{ color: "#64748b" }}>Marital Status</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b" }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "#1e293b", wordBreak: "break-word" }}>
                 {userProfile.marital_status || "Unmarried"}
               </Typography>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Box>
       </Paper>
 
       {/* Photo Gallery Section: If multiple photos available or visitor viewing */}
       {allPhotos.length > 0 && (
         <SectionCard title={`Photo Gallery (${allPhotos.length})`} icon={<PhotoLibraryIcon />}>
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(2, 1fr)",
+                sm: "repeat(3, 1fr)",
+                md: "repeat(4, 1fr)",
+              },
+              gap: 2,
+              width: "100%",
+            }}
+          >
             {allPhotos.map((photoUrl, pIdx) => {
               const isPrimary = photoUrl === userProfile.image;
               return (
-                <Grid item xs={6} sm={4} md={3} key={`gallery-thumb-${pIdx}`}>
-                  <Box
-                    onClick={() => handleOpenLightbox(pIdx)}
-                    sx={{
-                      height: 180,
-                      borderRadius: "6px",
-                      overflow: "hidden",
-                      border: isPrimary ? "2px solid #0F172A" : "1px solid #e2e8f0",
-                      cursor: "pointer",
-                      position: "relative",
-                      backgroundColor: "#f1f5f9",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-                      },
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                    }}
-                  >
-                    <img
-                      src={photoUrl}
-                      alt={`${fullName} photo ${pIdx + 1}`}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                <Box
+                  key={`gallery-thumb-${pIdx}`}
+                  onClick={() => handleOpenLightbox(pIdx)}
+                  sx={{
+                    height: 180,
+                    borderRadius: "6px",
+                    overflow: "hidden",
+                    border: isPrimary ? "2px solid #0F172A" : "1px solid #e2e8f0",
+                    cursor: "pointer",
+                    position: "relative",
+                    backgroundColor: "#f1f5f9",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+                    },
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                >
+                  <img
+                    src={photoUrl}
+                    alt={`${fullName} photo ${pIdx + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  {isPrimary && (
+                    <Chip
+                      label="Primary Photo"
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        bottom: 8,
+                        left: 8,
+                        backgroundColor: "#0F172A",
+                        color: "#ffffff",
+                        fontSize: "0.68rem",
+                        height: 20,
+                        fontWeight: 700,
+                        borderRadius: "4px",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
+                      }}
                     />
-                    {isPrimary && (
-                      <Chip
-                        label="Primary Photo"
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          bottom: 8,
-                          left: 8,
-                          backgroundColor: "#0F172A",
-                          color: "#ffffff",
-                          fontSize: "0.68rem",
-                          height: 20,
-                          fontWeight: 700,
-                          borderRadius: "4px",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Grid>
+                  )}
+                </Box>
               );
             })}
-          </Grid>
+          </Box>
         </SectionCard>
       )}
 
-      {/* Main Details Grid */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      {/* Main Details Grid: 2 balanced columns on desktop, 1 column on mobile */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: 3,
+          alignItems: "start",
+          width: "100%",
+        }}
+      >
+        {/* Left Column */}
+        <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
           <SectionCard title="Personal Information" icon={<PersonIcon />}>
             <DetailRow label="Full Name" value={fullName} />
             <DetailRow label="Gender" value={userProfile.gender} />
@@ -409,9 +441,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             <DetailRow label="Drinking" value={userProfile.drink} />
             <DetailRow label="Any Other Info" value={userProfile.any_other_info} />
           </SectionCard>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        {/* Right Column */}
+        <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, width: "100%" }}>
           <SectionCard title="Education & Career" icon={<SchoolIcon />}>
             <DetailRow label="Highest Qualification" value={userProfile.educational_qualification} />
             <DetailRow label="Occupation / Designation" value={userProfile.occupation} />
@@ -422,14 +455,25 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <SectionCard title="Family Background" icon={<FamilyIcon />}>
             {Array.isArray(userProfile.parents) && userProfile.parents.length > 0 ? (
               userProfile.parents.map((p: any, idx: number) => (
-                <DetailRow
-                  key={`parent-view-${idx}`}
-                  label={`${p.relation || "Parent"}'s Name`}
-                  value={p.name}
-                />
+                <React.Fragment key={`parent-view-${idx}`}>
+                  <DetailRow
+                    label={`${p.relation || "Parent"}'s Name`}
+                    value={p.name}
+                  />
+                  {(p.contact || p.mobile_no) && (
+                    <DetailRow
+                      label={`${p.relation || "Parent"}'s Contact`}
+                      value={p.contact || p.mobile_no}
+                    />
+                  )}
+                </React.Fragment>
               ))
             ) : (
-              <DetailRow label="Father's / Guardian's Name" value={userProfile.parent_name || userProfile.name_of_parent} />
+              <>
+                <DetailRow label="Father's / Guardian's Name" value={userProfile.parent_name || userProfile.name_of_parent} />
+                {userProfile.father_contact && <DetailRow label="Father's Contact" value={userProfile.father_contact} />}
+                {userProfile.mother_contact && <DetailRow label="Mother's Contact" value={userProfile.mother_contact} />}
+              </>
             )}
             <DetailRow
               label="Brothers"
@@ -457,14 +501,21 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </SectionCard>
 
           <SectionCard title="Contact Information" icon={<PhoneIcon />}>
-            <DetailRow label="Mobile Number" value={userProfile.mobile_no || userProfile.contactinfo} />
+            <DetailRow
+              label="Mobile Number"
+              value={
+                Array.isArray(userProfile.mobile_numbers) && userProfile.mobile_numbers.length > 0
+                  ? userProfile.mobile_numbers.filter(Boolean).join(", ")
+                  : (userProfile.mobile_no || userProfile.contactinfo)
+              }
+            />
             <DetailRow label="Email Address" value={userProfile.email_id || userProfile.username} />
             <DetailRow label="Residential Address" value={userProfile.address} />
             <DetailRow label="City & State" value={[userProfile.city, userProfile.state].filter(Boolean).join(", ")} />
             <DetailRow label="Pincode" value={userProfile.pincode} />
           </SectionCard>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Interactive Lightbox Dialog */}
       <Dialog

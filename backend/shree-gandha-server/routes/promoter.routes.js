@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const PromotersModel = require('../models/promoters/Promoters');
+const authenticateToken = require('../middleware/auth.middleware');
+const checkRole = require('../middleware/roles.middleware');
+const { referUserByPromoter } = require('../controllers/promoters/PromotersController');
+
+// Refer user by email & phone on user_tbl
+router.post('/refer-user', authenticateToken, checkRole("promoter"), referUserByPromoter);
 
 // Check promocode validity
 router.post('/promocheck', async (req, res) => {

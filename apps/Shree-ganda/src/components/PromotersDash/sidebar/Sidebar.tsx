@@ -22,7 +22,7 @@ export const PROMOTER_SIDEBAR_CONFIG: SidebarConfig = {
     },
     {
       id: 'refer',
-      title: 'Refer / Invite',
+      title: 'Refer',
       path: '/PromotAdmin/refer',
       icon: 'Share',
     },

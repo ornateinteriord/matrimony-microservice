@@ -109,7 +109,7 @@ useEffect(() => {
               }}
             >
               Welcome back,{" "}
-              <span style={{ color: '#fde68a' }}>{userProfile?.first_name || "User"} {userProfile?.last_name || ""}</span>
+              <span style={{ color: '#fde68a' }}>{userProfile?.full_name || userProfile?.fullname || `${userProfile?.first_name || "User"} ${userProfile?.last_name || ""}`.trim()}</span>
             </Typography>
             <Box display="flex" alignItems="center" gap={1}>
               <Typography sx={{

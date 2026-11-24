@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import CloseIcon from "@mui/icons-material/Close";
+import { Add as AddIcon, DeleteOutline as DeleteIcon } from "@mui/icons-material";
 import rawJsonData from "../Userprofile/profile/eduction/jsondata/data.json";
 import Navbar from "../navbar/Navbar";
 import "./Register.scss";
@@ -102,16 +103,24 @@ const Register = () => {
     mother_tongue: "",
     name_of_parent: "",
     parent_name: "",
+    father_contact: "",
+    mother_contact: "",
+    parents: [
+      { relation: "Father", name: "", contact: "" },
+      { relation: "Mother", name: "", contact: "" },
+    ],
     religion: "Hindu",
     caste: "",
     address: "",
     occupation_country: "",
     state: "",
     city: "",
+    full_name: "",
     first_name: "",
     last_name: "",
     username: "",
     mobile_no: "",
+    mobile_numbers: [""],
     password: "",
     confirmPassword: "",
     refered_by: getInitialRefCode(),
@@ -202,6 +211,26 @@ const Register = () => {
     }
     if (name === "mobile_no") {
       if (value === "" || /^\d{0,10}$/.test(value)) {
+        setFormData((prev) => {
+          const numbers = [...(prev.mobile_numbers || [""])];
+          numbers[0] = value;
+          return { ...prev, mobile_no: value, mobile_numbers: numbers };
+        });
+      }
+      return;
+    }
+    if (name === "full_name") {
+      const parts = value.trim().split(/\s+/);
+      setFormData((prev) => ({
+        ...prev,
+        full_name: value,
+        first_name: parts[0] || "",
+        last_name: parts.slice(1).join(" ") || "",
+      }));
+      return;
+    }
+    if (name === "father_contact" || name === "mother_contact") {
+      if (value === "" || /^\d{0,10}$/.test(value)) {
         setFormData((prev) => ({ ...prev, [name]: value }));
       }
       return;
@@ -224,6 +253,39 @@ const Register = () => {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleMobileNumberChange = (index, value) => {
+    if (value === "" || /^\d{0,10}$/.test(value)) {
+      setFormData((prev) => {
+        const numbers = [...(prev.mobile_numbers || [""])];
+        numbers[index] = value;
+        return {
+          ...prev,
+          mobile_numbers: numbers,
+          mobile_no: numbers[0] || "",
+        };
+      });
+    }
+  };
+
+  const handleAddMobileNumber = () => {
+    setFormData((prev) => ({
+      ...prev,
+      mobile_numbers: [...(prev.mobile_numbers || [prev.mobile_no || ""]), ""],
+    }));
+  };
+
+  const handleRemoveMobileNumber = (index) => {
+    setFormData((prev) => {
+      const numbers = (prev.mobile_numbers || [""]).filter((_, i) => i !== index);
+      const finalNumbers = numbers.length > 0 ? numbers : [""];
+      return {
+        ...prev,
+        mobile_numbers: finalNumbers,
+        mobile_no: finalNumbers[0] || "",
+      };
+    });
   };
 
   const calculateAge = (dob) => {
@@ -292,16 +354,62 @@ const Register = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!/^[0-9]{10}$/.test(formData.mobile_no)) {
+    if (!formData.full_name?.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+    const primaryMobile = (formData.mobile_numbers?.[0] || formData.mobile_no || "").trim();
+    if (!/^[0-9]{10}$/.test(primaryMobile)) {
       toast.error("Please enter a valid 10-digit mobile number");
       return;
     }
+
+    if (Array.isArray(formData.mobile_numbers)) {
+      for (let i = 1; i < formData.mobile_numbers.length; i++) {
+        const num = (formData.mobile_numbers[i] || "").trim();
+        if (num && !/^[0-9]{10}$/.test(num)) {
+          toast.error(`Mobile number #${i + 1} must be a valid 10-digit number`);
+          return;
+        }
+      }
+    }
+
+    if (formData.father_contact && !/^[0-9]{10}$/.test(formData.father_contact.trim())) {
+      toast.error("Father's contact must be a valid 10-digit number");
+      return;
+    }
+
+    if (formData.mother_contact && !/^[0-9]{10}$/.test(formData.mother_contact.trim())) {
+      toast.error("Mother's contact must be a valid 10-digit number");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
+
+    const nameParts = formData.full_name.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    const validMobileNumbers = (formData.mobile_numbers || [primaryMobile]).map((n) => n.trim()).filter(Boolean);
+
+    const submissionData = {
+      ...formData,
+      full_name: formData.full_name.trim(),
+      fullname: formData.full_name.trim(),
+      first_name: firstName,
+      last_name: lastName,
+      mobile_no: primaryMobile,
+      mobile_numbers: validMobileNumbers,
+      parents: [
+        { relation: "Father", name: formData.name_of_parent === "Father" ? formData.parent_name : "", contact: formData.father_contact || "" },
+        { relation: "Mother", name: formData.name_of_parent === "Mother" ? formData.parent_name : "", contact: formData.mother_contact || "" }
+      ]
+    };
+
     try {
-      mutate(formData, {
+      mutate(submissionData, {
         onSuccess: (response) => {
           if (response.success) {
             setSignupResponse(response);
@@ -498,6 +606,20 @@ const Register = () => {
                 </div>
 
                 <div className="form-row">
+                  <div className="label-col">Father Contact:</div>
+                  <div className="input-col">
+                    <TextField fullWidth name="father_contact" value={formData.father_contact || ""} onChange={handleChange} placeholder="Father's Contact (Optional)" className="mui-input-custom" inputProps={{ maxLength: 10, pattern: "[0-9]*" }} />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="label-col">Mother Contact:</div>
+                  <div className="input-col">
+                    <TextField fullWidth name="mother_contact" value={formData.mother_contact || ""} onChange={handleChange} placeholder="Mother's Contact (Optional)" className="mui-input-custom" inputProps={{ maxLength: 10, pattern: "[0-9]*" }} />
+                  </div>
+                </div>
+
+                <div className="form-row">
                   <div className="label-col">Address:</div>
                   <div className="input-col">
                     <TextField fullWidth name="address" value={formData.address} onChange={handleChange} placeholder="Address" className="mui-input-custom" multiline rows={2} />
@@ -526,29 +648,50 @@ const Register = () => {
                 </div>
 
                 <div className="form-row">
-                  <div className="label-col">First Name:</div>
+                  <div className="label-col">Full Name:</div>
                   <div className="input-col">
-                    <TextField fullWidth name="first_name" value={formData.first_name} onChange={handleChange} placeholder="First Name" className="mui-input-custom" required />
+                    <TextField fullWidth name="full_name" value={formData.full_name || ""} onChange={handleChange} placeholder="Full Name" className="mui-input-custom" required />
                   </div>
                 </div>
 
                 <div className="form-row">
-                  <div className="label-col">Last Name:</div>
+                  <div className="label-col">Mobile Numbers:</div>
                   <div className="input-col">
-                    <TextField fullWidth name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Last Name" className="mui-input-custom" required />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="label-col">Mobile:</div>
-                  <div className="input-col">
-                    <TextField
-                      fullWidth name="mobile_no" value={formData.mobile_no} onChange={handleChange}
-                      placeholder="Mobile Number" className="mui-input-custom" required
-                      inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
-                      error={formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no)}
-                      helperText={formData.mobile_no && !/^[0-9]{10}$/.test(formData.mobile_no) ? "Please enter a valid 10-digit mobile number" : ""}
-                    />
+                    {(formData.mobile_numbers && formData.mobile_numbers.length > 0 ? formData.mobile_numbers : [formData.mobile_no || ""]).map((mobVal, mobIdx) => (
+                      <Box key={`mob-num-${mobIdx}`} sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
+                        <TextField
+                          fullWidth
+                          name={mobIdx === 0 ? "mobile_no" : `mobile_no_${mobIdx}`}
+                          value={mobVal}
+                          onChange={(e) => handleMobileNumberChange(mobIdx, e.target.value)}
+                          placeholder={mobIdx === 0 ? "Primary Mobile Number" : `Alternate Mobile ${mobIdx}`}
+                          className="mui-input-custom"
+                          required={mobIdx === 0}
+                          inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
+                          error={Boolean(mobVal && !/^[0-9]{10}$/.test(mobVal))}
+                          helperText={mobVal && !/^[0-9]{10}$/.test(mobVal) ? "10-digit number required" : ""}
+                        />
+                        {mobIdx === 0 ? (
+                          <IconButton
+                            size="small"
+                            onClick={handleAddMobileNumber}
+                            title="Add another mobile number"
+                            sx={{ bgcolor: "#0B192C", color: "#fff", "&:hover": { bgcolor: "#1A365D" }, borderRadius: "4px", p: "6px" }}
+                          >
+                            <AddIcon fontSize="small" />
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleRemoveMobileNumber(mobIdx)}
+                            title="Remove number"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    ))}
                   </div>
                 </div>
 
