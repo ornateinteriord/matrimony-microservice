@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { debounce } from "lodash";
-import PaginationDataTable from "../../common/PaginationDataTable";
+import PaginationDataTable from "../common/PaginationDataTable";
 import {
   Box,
   Typography,
@@ -19,10 +19,10 @@ import { Close } from "@mui/icons-material";
 import {
   customStyles,
   getImageVerificationColumns,
-} from "../../../utils/DataTableColumnsProvider";
-import { getAllUserProfiles, UpgradeUserStatus } from "../../api/Admin";
-import { useGetSearchProfiles } from "../../api/User";
-import { LoadingTextSpinner } from "../../../utils/common";
+} from "../../utils/DataTableColumnsProvider";
+import { getAllUserProfiles, UpgradeUserStatus } from "../api/Admin";
+import { useGetSearchProfiles } from "../api/User";
+import { LoadingTextSpinner } from "../../utils/common";
 import { toast } from "react-toastify";
 
 const ImageVerificationData = () => {

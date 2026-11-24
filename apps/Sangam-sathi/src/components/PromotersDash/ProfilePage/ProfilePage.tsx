@@ -99,7 +99,7 @@ function ProfilePage() {
           toast.success(res?.message || "Profile updated successfully!");
           setIsEditing(false);
         },
-        onError: (err) => {
+        onError: (err: any) => {
           toast.error(err?.response?.data?.message || err?.message || "Failed to update profile");
         },
       }

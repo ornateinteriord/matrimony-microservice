@@ -3,6 +3,8 @@ import "./ContactUs.scss";
 import Navbar from "../navbar/Navbar";
 import Footer from "../footer/Footer";
 import { FaMapMarkerAlt, FaEnvelope, FaPhoneAlt } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import SEOHead from "../common/SEOHead";
 
 const ContactUs = () => {
   useEffect(() => {
@@ -11,23 +13,27 @@ const ContactUs = () => {
 
   return (
     <>
+      <SEOHead
+        title="Contact Us"
+        description="Get in touch with the Sangam Sathi team for support, profile queries, assistance services, and office visits."
+        canonicalUrl="https://sangamsathi.com/contact"
+      />
       <Navbar />
-  
+
       <div className="contact-container">
         {/* Header Section */}
         <div className="contact-header">
-          <h2>Get In Touch</h2>
+          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: '#0B192C', marginBottom: '12px' }}>
+            Get In Touch
+          </h1>
           <p>
-            We're here to assist you! Feel free to reach out to us with any
-            questions, concerns, or feedback.
+            We are here to assist you. Feel free to reach out to us with any
+            questions, concerns, or feedback regarding your matrimonial journey.
           </p>
         </div>
 
         <div className="contact-content-wrapper">
           <div className="contact-columns">
-            {/* Left Column - Contact Form */}
-          
-
             {/* Right Column - Contact Details + Map */}
             <div className="contact-details-column">
               <div className="contact-details">
@@ -70,7 +76,7 @@ const ContactUs = () => {
                     width="100%" 
                     height="400" 
                     style={{ border: 0 }} 
-                    allowFullScreen="" 
+                    allowFullScreen={false} 
                     loading="lazy"
                     title="Location Map"
                   ></iframe>
@@ -78,12 +84,12 @@ const ContactUs = () => {
               </div>
             </div>
 
-              <div className="contact-form-column">
+            <div className="contact-form-column">
               <div className="form-header">
                 <h3>Send Us a Message</h3>
                 <p>We typically respond within 24 hours</p>
               </div>
-              <form className="contact-form">
+              <form className="contact-form" onSubmit={(e) => { e.preventDefault(); alert('Thank you for contacting Sangam Sathi. We will respond shortly.'); }}>
                 <div className="form-group">
                   <label htmlFor="name">Your Name</label>
                   <input type="text" id="name" placeholder="John Doe" required />
@@ -96,12 +102,20 @@ const ContactUs = () => {
                 
                 <div className="form-group">
                   <label htmlFor="subject">Subject</label>
-                  <input type="text" id="subject" placeholder="How can we help?" />
+                  <input type="text" id="subject" placeholder="How can we help?" required />
                 </div>
                 
                 <div className="form-group">
                   <label htmlFor="message">Your Message</label>
-                  <textarea id="message" placeholder="Type your message here..." rows="5"></textarea>
+                  <textarea id="message" placeholder="Type your message here..." rows={5} required></textarea>
+                </div>
+
+                <div className="form-group consent-group" style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '16px 0' }}>
+                  <input type="checkbox" id="consent" required style={{ width: '18px', height: '18px', accentColor: '#0B192C', marginTop: '2px' }} />
+                  <label htmlFor="consent" style={{ fontSize: '0.85rem', color: '#475569', cursor: 'pointer', lineHeight: 1.5 }}>
+                    I consent to the collection and processing of my contact information in accordance with the{' '}
+                    <Link to="/privacy-policy" style={{ color: '#0B192C', fontWeight: 600 }}>Privacy Policy</Link>.
+                  </label>
                 </div>
                 
                 <div className="button-group">
@@ -121,7 +135,7 @@ const ContactUs = () => {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </>
   );

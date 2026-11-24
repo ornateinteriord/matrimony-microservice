@@ -51,6 +51,11 @@ const ProfileSchema = new mongoose.Schema({
   bloodgroup: String,
   mobile_verification: String,
   image: String,
+  images: [String],
+  parents: [{
+    relation: String,
+    name: String
+  }],
   image_verification: { type: String,default: "pending" },
   secure_image: {type: String, 
     enum: ['disable', 'enable', 'Premiumuser', 'requestuser'], 
@@ -73,12 +78,53 @@ const ProfileSchema = new mongoose.Schema({
   boost_profile: String,
   boosted_on: String,
   otherInfo: { type: String, default: 'Pending' },
-}, { collection: 'registration_tbl' }); 
+  ref_no: String,
+  user_id: Number,
+  username: String,
+  password: String,
+  user_role: String,
+}, { collection: 'user_tbl', timestamps: true, strict: false }); 
 
-// Add compound indexes for commonly queried fields
+// Pre-save hook to ensure aliases are always synchronized
+ProfileSchema.pre('save', function(next) {
+  if (this.registration_no && !this.ref_no) this.ref_no = this.registration_no;
+  if (this.ref_no && !this.registration_no) this.registration_no = this.ref_no;
+  if (this.type_of_user && !this.user_role) this.user_role = this.type_of_user;
+  if (this.user_role && !this.type_of_user) this.type_of_user = this.user_role;
+  if (this.email_id && !this.username) this.username = this.email_id;
+  if (this.username && !this.email_id) this.email_id = this.username;
+  next();
+});
+
+const syncProfileUpdateFields = function(next) {
+  const update = this.getUpdate();
+  if (!update) return next();
+  const setObj = update.$set || update;
+  if (setObj.user_role && !setObj.type_of_user) setObj.type_of_user = setObj.user_role;
+  if (setObj.type_of_user && !setObj.user_role) setObj.user_role = setObj.type_of_user;
+  if (setObj.registration_no && !setObj.ref_no) setObj.ref_no = setObj.registration_no;
+  if (setObj.ref_no && !setObj.registration_no) setObj.registration_no = setObj.ref_no;
+  if (setObj.email_id && !setObj.username) setObj.username = setObj.email_id;
+  if (setObj.username && !setObj.email_id) setObj.email_id = setObj.username;
+  next();
+};
+
+ProfileSchema.pre('findOneAndUpdate', syncProfileUpdateFields);
+ProfileSchema.pre('updateOne', syncProfileUpdateFields);
+ProfileSchema.pre('updateMany', syncProfileUpdateFields);
+
+// Compound and single-field indexes for high-performance querying
+ProfileSchema.index({ ref_no: 1 });
+ProfileSchema.index({ email_id: 1 });
+ProfileSchema.index({ mobile_no: 1 });
+ProfileSchema.index({ status: 1 });
+ProfileSchema.index({ user_role: 1 });
+ProfileSchema.index({ type_of_user: 1 });
+ProfileSchema.index({ refered_by: 1 });
+ProfileSchema.index({ caste: 1 });
+ProfileSchema.index({ gender: 1, age: 1 });
 ProfileSchema.index({ registration_no: 1, gender: 1 });
 ProfileSchema.index({ age: 1 });
 ProfileSchema.index({ height: 1 });
-ProfileSchema.index({ caste: 1 });
 
 module.exports = mongoose.model('Profile', ProfileSchema);

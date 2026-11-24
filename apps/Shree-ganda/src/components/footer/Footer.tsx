@@ -1,13 +1,11 @@
 import React from "react";
 import "./Footer.scss";
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaYoutube, FaUserTie } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Footer() {
-  const navigate = useNavigate();
-
-  const handleSocialClick = (platform) => {
-    const urls = {
+  const handleSocialClick = (platform: string) => {
+    const urls: Record<string, string> = {
       facebook: "https://facebook.com",
       twitter: "https://twitter.com",
       linkedin: "https://linkedin.com",
@@ -31,14 +29,15 @@ function Footer() {
             </p>
 
             <div className="footer-promoter-cta">
-              <button
+              <Link
+                to="/promoter/login"
                 className="footer-promoter-btn"
-                onClick={() => navigate("/promoter/login")}
                 title="Access the Promoter Portal"
+                style={{ textDecoration: "none" }}
               >
                 <FaUserTie className="promoter-btn-icon" />
                 <span>Login as a Promoter</span>
-              </button>
+              </Link>
             </div>
 
             <div className="footer-newsletter">
@@ -60,31 +59,38 @@ function Footer() {
             <div className="footer-link-group">
               <h3 className="footer-heading">About Company</h3>
               <ul className="footer-list">
-                <li onClick={() => navigate("/home")}>Home</li>
-                <li onClick={() => navigate("/membership")}>Membership Plans</li>
-                <li onClick={() => navigate("/register")}>Register</li>
-                <li onClick={() => navigate("/contact")}>Contact Us</li>
+                <li><Link to="/home">Home</Link></li>
+                <li><Link to="/membership">Membership Plans</Link></li>
+                <li><Link to="/register">Register</Link></li>
+                <li><Link to="/contact">Contact Us</Link></li>
+              </ul>
+            </div>
+
+            <div className="footer-link-group">
+              <h3 className="footer-heading">Legal &amp; Compliance</h3>
+              <ul className="footer-list">
+                <li><Link to="/privacy-policy">Privacy Policy (DPDP 2023)</Link></li>
+                <li><Link to="/terms-and-conditions">Terms &amp; Conditions</Link></li>
+                <li><Link to="/cookie-policy">Cookie Policy</Link></li>
+                <li><Link to="/refund-policy">Refund Policy</Link></li>
+                <li><Link to="/data-collection-disclosure">Data Collection Disclosure</Link></li>
               </ul>
             </div>
 
             <div className="footer-link-group">
               <h3 className="footer-heading">Partner Program</h3>
               <ul className="footer-list">
-                <li onClick={() => navigate("/promoter/login")} className="promoter-nav-link">
-                  Promoter Login
-                </li>
-                <li onClick={() => navigate("/promoter/register")}>
-                  Become a Promoter
-                </li>
+                <li><Link to="/promoter/login" className="promoter-nav-link">Promoter Login</Link></li>
+                <li><Link to="/promoter/register">Become a Promoter</Link></li>
               </ul>
             </div>
 
             <div className="footer-link-group">
               <h3 className="footer-heading">Contact Us</h3>
               <ul className="footer-list contact-list">
-                <li><span className="accent-text">Email:</span> shreegandamatrimonysupport@gmail.com</li>
-                <li><span className="accent-text">Call Us:</span> 7026425724</li>
-                <li onClick={() => navigate("/contact")} className="contact-link">Contact Support →</li>
+                <li><span className="accent-text">Email:</span> privacy@shreegandha.com</li>
+                <li><span className="accent-text">Call Us:</span> +91 80 2345 6789</li>
+                <li><Link to="/contact" className="contact-link">Contact Support →</Link></li>
               </ul>
             </div>
 
@@ -94,7 +100,7 @@ function Footer() {
         {/* Bottom Section: Socials & Copyright */}
         <div className="footer-bottom">
           <div className="footer-copyright">
-            Copyright © {new Date().getFullYear()} Shree Gandha Matrimony. All Rights Reserved.
+            Copyright © {new Date().getFullYear()} Shree Gandha Matrimony. All Rights Reserved. | In Compliance with DPDP Act 2023
           </div>
 
           <div className="social-icons">

@@ -30,21 +30,31 @@ const UserCard = ({
     <Card
       sx={{
         width: { xs: 280, sm: 280, md: 260, lg: 280 },
-        borderRadius: 4,
-        boxShadow: 3,
+        borderRadius: "8px",
+        boxShadow: "0 4px 16px rgba(180,83,9,0.08)",
         overflow: "hidden",
-        transition: "transform 0.2s",
+        transition: "transform 0.25s ease, box-shadow 0.25s ease",
         "&:hover": {
           transform: "translateY(-4px)",
-          boxShadow: 6,
+          boxShadow: "0 8px 24px rgba(180,83,9,0.16)",
         },
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        pt: 2,
         position: "relative",
+        background: "#fff",
       }}
     >
+      {/* Top accent strip */}
+      <Box
+        sx={{
+          width: "100%",
+          height: 48,
+          background: "#78350F",
+          position: "relative",
+          flexShrink: 0,
+        }}
+      />
       {connection && (
         <Box
           sx={{
@@ -94,14 +104,15 @@ const UserCard = ({
 
       <Box
         sx={{
-          width: { xs: 100, sm: 120 },
-          height: { xs: 100, sm: 120 },
+          width: { xs: 100, sm: 110 },
+          height: { xs: 100, sm: 110 },
           borderRadius: "50%",
-          border: "2.5px solid #991b1b",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-          mb: 2,
-          padding: "2px",
-          background: "linear-gradient(45deg, #991b1b, #fff)",
+          border: "3px solid #ffffff",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          mb: 1.5,
+          mt: -5,
+          position: "relative",
+          zIndex: 2,
         }}
       >
         <Avatar
@@ -224,16 +235,16 @@ const UserCard = ({
             variant="contained"
             onClick={() => onViewMore(profile)}
             sx={{
-              backgroundColor: "#991b1b",
+              backgroundColor: "#78350F",
               "&:hover": {
-                backgroundColor: "#7f1d1d",
+                backgroundColor: "#5c280b",
               },
               minWidth: "120px",
-              borderRadius: 2,
-              py: 1,
+              borderRadius: "4px",
+              py: 0.9,
               textTransform: "none",
-              fontWeight: 500,
-              fontSize: { xs: "0.8rem", sm: "0.9rem" },
+              fontWeight: 600,
+              fontSize: { xs: "0.82rem", sm: "0.9rem" },
             }}
           >
             View More

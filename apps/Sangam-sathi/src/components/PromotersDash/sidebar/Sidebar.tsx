@@ -3,6 +3,7 @@ import {
   Box,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Collapse,
@@ -41,41 +42,45 @@ import {
   Email,
   Logout,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import defaultSidebarData, { promoterSidebarConfig } from './data';
 
+interface SidebarProps {
+  isMobile?: boolean;
+  open?: boolean;
+  toggleDrawer?: () => void;
+  sidebarData?: typeof defaultSidebarData;
+}
 
-const Sidebar = ({
-  isMobile,
-  open,
+const Sidebar: React.FC<SidebarProps> = ({
+  isMobile = false,
+  open = true,
   toggleDrawer,
-  sidebarData
+  sidebarData = defaultSidebarData,
 }) => {
   const navigate = useNavigate();
-  const [openSubmenus, setOpenSubmenus] = useState({});
-  const [selectedItem, setSelectedItem] = useState(null);
+  const location = useLocation();
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
-  const handleItemClick = (text, hasSubItems = false, path = null) => {
-    const newOpenSubmenus = {};
+  const handleItemClick = (text: string, hasSubItems = false, path?: string) => {
     if (hasSubItems) {
-      newOpenSubmenus[text] = !openSubmenus[text];
+      setOpenSubmenus((prev) => ({
+        ...prev,
+        [text]: !prev[text],
+      }));
     } else if (path) {
       navigate(path);
-      console.log(path, "yy")
     }
-    setOpenSubmenus(newOpenSubmenus);
-    setSelectedItem(text);
   };
 
-  const handleSubItemClick = (parentText, subItem) => {
-    setSelectedItem(`${parentText}-${subItem.text}`);
+  const handleSubItemClick = (parentText: string, subItem: { text: string; path?: string }) => {
     if (subItem.path) {
       navigate(subItem.path);
-
     }
   };
 
-  const getIconComponent = (iconName, props = {}) => {
-    const iconComponents = {
+  const getIconComponent = (iconName: string, props = {}) => {
+    const iconComponents: Record<string, React.ComponentType<any>> = {
       Logout,
       Dashboard,
       Person,
@@ -112,32 +117,45 @@ const Sidebar = ({
     return IconComponent ? <IconComponent {...props} /> : null;
   };
 
-  const renderSubItems = (subItems, parentText) => (
+  const isPathActive = (path?: string) => {
+    if (!path) return false;
+    return location.pathname === path;
+  };
+
+  const renderSubItems = (subItems: { text: string; path?: string }[], parentText: string) => (
     <Collapse in={openSubmenus[parentText]} timeout="auto" unmountOnExit>
       <List component="div" disablePadding>
-        {subItems.map((item, index) => (
-          <ListItem
-            key={index}
-            button
-            onClick={() => handleSubItemClick(parentText, item)} // Pass the whole item
-            sx={{
-              pl: 4,
-              py: 0.5,
-              backgroundColor:
-                selectedItem === `${parentText}-${item.text}` ? 'rgba(255, 215, 0, 0.25)' : 'transparent',
-              '&:hover': { backgroundColor: 'rgba(255, 215, 0, 0.15)' },
-            }}
-          >
-            <ListItemText
-              primary={item.text}
-              sx={{
-                color: '#fff',
-                '& .MuiTypography-root': { fontWeight: 'bold' },
-              }}
-              primaryTypographyProps={{ fontSize: '1rem' }}
-            />
-          </ListItem>
-        ))}
+        {subItems.map((item, index) => {
+          const active = isPathActive(item.path);
+          return (
+            <ListItem key={index} disablePadding sx={{ my: 0.25 }}>
+              <ListItemButton
+                onClick={() => handleSubItemClick(parentText, item)}
+                sx={{
+                  pl: 4,
+                  py: 0.6,
+                  borderRadius: '4px',
+                  mx: 1,
+                  backgroundColor: active ? 'rgba(212, 175, 55, 0.2)' : 'transparent',
+                  borderLeft: active ? '3px solid #D4AF37' : '3px solid transparent',
+                  color: active ? '#D4AF37' : '#FFFFFF',
+                  '&:hover': {
+                    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                    color: '#D4AF37',
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={item.text}
+                  sx={{
+                    color: 'inherit',
+                  }}
+                  primaryTypographyProps={{ fontSize: '0.9rem', fontWeight: active ? 700 : 500 }}
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
     </Collapse>
   );
@@ -153,63 +171,68 @@ const Sidebar = ({
         '& .MuiDrawer-paper': {
           width: 250,
           boxSizing: 'border-box',
-          background: '#800000',
+          backgroundColor: '#0B192C',
+          color: '#FFFFFF',
+          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
         },
       }}
     >
       <Toolbar />
-      <Box sx={{ overflow: 'auto' }}>
+      <Box sx={{ overflow: 'auto', py: 1 }}>
         <List sx={{ mt: '10px' }}>
-          {sidebarData.menuItems.map((item, index,) => (
-            <Box key={index}>
-              <ListItem
-                button
-                onClick={() => handleItemClick(item.text, !!item.subItems, item.path)}
-                sx={{
-                  cursor: 'pointer',
-                  pl: 2,
-                  py: 1,
-                  backgroundColor: selectedItem === item.text ? 'rgba(255, 215, 0, 0.25)' : 'transparent',
-                  borderLeft: selectedItem === item.text ? '3px solid #FFD700' : '3px solid transparent',
-                  '&:hover': { backgroundColor: 'rgba(255, 215, 0, 0.15)' },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 35, color: '#fff' }}>
-                  {getIconComponent(item.icon)}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{
-                    cursor: 'pointer',
-                    color: '#fff',
-                    '& .MuiTypography-root': { fontWeight: 'bold' },
-                  }}
-                  primaryTypographyProps={{ fontSize: '1rem' }}
-                />
-                {item.subItems && (
-                  <ArrowDropDownIcon
+          {sidebarData.menuItems.map((item, index) => {
+            const hasSub = Boolean(item.subItems && item.subItems.length > 0);
+            const active = isPathActive(item.path);
+            const isOpen = Boolean(openSubmenus[item.text]);
+
+            return (
+              <Box key={index}>
+                <ListItem disablePadding sx={{ my: 0.3 }}>
+                  <ListItemButton
+                    onClick={() => handleItemClick(item.text, hasSub, item.path)}
                     sx={{
-                      color: '#fff',
-                      transform: openSubmenus[item.text] ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.3s',
+                      cursor: 'pointer',
+                      px: 2,
+                      py: 0.9,
+                      mx: 1,
+                      borderRadius: '6px',
+                      backgroundColor: active ? 'rgba(212, 175, 55, 0.2)' : 'transparent',
+                      borderLeft: active ? '3px solid #D4AF37' : '3px solid transparent',
+                      color: active ? '#D4AF37' : '#FFFFFF',
+                      '&:hover': {
+                        backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                        color: '#D4AF37',
+                      },
                     }}
-                  />
+                  >
+                    <ListItemIcon sx={{ minWidth: 35, color: active ? '#D4AF37' : 'rgba(255, 255, 255, 0.85)' }}>
+                      {getIconComponent(item.icon)}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.text}
+                      sx={{ color: 'inherit' }}
+                      primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: active ? 700 : 500 }}
+                    />
+                    {hasSub && (
+                      <ArrowDropDownIcon
+                        sx={{
+                          color: active ? '#D4AF37' : '#FFFFFF',
+                          transform: isOpen ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 0.3s',
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
+                </ListItem>
+
+                {hasSub && item.subItems && (
+                  <Box sx={{ ml: 1 }}>
+                    {renderSubItems(item.subItems, item.text)}
+                  </Box>
                 )}
-              </ListItem>
-              {item.subItems && (
-                <Box
-                  sx={{
-                    cursor: 'pointer',
-                    backgroundColor: 'rgba(255, 215, 0, 0.08)',
-                    borderLeft: '3px solid #FFD700',
-                    ml: 0,
-                  }}
-                >
-                  {renderSubItems(item.subItems, item.text)}
-                </Box>
-              )}
-            </Box>
-          ))}
+              </Box>
+            );
+          })}
         </List>
       </Box>
     </Drawer>

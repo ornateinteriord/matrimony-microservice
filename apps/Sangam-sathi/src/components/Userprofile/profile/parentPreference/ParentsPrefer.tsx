@@ -15,9 +15,9 @@ import TokenService from "../../../token/tokenService";
 import { LoadingComponent } from "../../../../App";
 import CustomAutocomplete from "../../../Autocomplete/CustomAutocomplete";
 
-const datas = rawJsonData.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+const datas: any = (rawJsonData as any[]).reduce((acc: any, curr: any) => ({ ...acc, ...curr }), {});
 
-const ParentsPrefer = () => {
+const ParentsPrefer = ({ render }: any) => {
   const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 

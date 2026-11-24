@@ -7,7 +7,7 @@ const NotFoundPage = () => {
   return (
     <Box
       sx={{
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#FDFBF7',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -15,46 +15,34 @@ const NotFoundPage = () => {
         justifyContent: 'center',
         textAlign: 'center',
         padding: 4,
-        color: '#7c2d12'
+        color: '#2D1810'
       }}
     >
       <Box sx={{ maxWidth: '600px' }}>
         <Typography
           variant="h1"
+          component="h1"
           sx={{
-            fontSize: '4rem',
+            fontSize: { xs: '2.5rem', sm: '3.5rem' },
             fontWeight: 700,
             mb: 2,
-            color: '#7c2d12'
+            color: '#8B1E1E'
           }}
         >
-          404
-        </Typography>
-
-        <Typography
-          variant="h2"
-          sx={{
-            fontSize: '1.8rem',
-            fontWeight: 600,
-            mb: 2,
-            color: '#7c2d12'
-          }}
-        >
-          Page Not Found
+          404 - Page Not Found
         </Typography>
 
         <Typography
           variant="body1"
           sx={{
             fontSize: '1.1rem',
-            color: '#000',
-            mb: 3,
-            lineHeight: 1.5
+            color: '#5C4033',
+            mb: 4,
+            lineHeight: 1.6
           }}
         >
-          The page you're looking for doesn't exist or has been moved.
-          <br />
-          Please check the URL or use the buttons below to navigate.
+          The page you are looking for does not exist, has been moved, or is temporarily unavailable.
+          Please check the URL or use the options below to continue.
         </Typography>
 
         <Stack direction="row" spacing={2} justifyContent="center">
@@ -62,11 +50,14 @@ const NotFoundPage = () => {
             variant="contained"
             onClick={() => navigate('/')}
             sx={{
-              textTransform: 'capitalize',
-              backgroundColor: '#7c2d12',
-              '&:hover': { backgroundColor: 'rgba(93, 32, 110, 1)' },
+              textTransform: 'none',
+              backgroundColor: '#8B1E1E',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              borderRadius: '6px',
+              '&:hover': { backgroundColor: '#6B1717' },
               px: 3,
-              py: 1
+              py: 1.2
             }}
           >
             Return to Home
@@ -76,15 +67,18 @@ const NotFoundPage = () => {
             variant="outlined"
             onClick={() => navigate(-1)}
             sx={{
-              textTransform: 'capitalize',
-              color: '#7c2d12',
-              borderColor: '#7c2d12',
+              textTransform: 'none',
+              color: '#8B1E1E',
+              borderColor: '#8B1E1E',
+              fontWeight: 600,
+              borderRadius: '6px',
               '&:hover': {
-                backgroundColor: '#7c2d12',
-                color: 'white'
+                backgroundColor: 'rgba(139, 30, 30, 0.08)',
+                borderColor: '#6B1717',
+                color: '#6B1717'
               },
               px: 3,
-              py: 1
+              py: 1.2
             }}
           >
             Go Back

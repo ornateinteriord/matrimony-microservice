@@ -178,7 +178,7 @@ const UserTable = () => {
             },
             {
               onSuccess: () => {
-                setLocalUsers((prev) =>
+                setFilteredUsers((prev) =>
                   Array.isArray(prev)
                     ? prev.map((user) =>
                         user?.registration_no === regno

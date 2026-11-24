@@ -3,7 +3,7 @@ const getCasteFilter = (req) => {
   console.log("Project Header:", project);
 
   if (project === 'sangamsathi') {
-    return { $regex: 'brahmin', $options: 'i' };
+    return { $regex: 'brah?min|brahmana|smartha|madhwa|iyer|iyengar', $options: 'i' };
   }
   
   // Return undefined for girijakalyana to completely remove the logic

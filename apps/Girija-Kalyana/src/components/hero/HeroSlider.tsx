@@ -12,6 +12,7 @@ import "./HeroSlider.scss";
 import useAuth from "../hook/UseAuth";
 import TokenService from "../token/tokenService";
 import ThemedButton from "../UI/ThemedButton";
+import SEOHead from "../common/SEOHead";
 
 
 
@@ -81,6 +82,17 @@ const HeroSlider = () => {
 
   return (
     <Box className="hero-main-container">
+      <SEOHead
+        title="Girija Kalyana - Most Trusted Sacred Matrimonial Service"
+        description="Join Girija Kalyana, Karnataka's trusted matrimonial platform to find your verified life partner within your community with privacy and dignity."
+        canonicalUrl="https://girijakalyana.com/"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Girija Kalyana Matrimony",
+          "url": "https://girijakalyana.com",
+        }}
+      />
       <HeroWrapper>
         <Navbar />
         <Slider {...settings}>
@@ -125,7 +137,6 @@ const HeroSlider = () => {
             }}
           >
             Join the most trusted platform and start your journey towards a lifetime of happiness.
-            1234567890
           </Typography>
           <Box
             sx={{

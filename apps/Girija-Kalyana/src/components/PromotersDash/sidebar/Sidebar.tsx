@@ -1,217 +1,129 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  Drawer,
-  Toolbar,
-} from '@mui/material';
-import {
-  Dashboard,
-  Person,
-  Share,
-  Search,
-  ManageSearch,
-  ImageSearch,
-  TrendingUp,
-  ArrowDropDown as ArrowDropDownIcon,
-  Pending,
-  CheckCircle,
-  TimerOff,
-  Groups,
-  HowToReg,
-  SupportAgent,
-  Autorenew,
-  Send,
-  Inbox,
-  AttachMoney,
-  AccountBalanceWallet,
-  Favorite,
-  GroupAdd,
-  PersonOff,
-  PendingActions,
-  TaskAlt,
-  Event,
-  Settings,
-  Lock,
-  Notifications,
-  Email,
-  Logout,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import DynamicSidebar from "../../common/DynamicSidebar";
+import { SidebarConfig, NavItemConfig } from "../../../types/navigation";
 
+export interface PromoterSidebarProps {
+  isMobile: boolean;
+  open: boolean;
+  toggleDrawer: () => void;
+  sidebarData?: any;
+}
 
-const Sidebar = ({ 
-  isMobile, 
-  open, 
-  toggleDrawer, 
-  sidebarData 
+const defaultPromoterConfig: SidebarConfig = {
+  brandTitle: "Girija Kalyana",
+  homePath: "/PromotAdmin",
+  items: [
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      path: "/PromotAdmin",
+      icon: "Dashboard",
+    },
+    {
+      id: "profile",
+      title: "My Profile",
+      path: "/PromotAdmin/profilepage",
+      icon: "Person",
+    },
+    {
+      id: "refer",
+      title: "Refer / Invite",
+      path: "/PromotAdmin/refer",
+      icon: "Share",
+    },
+    {
+      id: "my-referrals",
+      title: "My Referrals",
+      path: "/PromotAdmin/my-referrals",
+      icon: "Groups",
+    },
+    {
+      id: "assistance-services",
+      title: "Assistance Services",
+      path: "/PromotAdmin/pending",
+      icon: "SupportAgent",
+      children: [
+        {
+          id: "pending-assistance",
+          title: "Pending",
+          path: "/PromotAdmin/pending",
+          icon: "Pending",
+        },
+        {
+          id: "success-assistance",
+          title: "Success",
+          path: "/PromotAdmin/success",
+          icon: "CheckCircle",
+        },
+      ],
+    },
+    {
+      id: "team-users",
+      title: "Team Users",
+      path: "/PromotAdmin/team-users",
+      icon: "Groups",
+    },
+    {
+      id: "expired",
+      title: "Expired Referrals",
+      path: "/PromotAdmin/expired",
+      icon: "TimerOff",
+    },
+    {
+      id: "inactive",
+      title: "Inactive Referrals",
+      path: "/PromotAdmin/inactive",
+      icon: "Person",
+    },
+    {
+      id: "logout",
+      title: "Logout",
+      path: "/",
+      icon: "Logout",
+    },
+  ],
+};
+
+const Sidebar: React.FC<PromoterSidebarProps> = ({
+  isMobile,
+  open,
+  toggleDrawer,
+  sidebarData,
 }) => {
-    const navigate = useNavigate();
-  const [openSubmenus, setOpenSubmenus] = useState({});
-  const [selectedItem, setSelectedItem] = useState(null);
+  // Convert custom sidebarData to SidebarConfig if provided
+  const config: SidebarConfig = React.useMemo(() => {
+    if (!sidebarData?.menuItems) return defaultPromoterConfig;
 
-    const handleItemClick = (text, hasSubItems = false, path = null) => {
-  const newOpenSubmenus = {};
-  if (hasSubItems) {
-    newOpenSubmenus[text] = !openSubmenus[text];
-  } else if (path) {
-    navigate(path); 
-     console.log(path,"yy")
-  }
-  setOpenSubmenus(newOpenSubmenus);
-  setSelectedItem(text);
-};
+    const items: NavItemConfig[] = sidebarData.menuItems.map(
+      (m: any, idx: number) => ({
+        id: `item-${idx}-${m.text.toLowerCase().replace(/\s+/g, "-")}`,
+        title: m.text,
+        path: m.path || "",
+        icon: m.icon || "ChevronRight",
+        children: m.subItems?.map((s: any, sIdx: number) => ({
+          id: `sub-${idx}-${sIdx}-${s.text.toLowerCase().replace(/\s+/g, "-")}`,
+          title: s.text,
+          path: s.path || `/PromotAdmin/${s.text.toLowerCase().replace(/\s+/g, "-")}`,
+          icon: "ChevronRight",
+        })),
+      })
+    );
 
-const handleSubItemClick = (parentText, subItem) => {
-  setSelectedItem(`${parentText}-${subItem.text}`);
-  if (subItem.path) {
-    navigate(subItem.path); 
-   
-  }
-};
-
-  const getIconComponent = (iconName, props = {}) => {
-    const iconComponents = {
-      Logout,
-      Dashboard,
-      Person,
-      Share,
-      Search,
-      ManageSearch,
-      ImageSearch,
-      TrendingUp,
-      ArrowDropDown: ArrowDropDownIcon,
-      Pending,
-      CheckCircle,
-      TimerOff,
-      Groups,
-      HowToReg,
-      SupportAgent,
-      Autorenew,
-      Send,
-      Inbox,
-      AttachMoney,
-      AccountBalanceWallet,
-      Favorite,
-      GroupAdd,
-      PersonOff,
-      PendingActions,
-      TaskAlt,
-      Event,
-      Settings,
-      Lock,
-      Notifications,
-      Email,
+    return {
+      brandTitle: sidebarData.title?.trim() || "Girija Kalyana",
+      homePath: "/PromotAdmin",
+      items,
     };
-    
-    const IconComponent = iconComponents[iconName];
-    return IconComponent ? <IconComponent {...props} /> : null;
-  };
-
- const renderSubItems = (subItems, parentText) => (
-  <Collapse in={openSubmenus[parentText]} timeout="auto" unmountOnExit>
-    <List component="div" disablePadding>
-      {subItems.map((item, index) => (
-        <ListItem
-          key={index}
-          button
-          onClick={() => handleSubItemClick(parentText, item)} // Pass the whole item
-          sx={{
-            pl: 4,
-            py: 0.5,
-            backgroundColor:
-              selectedItem === `${parentText}-${item.text}` ? '#4d75d4' : 'transparent',
-            '&:hover': { backgroundColor: '#4d75d4' },
-          }}
-        >
-          <ListItemText
-            primary={item.text}
-            sx={{
-              color: '#fff',
-              '& .MuiTypography-root': { fontWeight: 'bold' },
-            }}
-            primaryTypographyProps={{ fontSize: '1rem' }}
-          />
-        </ListItem>
-      ))}
-    </List>
-  </Collapse>
-);
+  }, [sidebarData]);
 
   return (
-    <Drawer
-      variant={isMobile ? 'temporary' : 'persistent'}
-      open={open}
+    <DynamicSidebar
+      config={config}
+      isOpen={open}
       onClose={toggleDrawer}
-      sx={{
-        width: 250,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: 250,
-          boxSizing: 'border-box',
-          background: '#182848',
-        },
-      }}
-    >
-      <Toolbar />
-      <Box sx={{ overflow: 'auto' }}>
-        <List sx={{ mt: '10px' }}>
-          {sidebarData.menuItems.map((item, index,) => (
-            <Box key={index}>
-              <ListItem
-                button
-                onClick={() => handleItemClick(item.text, !!item.subItems,item.path)}
-                sx={{
-                  cursor: 'pointer',
-                  pl: 2,
-                  py: 1,
-                  backgroundColor: selectedItem === item.text ? '#4d75d4' : 'transparent',
-                  '&:hover': { backgroundColor: '#4d75d4' },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 35, color: '#fff' }}>
-                  {getIconComponent(item.icon)}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{
-                    cursor: 'pointer',
-                    color: '#fff',
-                    '& .MuiTypography-root': { fontWeight: 'bold' },
-                  }}
-                  primaryTypographyProps={{ fontSize: '1rem' }}
-                />
-                {item.subItems && (
-                  <ArrowDropDownIcon
-                    sx={{
-                      color: '#fff',
-                      transform: openSubmenus[item.text] ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.3s',
-                    }}
-                  />
-                )}
-              </ListItem>
-              {item.subItems && (
-                <Box
-                  sx={{
-                    cursor: 'pointer',
-                    backgroundColor: '#1a3151',
-                    borderLeft: '3px solid #4d75d4',
-                    ml: 0,
-                  }}
-                >
-                  {renderSubItems(item.subItems, item.text)}
-                </Box>
-              )}
-            </Box>
-          ))}
-        </List>
-      </Box>
-    </Drawer>
+      variant={isMobile ? "temporary" : "permanent"}
+      width={240}
+    />
   );
 };
 

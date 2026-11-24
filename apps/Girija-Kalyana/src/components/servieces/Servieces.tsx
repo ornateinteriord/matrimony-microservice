@@ -6,6 +6,7 @@ import { GrBook } from "react-icons/gr";
 import { FaArrowAltCircleRight } from "react-icons/fa";
 import Navbar from "../navbar/Navbar";
 import Footer from "../footer/Footer";
+import SEOHead from "../common/SEOHead";
 import "./Servieces.scss";
 
 const Services = () => {
@@ -50,10 +51,15 @@ const services = [
 
   return (
     <>
+      <SEOHead
+        title="Matrimonial Services"
+        description="Explore Girija Kalyana assisted matchmaking services, personalized relationship managers, and verified partner search."
+        canonicalUrl="https://girijakalyana.com/service"
+      />
       <Navbar />
       <div className="servicebody">
-      <h2 style={{ textTransform: "capitalize",
-        marginTop:'25px',fontWeight:400,color:'#1a4f72' }}>Assisted Service Advantages</h2>
+      <h1 style={{ textTransform: "capitalize",
+        marginTop:'25px',fontWeight:700,color:'#881337',fontSize:'2rem' }}>Assisted Matrimonial Service Advantages</h1>
         <div className="service-grid">
           {services.map((service, index) => (
             <div className="service-card" key={index}>

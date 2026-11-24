@@ -31,13 +31,14 @@ const UserCard = ({
     <Card
       sx={{
         width: { xs: 280, sm: 280, md: 260, lg: 280 },
-        borderRadius: "20px",
-        boxShadow: "0 4px 24px rgba(26,79,114,0.10)",
+        borderRadius: "6px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        border: "1px solid #e2e8f0",
         overflow: "hidden",
-        transition: "transform 0.25s ease, box-shadow 0.25s ease",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
-          transform: "translateY(-6px)",
-          boxShadow: "0 12px 36px rgba(26,79,114,0.18)",
+          transform: "translateY(-3px)",
+          boxShadow: "0 4px 12px rgba(112, 15, 43, 0.12)",
         },
         display: "flex",
         flexDirection: "column",
@@ -46,12 +47,12 @@ const UserCard = ({
         background: "#fff",
       }}
     >
-      {/* Top gradient banner */}
+      {/* Top accent strip */}
       <Box
         sx={{
           width: "100%",
-          height: 72,
-          background: "linear-gradient(135deg, #1a4f72 0%, #2196f3 100%)",
+          height: 48,
+          background: "#700F2B",
           position: "relative",
           flexShrink: 0,
         }}
@@ -102,12 +103,12 @@ const UserCard = ({
             fontWeight: 700,
             fontSize: "0.6rem",
             letterSpacing: "0.5px",
-            background: "linear-gradient(135deg, #f7c948, #e6a800)",
-            color: "#5a3800",
+            background: "#B45309",
+            color: "#ffffff",
             border: "none",
-            boxShadow: "0 2px 8px rgba(230,168,0,0.4)",
             zIndex: 2,
             height: 22,
+            borderRadius: "4px",
           }}
         />
       )}
@@ -126,9 +127,10 @@ const UserCard = ({
             width: { xs: 90, sm: 96 },
             height: { xs: 90, sm: 96 },
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #1a4f72, #64b5f6)",
-            padding: "3px",
-            boxShadow: "0 4px 16px rgba(26,79,114,0.35)",
+            border: "2px solid #700F2B",
+            backgroundColor: "#ffffff",
+            padding: "2px",
+            boxShadow: "0 2px 8px rgba(112, 15, 43, 0.15)",
           }}
         >
           <Avatar
@@ -137,7 +139,7 @@ const UserCard = ({
             sx={{
               width: "100%",
               height: "100%",
-              border: "3px solid #fff",
+              border: "2px solid #fff",
               fontSize: "2rem",
             }}
           />
@@ -173,13 +175,13 @@ const UserCard = ({
         <Typography
           sx={{
             fontSize: "0.82rem",
-            color: "#1a4f72",
+            color: "#700F2B",
             fontWeight: 600,
             mb: 1.2,
-            background: "rgba(26,79,114,0.08)",
+            background: "rgba(112,15,43,0.08)",
             px: 1.5,
             py: 0.25,
-            borderRadius: "20px",
+            borderRadius: "4px",
           }}
         >
           {age || "N/A"} yrs
@@ -195,7 +197,7 @@ const UserCard = ({
             mb: 0.6,
           }}
         >
-          <FaBriefcase size={13} color="#1a4f72" />
+          <FaBriefcase size={13} color="#700F2B" />
           <Typography variant="body2" sx={{ color: "#444", fontSize: "0.82rem" }}>
             {profile?.occupation || "Not specified"}
           </Typography>
@@ -211,7 +213,7 @@ const UserCard = ({
             mb: 1.5,
           }}
         >
-          <FaMapMarkerAlt size={13} color="#1a4f72" />
+          <FaMapMarkerAlt size={13} color="#700F2B" />
           <Typography variant="body2" sx={{ color: "#444", fontSize: "0.82rem" }}>
             {[profile?.city, profile?.state, profile?.country]
               .filter(Boolean)
@@ -225,17 +227,18 @@ const UserCard = ({
             width: "100%",
             display: "flex",
             justifyContent: "space-around",
-            background: "rgba(26,79,114,0.05)",
-            borderRadius: "12px",
+            background: "rgba(112,15,43,0.04)",
+            borderRadius: "4px",
+            border: "1px solid rgba(112,15,43,0.08)",
             py: 1,
             px: 0.5,
             mb: 1.5,
           }}
         >
           <ProfileInfo label="Height" value={profile?.height || "N/A"} />
-          <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(26,79,114,0.15)" }} />
+          <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(112,15,43,0.12)" }} />
           <ProfileInfo label="Religion" value={profile?.religion || "N/A"} />
-          <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(26,79,114,0.15)" }} />
+          <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(112,15,43,0.12)" }} />
           <ProfileInfo label="Caste" value={profile?.caste || "N/A"} />
         </Box>
 
@@ -258,7 +261,7 @@ const UserCard = ({
                   borderColor: "rgba(211,47,47,0.4)",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: "10px",
+                  borderRadius: "8px",
                   fontSize: "0.82rem",
                   flex: 1,
                   "&:hover": {
@@ -274,17 +277,17 @@ const UserCard = ({
                 fullWidth
                 variant="contained"
                 sx={{
-                  background: "linear-gradient(135deg, #1a4f72, #2196f3)",
+                  background: "linear-gradient(135deg, #881337, #D97706)",
                   color: "#fff",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: "10px",
+                  borderRadius: "8px",
                   fontSize: "0.82rem",
                   flex: 1,
-                  boxShadow: "0 2px 10px rgba(26,79,114,0.3)",
+                  boxShadow: "0 2px 10px rgba(136,19,55,0.3)",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #2196f3, #1a4f72)",
-                    boxShadow: "0 4px 14px rgba(26,79,114,0.4)",
+                    background: "linear-gradient(135deg, #70102e, #b45309)",
+                    boxShadow: "0 4px 14px rgba(136,19,55,0.4)",
                   },
                 }}
                 onClick={() => onResponse(profile?.registration_no, true)}
@@ -300,15 +303,11 @@ const UserCard = ({
             variant="contained"
             onClick={() => onViewMore(profile)}
             sx={{
-              background: "linear-gradient(135deg, #1a4f72 0%, #2196f3 100%)",
+              backgroundColor: "#700F2B",
               "&:hover": {
-                background: "linear-gradient(135deg, #2196f3 0%, #1a4f72 100%)",
-                boxShadow: "0 4px 16px rgba(26,79,114,0.4)",
-                transform: "translateY(-1px)",
+                backgroundColor: "#590a21",
               },
-              transition: "all 0.2s ease",
-              boxShadow: "0 2px 10px rgba(26,79,114,0.25)",
-              borderRadius: "10px",
+              borderRadius: "4px",
               py: 0.9,
               textTransform: "none",
               fontWeight: 600,
@@ -325,7 +324,7 @@ const UserCard = ({
               onClick={() => onRemoveConnection(interestId)}
               sx={{
                 flex: 1,
-                borderRadius: "10px",
+                borderRadius: "8px",
                 py: 0.9,
                 textTransform: "none",
                 fontWeight: 600,
@@ -349,7 +348,7 @@ const UserCard = ({
               onClick={() => onCancelRequest(interestId)}
               sx={{
                 flex: 1,
-                borderRadius: "10px",
+                borderRadius: "8px",
                 py: 0.9,
                 textTransform: "none",
                 fontWeight: 600,
@@ -379,7 +378,7 @@ export const ProfileInfo = ({ label, value }) => (
       variant="caption"
       sx={{
         fontWeight: 700,
-        color: "#1a4f72",
+        color: "#881337",
         fontSize: "0.68rem",
         letterSpacing: "0.3px",
         textTransform: "uppercase",

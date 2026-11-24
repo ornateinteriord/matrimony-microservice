@@ -20,7 +20,13 @@ import { AiOutlineClose } from "react-icons/ai";
 import { CheckCircle } from "@mui/icons-material";
 import { membershipOptions } from "../../../assets/memberShipOptions/MemberShipPlans";
 
-const MembershipDialog = ({ open, onClose, onSelectPlan }) => {
+const MembershipDialog = ({
+  open,
+  onClose,
+  onSelectPlan,
+  selectedPlan,
+  onConfirm,
+}: any) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 

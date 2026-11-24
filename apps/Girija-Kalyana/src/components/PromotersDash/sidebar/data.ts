@@ -1,6 +1,6 @@
 // data.js
 const sidebarData = {
-  title: " Girija❤️Kalyana",
+  title: "Girija Kalyana",
   menuItems: [
     {
       text: "Dashboard",
@@ -20,13 +20,7 @@ const sidebarData = {
     {
       text: "My Referrals",
       icon: "Groups",
-      subItems: [
-        { text: "Pending", path: "/PromotAdmin/pending" },
-        { text: "Success",path: "/PromotAdmin/success" },
-        { text: "Expired",path: "/PromotAdmin/expired" },
-        { text: "inActive",path: "/PromotAdmin/inactive" },
-        { text: "Team Users",path: "/PromotAdmin/team-users"  },
-      ],
+      path: "/PromotAdmin/my-referrals"
     },
     {
       text: "Assistance Services",
@@ -90,7 +84,7 @@ const sidebarData = {
     {
       title: "My Total Earnings",
       value: "24700.0",
-      color: "#9c27b0",
+      color: "#881337",
       icon: "AttachMoney",
     },
     {

@@ -6,7 +6,7 @@ const GenderFilter = ({selectedStatus,handleStatusChange}) => {
     <FormControl  sx={{ 
       width: { xs: '100%', sm: '200px' },
       fontFamily: '"Outfit", sans-serif'
-    }} fontFamily={"Outfit sans-serif"}>
+    }}>
             <Select
               value={selectedStatus}
               onChange={(e) => handleStatusChange(e.target.value)}

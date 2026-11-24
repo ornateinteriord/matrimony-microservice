@@ -86,7 +86,7 @@ const Requests = ({ refetchCounts }) => {
           });
           refetchCounts();
         },
-        onError: (error) => {
+        onError: (error: any) => {
           toast.error(
             error?.response?.data?.message || "Failed to reject request"
           );
@@ -157,7 +157,7 @@ const Requests = ({ refetchCounts }) => {
                           });
                           refetchCounts();
                         },
-                        onError: (error) => {
+                        onError: (error: any) => {
                           toast.error(
                             error?.response?.data?.message ||
                               "Failed to update request"

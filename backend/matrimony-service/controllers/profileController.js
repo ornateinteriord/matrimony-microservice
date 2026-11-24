@@ -15,7 +15,24 @@ const getProfileByRegistrationNo = async (req, res) => {
   try {
     const { registration_no } = req.params;
 
-    const profile = await Profile.findOne({ registration_no });
+    let profile = await Profile.findOne({ registration_no }).lean();
+
+    if (!profile) {
+      // Fallback to UserModel (user_tbl)
+      const user = await UserModel.findOne({
+        $or: [{ ref_no: registration_no }, { registration_no: registration_no }]
+      }).lean();
+
+      if (user) {
+        profile = {
+          ...user,
+          registration_no: user.ref_no || user.registration_no,
+          ref_no: user.ref_no || user.registration_no,
+          user_role: user.user_role || user.type_of_user || 'FreeUser',
+          type_of_user: user.type_of_user || user.user_role || 'FreeUser',
+        };
+      }
+    }
 
     if (!profile) {
       return res.status(404).json({
@@ -76,7 +93,17 @@ const updateProfile = async (req, res) => {
     if (typeof status !== 'undefined') profileUpdateObj.status = status;
 
     const userUpdateObj = { ...others };
+    if (image) userUpdateObj.image = image;
     if (typeof status !== 'undefined') userUpdateObj.status = status;
+
+    // Harmonize role and type fields across both models
+    const targetRole = others.user_role || others.type_of_user;
+    if (targetRole) {
+      profileUpdateObj.type_of_user = targetRole;
+      profileUpdateObj.user_role = targetRole;
+      userUpdateObj.type_of_user = targetRole;
+      userUpdateObj.user_role = targetRole;
+    }
 
     // Check profile completeness for otherInfo status
     const requiredFields = ['height', 'pincode', 'gotra', 'rashi', 'nakshatra', 'subcaste', 'bloodgroup', 'skin_type', 'body_type', 'diet', 'drink', 'smoke', 'sunsign', 'brother_younger_unmarried', 'brother_younger_married', 'brother_elder_unmarried', 'brother_elder_married', 'sister_younger_unmarried', 'sister_younger_married', 'sister_elder_unmarried', 'sister_elder_married', 'from_age_preference', 'to_age_preference', 'from_height_preference', 'to_height_preference', 'education_preference', 'caste_preference', 'maritalstatus_preference', 'occupation_country_preference', 'contactinfo', 'any_other_info'];
@@ -188,19 +215,15 @@ const getAllUserDetails = async (req, res) => {
     const { user_role: userRole, ref_no: loggedInUserId } = req.user;
     const { page, pageSize } = getPaginationParams(req);
 
-    // Using facet for single database call
+    const matchFilter = { ref_no: { $ne: loggedInUserId } };
+    if (casteFilter) {
+      matchFilter.caste = casteFilter;
+    }
+
+    // Direct aggregation on unified user_tbl (no cross-table $lookup needed)
     const [{ metadata, data }] = await UserModel.aggregate([
-      { $match: { ref_no: { $ne: loggedInUserId } } },
-      {
-        $lookup: {
-          from: "registration_tbl",
-          localField: "ref_no",
-          foreignField: "registration_no",
-          as: "profileData"
-        }
-      },
-      { $unwind: { path: "$profileData", preserveNullAndEmptyArrays: true } },
-      ...(casteFilter ? [{ $match: { "profileData.caste": casteFilter } }] : []),
+      { $match: matchFilter },
+      { $addFields: { profileData: "$$ROOT" } },
       {
         $facet: {
           metadata: [
@@ -338,16 +361,7 @@ const getProfilesRenewal = async (req, res) => {
 
     const [aggregateResult] = await UserModel.aggregate([
       { $match: filterConditions },
-      {
-        $lookup: {
-          from: "registration_tbl",
-          localField: "ref_no",
-          foreignField: "registration_no",
-          as: "profile",
-        },
-      },
-      { $unwind: { path: "$profile", preserveNullAndEmptyArrays: false } },
-      ...(casteFilter ? [{ $match: { "profile.caste": casteFilter } }] : []),
+      ...(casteFilter ? [{ $match: { caste: casteFilter } }] : []),
       {
         $facet: {
           metadata: [{ $count: "total" }],
@@ -357,14 +371,14 @@ const getProfilesRenewal = async (req, res) => {
                 username: 1,  
                 user_role: 1,
                 status: 1,
-                registration_no: "$profile.registration_no",
-                first_name: "$profile.first_name",
-                email_id: "$profile.email_id",
-                gender: "$profile.gender",
-                expiry_date: "$profile.expiry_date",
-                mobile_no: "$profile.mobile_no",
-                plan_type: "$profile.plan_type",
-                created_at: "$profile.created_at",
+                registration_no: { $ifNull: ["$ref_no", "$registration_no"] },
+                first_name: 1,
+                email_id: { $ifNull: ["$email_id", "$username"] },
+                gender: 1,
+                expiry_date: 1,
+                mobile_no: 1,
+                plan_type: { $ifNull: ["$user_role", "$type_of_user"] },
+                created_at: { $ifNull: ["$createdAt", "$registration_date"] },
               },
             },
             { $sort: { expiry_date: 1 } },
@@ -473,8 +487,14 @@ const getMyMatches = async (req, res) => {
       const toCm = extractCm(myProfile.to_height_preference);
 
       if (fromCm && toCm) {
+        const minCm = Math.min(fromCm, toCm);
+        const maxCm = Math.max(fromCm, toCm);
+        const cmList = [];
+        for (let cm = minCm; cm <= maxCm; cm++) {
+          cmList.push(cm);
+        }
         matchCriteria.height = {
-          $regex: new RegExp(`(${fromCm}|${toCm})cm`)
+          $regex: new RegExp(`(${cmList.join('|')})\\s*cm`, 'i')
         };
       }
     }
@@ -496,23 +516,14 @@ const getMyMatches = async (req, res) => {
       Profile.aggregate([
         { $match: matchCriteria },
         {
-          $lookup: {
-            from: "user_tbl",
-            localField: "registration_no",
-            foreignField: "ref_no",
-            as: "user"
-          }
-        },
-        { $unwind: "$user" },
-        {
           $addFields: {
             user_details: {
-              user_role: "$user.user_role",
-              status: "$user.status",
-              UpdateStatus: "$user.UpdateStatus",
-              counter: "$user.counter",
-              last_loggedin: "$user.last_loggedin",
-              ref_no: "$user.ref_no"
+              user_role: "$user_role",
+              status: "$status",
+              UpdateStatus: "$UpdateStatus",
+              counter: "$counter",
+              last_loggedin: "$last_loggedin",
+              ref_no: "$ref_no"
             },
             mobile_no: {
               $cond: [
@@ -726,7 +737,26 @@ const upgradeUser = async (req, res) => {
     const { registration_no } = req.params;
     const { userType, amountPaid, paidType, referenceNumber } = req.body;
 
-    const profile = await Profile.findOne({ registration_no });
+    let profile = await Profile.findOne({ registration_no });
+    if (!profile) {
+      // Find in UserModel (user_tbl)
+      const userDoc = await UserModel.findOne({
+        $or: [{ ref_no: registration_no }, { registration_no: registration_no }]
+      }).lean();
+
+      if (userDoc) {
+        profile = new Profile({
+          ...userDoc,
+          registration_no: userDoc.ref_no || userDoc.registration_no,
+          ref_no: userDoc.ref_no || userDoc.registration_no,
+          user_role: userType,
+          type_of_user: userType,
+          status: "active",
+        });
+        await profile.save();
+      }
+    }
+
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -778,6 +808,7 @@ const upgradeUser = async (req, res) => {
       {
         $set: {
           type_of_user: userType,
+          user_role: userType,
           expiry_date: updatedExpiryDate,
           status: "active",
         },
@@ -785,10 +816,10 @@ const upgradeUser = async (req, res) => {
       { new: true }
     );
 
-    // 6️⃣ Update user_tbl (find by ref_no == registration_no)
+    // 6️⃣ Update user_tbl (find by ref_no or registration_no)
     await UserModel.updateOne(
-      { ref_no: registration_no },
-      { $set: { user_role: userType, status: "active" } }
+      { $or: [{ ref_no: registration_no }, { registration_no: registration_no }] },
+      { $set: { user_role: userType, type_of_user: userType, status: "active", expiry_date: updatedExpiryDate } }
     );
 
     if (updatedProfile && oldStatus !== "active") {
@@ -829,98 +860,29 @@ const upgradeUser = async (req, res) => {
 const getAllUserImageVerification = async (req, res) => {
   try {
     const { page, pageSize } = getPaginationParams(req);
+    const filter = {
+      image_verification: { $in: ["pending", "Pending"] },
+    };
 
-    const [{ metadata, data }] = await UserModel.aggregate([
-      {
-        $facet: {
-          metadata: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            { $count: "totalRecords" }
-          ],
-          data: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            {
-              $addFields: {
-                registration_date_parsed: {
-                  $dateFromString: {
-                    dateString: "$profileData.registration_date",
-                    format: "%m/%d/%Y",
-                    onError: new Date(0),
-                    onNull: new Date(0)
-                  }
-                }
-              }
-            },
-            {
-              $replaceRoot: {
-                newRoot: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    "$profileData",
-                    {
-                      user_role: "$user_role",
-                      status: "$status",
-                      ref_no: "$ref_no"
-                    }
-                  ]
-                }
-              }
-            },
-            { $sort: { registration_date_parsed: -1, _id: -1 } },
-            {
-              $project: {
-                _id: 0,
-                ref_no: 1,
-                registration_no: 1,
-                first_name: 1,
-                last_name: 1,
-                email_id: 1,
-                gender: 1,
-                user_role: 1,
-                image: 1,
-                image_verification: 1,
-                registration_date: 1
-              }
-            },
-            { $skip: page * pageSize },
-            { $limit: pageSize }
-          ]
-        }
-      }
-    ]).exec();
+    const totalRecords = await UserModel.countDocuments(filter);
+    const users = await UserModel.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(page * pageSize)
+      .limit(pageSize)
+      .lean();
+
+    const content = users.map((u) => ({
+      ...u,
+      registration_no: u.ref_no || u.registration_no,
+      ref_no: u.ref_no || u.registration_no,
+    }));
 
     return res.status(200).json({
       success: true,
-      content: data,
+      content,
       currentPage: page,
       pageSize,
-      totalRecords: metadata?.[0]?.totalRecords || 0
+      totalRecords,
     });
   } catch (error) {
     console.error("getAllUserImageVerification error:", error);

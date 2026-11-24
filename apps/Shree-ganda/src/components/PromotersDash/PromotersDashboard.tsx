@@ -64,7 +64,9 @@ const PromotersDashboard = () => {
         position="fixed"
         sx={{
           zIndex: 1201,
-          background: "linear-gradient(to right, #182848, #7c2d12)",
+          background: "#78350F",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <Toolbar>

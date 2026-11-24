@@ -18,7 +18,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { calculateAge } from "../../../../utils/common";
 
-const About = () => {
+const About = ({ render }: any) => {
   const registerNo = TokenService.getRegistrationNo();
   const [formData, setFormData] = useState({
     first_name: '',

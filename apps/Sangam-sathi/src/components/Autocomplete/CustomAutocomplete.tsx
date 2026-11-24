@@ -10,7 +10,10 @@ const CustomAutocomplete = ({
   required = false,
   sx = {},
   freeSolo = true,
-}) => {
+  fullWidth,
+  FullWidth,
+  ...rest
+}: any) => {
   const [filteredOptions, setFilteredOptions] = useState(options);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
 

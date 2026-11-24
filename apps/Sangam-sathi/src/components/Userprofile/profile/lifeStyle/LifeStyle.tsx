@@ -14,7 +14,7 @@ import TokenService from "../../../token/tokenService";
 import { LoadingComponent } from "../../../../App";
 import { toast } from "react-toastify";
 
-const LifeStyle = () => {
+const LifeStyle = ({ render }: any) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const registerNo = TokenService.getRegistrationNo();

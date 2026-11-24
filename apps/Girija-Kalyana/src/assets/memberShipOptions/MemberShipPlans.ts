@@ -1,4 +1,4 @@
-// MemberShipPlans.js
+// MemberShipPlans.ts
 export const membershipOptions = [
   {
     name: 'SILVER MEMBERSHIP',
@@ -14,8 +14,8 @@ export const membershipOptions = [
       'Share Your Profile Details',
       'Mobile Application Access'
     ],
-    color: '#6a5acd',
-    gradient: 'linear-gradient(135deg, #6a5acd 0%, #9370db 100%)'
+    color: '#D97706',
+    gradient: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)'
   },
   {
     name: 'PREMIUM MEMBERSHIP',
@@ -31,7 +31,7 @@ export const membershipOptions = [
       'Unlimited Interests',
       'Profile Boost Monthly'
     ],
-    color: '#ff6b6b',
-    gradient: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%)'
+    color: '#881337',
+    gradient: 'linear-gradient(135deg, #881337 0%, #9f1239 100%)'
   }
 ];

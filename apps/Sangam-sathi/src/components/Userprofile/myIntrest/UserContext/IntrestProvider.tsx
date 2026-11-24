@@ -1,7 +1,7 @@
 import React, { createContext, useState } from "react";
 import axios from "axios";
 
-export const InterestContext = createContext();
+export const InterestContext = createContext<any>(null);
 
 const API_BASE_URL = "http://localhost:5000/api";
 

@@ -13,6 +13,7 @@
     "dev:all": "turbo run dev",
     "dev:concurrently": "concurrently -k -n \"girija,sangam,shree,matrimony\" -c \"cyan,magenta,yellow,green\" \"npm run dev --workspace=girija-kalyana\" \"npm run dev --workspace=sangam-sathi\" \"npm run dev --workspace=shree-ganda\" \"npm run dev --workspace=matrimony-service\"",
     "build": "turbo run build",
+    "build:workspaces": "npm run build --workspaces --if-present",
     "dev:girija": "npm run dev --workspace=girija-kalyana",
     "dev:sangam": "npm run dev --workspace=sangam-sathi",
     "dev:shree": "npm run dev --workspace=shree-ganda",

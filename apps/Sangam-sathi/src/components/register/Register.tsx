@@ -15,8 +15,13 @@ import {
   Avatar,
   useMediaQuery,
   useTheme,
+  Checkbox,
+  FormControlLabel,
+  IconButton,
 } from "@mui/material";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
+import LockIcon from "@mui/icons-material/Lock";
+import { Add as AddIcon, DeleteOutline as DeleteIcon } from "@mui/icons-material";
 import rawJsonData from "../Userprofile/profile/eduction/jsondata/data.json";
 
 import Navbar from "../navbar/Navbar";
@@ -24,15 +29,23 @@ import Footer from "../footer/Footer";
 import { toast } from "react-toastify";
 import { useSignupMutation } from "../api/Auth";
 import { post } from "../api/authHooks";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import { LoadingComponent } from "../../App";
 import CustomAutocomplete from "../Autocomplete/CustomAutocomplete";
+import useSponsorCode from "../../hooks/useSponsorCode";
+import SEOHead from "../common/SEOHead";
 
-const datas = rawJsonData.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+declare global {
+  interface Window {
+    Cashfree: any;
+  }
+}
+
+const datas: any = (rawJsonData as any[]).reduce((acc: any, curr: any) => ({ ...acc, ...curr }), {});
 
 const Register = () => {
   const location = useLocation();
@@ -84,11 +97,17 @@ const Register = () => {
     mother_tongue: "",
     name_of_parent: "",
     parent_name: "",
+    parents: [
+      { relation: "Father", name: "" },
+      { relation: "Mother", name: "" },
+    ],
     religion: "Hindu",
     caste: "",
     address: "",
     occupation_country: "",
     state: "",
+    district: "",
+    taluk: "",
     city: "",
     first_name: "",
     last_name: "",
@@ -100,41 +119,25 @@ const Register = () => {
     refered_name: "",
   };
 
-  const [formData, setFormData] = useState(initialFormState);
+  const [formData, setFormData] = useState<any>(initialFormState);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [promoterName, setPromoterName] = useState("");
-  const [promoterError, setPromoterError] = useState("");
-  const [isValidatingPromoter, setIsValidatingPromoter] = useState(false);
-  const verifiedCodeRef = useRef("");
+  const [agreeConsent, setAgreeConsent] = useState(false);
 
-  const verifyCode = useCallback(async (codeToVerify) => {
-    if (!codeToVerify || verifiedCodeRef.current === codeToVerify) return;
-    verifiedCodeRef.current = codeToVerify;
-    setIsValidatingPromoter(true);
-    setPromoterError("");
-    try {
-      const response = await post("/api/promoter/promocheck", { promocode: codeToVerify });
-      if (response?.success && response?.data?.promoterName) {
-        setPromoterName(response.data.promoterName);
-        setFormData((prev) => ({
-          ...prev,
-          refered_by: codeToVerify,
-          refered_name: response.data.promoterName,
-        }));
-        toast.success(`Sponsor Code applied: ${codeToVerify} (${response.data.promoterName})`, {
-          toastId: "sponsor-applied-toast",
-        });
-      } else {
-        setPromoterError(response?.message || "Invalid Sponsor Code");
-      }
-    } catch (error) {
-      console.error("Auto verify sponsor error:", error);
-      const msg = error?.response?.data?.message || "Invalid Sponsor Code or inactive promoter";
-      setPromoterError(msg);
-    } finally {
-      setIsValidatingPromoter(false);
-    }
-  }, []);
+  const {
+    sponsorState,
+    isValidating: isValidatingPromoter,
+    setCode: setSponsorCode,
+    handleManualVerify,
+    resetIfNotLocked,
+  } = useSponsorCode();
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      refered_by: sponsorState.code,
+      refered_name: sponsorState.promoterName,
+    }));
+  }, [sponsorState.code, sponsorState.promoterName]);
 
   // Determine display amount for selected plan
   const getPlanAmount = () => {
@@ -155,21 +158,6 @@ const Register = () => {
       user_role: getUserRole(),
     }));
   }, [planType]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const code = (
-      params.get("ref") ||
-      params.get("promo") ||
-      params.get("refered_by") ||
-      getInitialRefCode()
-    ).trim().toUpperCase();
-
-    if (code) {
-      setFormData((prev) => ({ ...prev, refered_by: code }));
-      verifyCode(code);
-    }
-  }, [location.search, verifyCode]);
 
   useEffect(() => {
     if (formData.state) {
@@ -194,7 +182,7 @@ const Register = () => {
     const { name, value } = e.target;
 
     if (name === "refered_by") {
-      setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+      setSponsorCode(value);
       return;
     }
 
@@ -232,54 +220,76 @@ const Register = () => {
     }
   };
 
-  const calculateAge = (dob) => {
-    const birthDate = new Date(dob);
-    const difference = Date.now() - birthDate.getTime();
-    const ageDate = new Date(difference);
-    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  const handleParentChange = (index: number, field: "relation" | "name", val: string) => {
+    setFormData((prev: any) => {
+      const updated = [...(prev.parents || [])];
+      if (!updated[index]) updated[index] = { relation: "Father", name: "" };
+      updated[index][field] = val;
+
+      const validParents = updated.filter((p: any) => p.name?.trim());
+      const parentNames = validParents.map((p: any) => `${p.relation}: ${p.name.trim()}`).join(", ");
+      const primaryParent = updated[0]?.relation || "Father";
+
+      return {
+        ...prev,
+        parents: updated,
+        name_of_parent: primaryParent,
+        parent_name: parentNames || updated[0]?.name || "",
+      };
+    });
   };
 
-  const handleVerifyPromoter = async () => {
-    const code = formData.refered_by?.trim().toUpperCase();
-    if (code !== formData.refered_by) {
-      setFormData((prev) => ({ ...prev, refered_by: code || "" }));
-    }
-    if (!code) {
-      setPromoterError("Please enter a Sponsor Code first");
-      setPromoterName("");
-      return;
-    }
-    setIsValidatingPromoter(true);
-    setPromoterError("");
-    setPromoterName("");
-    setFormData((prev) => ({ ...prev, refered_name: "" }));
-    try {
-      const response = await post("/api/promoter/promocheck", { promocode: code });
-      if (response?.success && response?.data?.promoterName) {
-        setPromoterName(response.data.promoterName);
-        setFormData((prev) => ({ ...prev, refered_name: response.data.promoterName }));
-        toast.success(`Sponsor verified: ${response.data.promoterName}`);
-      } else {
-        setPromoterError(response?.message || "Invalid Sponsor Code");
-        toast.error(response?.message || "Invalid Sponsor Code");
-      }
-    } catch (error) {
-      const msg = error?.response?.data?.message || "Invalid Sponsor Code or inactive promoter";
-      setPromoterError(msg);
-      toast.error(msg);
-    } finally {
-      setIsValidatingPromoter(false);
-    }
+  const handleAddParent = () => {
+    setFormData((prev: any) => {
+      const current = prev.parents || [];
+      const defaultNext = current.some((p: any) => p.relation === "Father") && !current.some((p: any) => p.relation === "Mother")
+        ? "Mother"
+        : "Guardian";
+      return {
+        ...prev,
+        parents: [...current, { relation: defaultNext, name: "" }],
+      };
+    });
+  };
+
+  const handleRemoveParent = (index: number) => {
+    setFormData((prev: any) => {
+      const updated = (prev.parents || []).filter((_: any, i: number) => i !== index);
+      const finalParents = updated.length > 0 ? updated : [{ relation: "Father", name: "" }];
+      const validParents = finalParents.filter((p: any) => p.name?.trim());
+      const parentNames = validParents.map((p: any) => `${p.relation}: ${p.name.trim()}`).join(", ");
+      return {
+        ...prev,
+        parents: finalParents,
+        name_of_parent: finalParents[0]?.relation || "",
+        parent_name: parentNames || finalParents[0]?.name || "",
+      };
+    });
+  };
+
+  const calculateAge = (dob: any) => {
+    if (!dob) return 0;
+    const birthDayjs = dayjs(dob);
+    if (!birthDayjs.isValid()) return 0;
+    return dayjs().diff(birthDayjs, "year");
   };
 
   const handleClear = () => {
-    setFormData(initialFormState);
-    setPromoterName("");
-    setPromoterError("");
+    setFormData({
+      ...initialFormState,
+      refered_by: sponsorState.isLocked ? sponsorState.code : "",
+      refered_name: sponsorState.isLocked ? sponsorState.promoterName : "",
+    });
+    resetIfNotLocked();
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!agreeConsent) {
+      toast.error("Please accept the Terms & Conditions and Privacy Policy to register");
+      return;
+    }
 
     // --- Field Validation ---
     if (!formData.first_name?.trim()) {
@@ -383,6 +393,11 @@ const Register = () => {
 
   return (
     <>
+      <SEOHead
+        title="Register"
+        description="Register with Sangam Sathi to discover verified matrimonial matches within your community."
+        canonicalUrl="https://sangamsathi.com/register"
+      />
       <Navbar />
       {isPending && <LoadingComponent />}
       <Box
@@ -395,7 +410,7 @@ const Register = () => {
           display: "flex",
           justifyContent: "center",
           justifySelf: "center",
-          background: "linear-gradient(135deg, #faf5ff 0%, #f9f0ff 100%)",
+          background: "#F8FAFC", border: "1px solid rgba(11,25,44,0.08)",
           borderRadius: 3,
         }}
       >
@@ -419,7 +434,7 @@ const Register = () => {
               width: "100%",
               pb: 2,
               borderBottom: "2px solid",
-              borderColor: "rgba(94,4,118,0.15)",
+              borderColor: "rgba(11,25,44,0.12)",
             }}
           >
             <Box
@@ -455,7 +470,7 @@ const Register = () => {
                   borderRadius: 2,
                   fontWeight: 600,
                   fontSize: { xs: "14px", sm: "16px" },
-                  boxShadow: "0 4px 14px rgba(94,4,118,0.35)",
+                  boxShadow: "0 4px 14px rgba(11,25,44,0.25)",
                 }}
               >
                 <Box component="span" sx={{ opacity: 0.85, fontSize: "13px" }}>Plan:</Box>
@@ -484,8 +499,8 @@ const Register = () => {
                   px: 2,
                   borderRadius: 2,
                   fontWeight: 500,
-                  border: "1px solid rgba(94,4,118,0.2)",
-                  background: "rgba(94,4,118,0.04)",
+                  border: "1px solid rgba(11,25,44,0.12)",
+                  background: "rgba(11,25,44,0.02)",
                 }}
               >
                 Plan: <Box component="span" sx={{ color: "#0B192C", fontWeight: 600 }}>Free</Box>
@@ -507,8 +522,8 @@ const Register = () => {
                 background: "#fff",
                 borderRadius: 3,
                 p: { xs: 2, sm: 3 },
-                boxShadow: "0 2px 16px rgba(94,4,118,0.08)",
-                border: "1px solid rgba(94,4,118,0.08)",
+                boxShadow: "0 2px 16px rgba(11,25,44,0.08)",
+                border: "1px solid rgba(11,25,44,0.08)",
               }}
             >
               <Typography
@@ -527,7 +542,7 @@ const Register = () => {
                     content: '""',
                     flex: 1,
                     height: "1px",
-                    background: "rgba(94,4,118,0.15)",
+                    background: "rgba(11,25,44,0.12)",
                     ml: 1,
                   },
                 }}
@@ -583,17 +598,20 @@ const Register = () => {
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   label="Date of Birth"
+                  format="DD/MM/YYYY"
                   value={
                     formData.date_of_birth
                       ? dayjs(formData.date_of_birth)
                       : null
                   }
                   onChange={(newValue) => {
-                    const dob = newValue
-                      ? newValue.toISOString().split("T")[0]
-                      : "";
-                    const age = dob ? calculateAge(dob) : "";
-                    setFormData((prev) => ({
+                    if (!newValue || !newValue.isValid()) {
+                      setFormData((prev: any) => ({ ...prev, date_of_birth: "", age: "" }));
+                      return;
+                    }
+                    const dob = newValue.format("YYYY-MM-DD");
+                    const age = calculateAge(dob);
+                    setFormData((prev: any) => ({
                       ...prev,
                       date_of_birth: dob,
                       age: age.toString(),
@@ -604,6 +622,7 @@ const Register = () => {
                     textField: {
                       fullWidth: true,
                       required: true,
+                      helperText: "Format: DD/MM/YYYY",
                       sx: { mb: 3 },
                     },
                   }}
@@ -705,8 +724,8 @@ const Register = () => {
                 background: "#fff",
                 borderRadius: 3,
                 p: { xs: 2, sm: 3 },
-                boxShadow: "0 2px 16px rgba(94,4,118,0.08)",
-                border: "1px solid rgba(94,4,118,0.08)",
+                boxShadow: "0 2px 16px rgba(11,25,44,0.08)",
+                border: "1px solid rgba(11,25,44,0.08)",
               }}
             >
               <Typography
@@ -725,7 +744,7 @@ const Register = () => {
                     content: '""',
                     flex: 1,
                     height: "1px",
-                    background: "rgba(94,4,118,0.15)",
+                    background: "rgba(11,25,44,0.12)",
                     ml: 1,
                   },
                 }}
@@ -733,29 +752,83 @@ const Register = () => {
                 Family Details
               </Typography>
 
-              <FormControl fullWidth sx={{ mb: 3 }} required>
-                <InputLabel>Select Parents</InputLabel>
-                <Select
-                  label="Select Parents"
-                  name="name_of_parent"
-                  value={formData.name_of_parent}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Father">Father</MenuItem>
-                  <MenuItem value="Mother">Mother</MenuItem>
-                  <MenuItem value="Guardian">Guardian</MenuItem>
-                </Select>
-              </FormControl>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#334155" }}>
+                    Parents / Guardians Details
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddParent}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      borderColor: "#0F172A",
+                      color: "#0F172A",
+                      borderRadius: "4px",
+                      py: 0.4,
+                      px: 1.2,
+                      "&:hover": { borderColor: "#020617", backgroundColor: "rgba(15, 23, 42, 0.05)" },
+                    }}
+                  >
+                    Add Parent
+                  </Button>
+                </Box>
 
-              <TextField
-                fullWidth
-                label="Please enter name"
-                name="parent_name"
-                sx={{ mb: 3 }}
-                value={formData.parent_name}
-                onChange={handleChange}
-                required
-              />
+                {(formData.parents || [{ relation: "Father", name: "" }]).map((parentItem: any, pIdx: number) => (
+                  <Box
+                    key={`parent-field-${pIdx}`}
+                    sx={{
+                      display: "flex",
+                      gap: 1.5,
+                      alignItems: "center",
+                      mb: 1.5,
+                      p: 1.5,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "6px",
+                      backgroundColor: "#f8fafc",
+                    }}
+                  >
+                    <FormControl size="small" sx={{ width: { xs: "120px", sm: "140px" } }}>
+                      <InputLabel>Relation</InputLabel>
+                      <Select
+                        label="Relation"
+                        value={parentItem.relation || "Father"}
+                        onChange={(e) => handleParentChange(pIdx, "relation", e.target.value)}
+                      >
+                        <MenuItem value="Father">Father</MenuItem>
+                        <MenuItem value="Mother">Mother</MenuItem>
+                        <MenuItem value="Step-Father">Step-Father</MenuItem>
+                        <MenuItem value="Step-Mother">Step-Mother</MenuItem>
+                        <MenuItem value="Guardian">Guardian</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={`${parentItem.relation || "Parent"} Name`}
+                      placeholder="Enter full name"
+                      value={parentItem.name || ""}
+                      onChange={(e) => handleParentChange(pIdx, "name", e.target.value)}
+                    />
+
+                    {(formData.parents || []).length > 1 && (
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleRemoveParent(pIdx)}
+                        title="Remove"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                ))}
+              </Box>
 
               <TextField
                 fullWidth
@@ -838,7 +911,7 @@ const Register = () => {
                 content: '""',
                 flex: 1,
                 height: "1px",
-                background: "rgba(94,4,118,0.15)",
+                background: "rgba(11,25,44,0.12)",
                 ml: 1,
               },
             }}
@@ -941,22 +1014,28 @@ const Register = () => {
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
             <Box>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: '#333' }}>
-                Sponsor Code:
+                Sponsor Code: {sponsorState.isLocked && <span style={{ color: '#D4AF37', fontSize: '0.8rem', marginLeft: '6px' }}>(Locked)</span>}
               </Typography>
               <Box display="flex" gap={1}>
                 <TextField
                   fullWidth
                   name="refered_by"
-                  value={formData.refered_by || ""}
-                  onChange={handleChange}
+                  value={sponsorState.code}
+                  disabled={sponsorState.isLocked}
+                  onChange={(e) => setSponsorCode(e.target.value)}
                   placeholder="Promoter ID / Sponsor Code"
                   inputProps={{ maxLength: 8 }}
+                  InputProps={{
+                    endAdornment: sponsorState.isLocked ? (
+                      <LockIcon sx={{ fontSize: 18, color: '#64748B' }} />
+                    ) : null,
+                  }}
                 />
                 <Button
                   type="button"
                   variant="contained"
-                  onClick={handleVerifyPromoter}
-                  disabled={isValidatingPromoter || !formData.refered_by}
+                  onClick={handleManualVerify}
+                  disabled={isValidatingPromoter || sponsorState.isLocked || !sponsorState.code}
                   sx={{
                     bgcolor: "#0B192C",
                     color: "#fff",
@@ -970,9 +1049,9 @@ const Register = () => {
                   {isValidatingPromoter ? "..." : "Verify"}
                 </Button>
               </Box>
-              {promoterError && (
+              {sponsorState.error && (
                 <Typography variant="caption" sx={{ color: "#d32f2f", fontWeight: 600, display: "block", mt: 0.5 }}>
-                  ✖ {promoterError}
+                  ✖ {sponsorState.error}
                 </Typography>
               )}
             </Box>
@@ -984,25 +1063,51 @@ const Register = () => {
               <TextField
                 fullWidth
                 name="refered_name"
-                value={promoterName || ""}
+                value={sponsorState.promoterName || ""}
                 placeholder="Sponsor Name (Auto-filled on verify)"
                 InputProps={{
                   readOnly: true,
-                  startAdornment: promoterName ? (
+                  startAdornment: sponsorState.promoterName ? (
                     <span style={{ color: "#2e7d32", fontWeight: "bold", marginRight: "8px" }}>✔</span>
                   ) : null
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    bgcolor: promoterName ? "#edf7ed !important" : "#ffffff !important",
+                    bgcolor: sponsorState.promoterName ? "#edf7ed !important" : "#ffffff !important",
                     "& input": {
-                      color: promoterName ? "#1e4620 !important" : "#555 !important",
-                      fontWeight: promoterName ? 600 : 400
+                      color: sponsorState.promoterName ? "#1e4620 !important" : "#555 !important",
+                      fontWeight: sponsorState.promoterName ? 600 : 400
                     }
                   }
                 }}
               />
             </Box>
+          </Box>
+
+          {/* Form Consent Checkbox */}
+          <Box sx={{ width: "100%", mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={agreeConsent}
+                  onChange={(e) => setAgreeConsent(e.target.checked)}
+                  sx={{ color: "#0B192C", "&.Mui-checked": { color: "#0B192C" } }}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: "#334155", fontSize: "0.88rem" }}>
+                  I agree to the{" "}
+                  <Link to="/terms" style={{ color: "#0B192C", fontWeight: 600 }} target="_blank">
+                    Terms &amp; Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy-policy" style={{ color: "#0B192C", fontWeight: 600 }} target="_blank">
+                    Privacy Policy
+                  </Link>{" "}
+                  (compliant with DPDP Act 2023).
+                </Typography>
+              }
+            />
           </Box>
 
           <Box
@@ -1047,7 +1152,7 @@ const Register = () => {
                   : "linear-gradient(135deg, #0B192C 0%, #1A365D 100%)",
                 "&:hover": {
                   background: "linear-gradient(135deg, #1A365D 0%, #0B192C 100%)",
-                  boxShadow: "0 6px 20px rgba(94,4,118,0.4)",
+                  boxShadow: "0 6px 20px rgba(11,25,44,0.3)",
                   transform: "translateY(-1px)",
                 },
                 transition: "all 0.25s ease",

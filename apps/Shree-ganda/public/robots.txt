@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /PromotAdmin/
+
+Sitemap: https://shreegandha.com/sitemap.xml

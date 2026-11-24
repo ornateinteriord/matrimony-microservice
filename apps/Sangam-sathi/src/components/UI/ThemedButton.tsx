@@ -7,7 +7,7 @@ const ThemedButton = ({
   sx,
   style,
   ...rest
-}) => {
+}: any) => {
   return (
     <Button
       onClick={onClick}

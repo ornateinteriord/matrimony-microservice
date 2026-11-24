@@ -84,7 +84,7 @@ const AssistanceOnlineTransactionData = () => {
           sx={{ width: { xs: '100%',sm:"auto", md: 'auto' },mb:"20px" }}
           InputProps={{
             startAdornment: (
-              <InputAdornment>
+              <InputAdornment position="start">
                 <FaSearch />
               </InputAdornment>
             ),

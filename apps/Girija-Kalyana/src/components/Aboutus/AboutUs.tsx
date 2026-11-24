@@ -2,16 +2,22 @@ import card4 from '../../assets/card4.jpg';
 import './Aboutus.scss';
 import Navbar from "../navbar/Navbar";
 import Footer from "../footer/Footer";
+import SEOHead from "../common/SEOHead";
 
 const AboutUs = () => {
   return (
     <>
+      <SEOHead
+        title="About Us"
+        description="Learn about Girija Kalyana Matrimony, established to bring sacred traditions together with modern verified matchmaking technology."
+        canonicalUrl="https://girijakalyana.com/about"
+      />
       <Navbar/>
       <div className="about-us-container">
         <section className="about-us-intro">
           <div className="about-us-text">
             <h4 className="highlight-text">About Us</h4>
-            <h2 className="main-heading">GIRIJA KALYANA</h2>
+            <h1 className="main-heading">GIRIJA KALYANA</h1>
           <h3 className="headingh3">
   Established in March 26<sup>th</sup> 2012
 </h3>

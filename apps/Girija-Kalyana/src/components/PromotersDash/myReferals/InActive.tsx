@@ -1,11 +1,8 @@
-
+import React from 'react';
+import ReferralsTable from './ReferralsTable';
 
 function InActive() {
-  return (
-    <div>
-      InActive
-    </div>
-  )
+  return <ReferralsTable statusFilter="inActive" />;
 }
 
-export default InActive
+export default InActive;

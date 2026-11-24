@@ -132,10 +132,10 @@ const Members = () => {
                         textAlign: "left",
                         fontWeight: 700,
                         mb: 2,
-                        color: "#1a4f72",
+                        color: "#881337",
                       }}
                     >
-                      Girija ❤️ Kalyana
+                      Girija Kalyana
                     </Typography>
 
                     <Box

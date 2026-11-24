@@ -12,7 +12,20 @@ import {
 import { FaBriefcase, FaMapMarkerAlt } from "react-icons/fa";
 import { calculateAge, isSilverOrPremiumUser } from "../../utils/common";
 
-const UserCard = ({
+interface UserCardProps {
+  profile?: any;
+  connection?: any;
+  onViewMore?: (profile?: any) => void;
+  onCancelRequest?: (interestId?: any) => void;
+  onRemoveConnection?: (interestId?: any) => void;
+  interestId?: any;
+  showCancelButton?: boolean;
+  onResponse?: (regNo?: any, accepted?: boolean) => void;
+  showResponseButtons?: boolean;
+  showRemoveButton?: boolean;
+}
+
+const UserCard: React.FC<UserCardProps> = ({
   profile,
   connection = null,
   onViewMore = () => { },
@@ -32,20 +45,20 @@ const UserCard = ({
       sx={{
         width: "100%",
         maxWidth: { xs: 280, sm: 280, md: 300, lg: 320 },
-        height: 470,
-        borderRadius: "24px",
-        boxShadow: "0 10px 30px rgba(11,25,44,0.1)",
+        height: 460,
+        borderRadius: "6px",
+        boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
         overflow: "hidden",
-        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        transition: "all 0.2s ease",
         "&:hover": {
-          transform: "translateY(-8px)",
-          boxShadow: "0 20px 40px rgba(11,25,44,0.15)",
+          transform: "translateY(-3px)",
+          boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
         },
         display: "flex",
         flexDirection: "column",
         position: "relative",
-        background: "#fff",
-        border: "1px solid rgba(11,25,44,0.05)",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
       }}
     >
       {/* Top 60% Full Bleed Image */}
@@ -53,7 +66,7 @@ const UserCard = ({
         width: '100%',
         height: '55%',
         position: 'relative',
-        background: 'linear-gradient(135deg, #F1F5F9, #E2E8F0)',
+        background: '#F1F5F9',
         overflow: 'hidden'
       }}>
         {profile?.image ? (
@@ -71,12 +84,23 @@ const UserCard = ({
           </Box>
         )}
 
-        {/* Dark Gradient Overlay for text */}
+        {/* Solid Overlay for text */}
         <Box sx={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%',
-          background: 'linear-gradient(to top, rgba(11,25,44,0.9) 0%, rgba(11,25,44,0) 100%)',
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'rgba(15, 23, 42, 0.88)',
+          p: 1.5,
           zIndex: 1
-        }} />
+        }}>
+          <Typography sx={{ fontWeight: 800, fontSize: "1.15rem", color: "#ffffff", lineHeight: 1.2, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            {profile?.first_name} {profile?.last_name}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <Typography sx={{ fontSize: "0.75rem", color: "#D97706", fontWeight: 700, background: "rgba(217,119,6,0.18)", px: 1, py: 0.2, borderRadius: "4px" }}>
+              {age || "N/A"} yrs
+            </Typography>
+            <Typography sx={{ fontSize: "0.75rem", color: "#cbd5e1" }}>• {profile?.religion || "Hindu"} {profile?.caste ? `• ${profile.caste}` : ""}</Typography>
+          </Box>
+        </Box>
 
         {/* Badges Overlay */}
         <Box sx={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', justifyContent: 'space-between', zIndex: 2 }}>
@@ -86,38 +110,26 @@ const UserCard = ({
               size="small"
               sx={{
                 fontWeight: 700, fontSize: "0.6rem", letterSpacing: "0.5px",
-                background: "linear-gradient(135deg, #D4AF37, #FFB200)",
-                color: "#1E293B", border: "none",
-                boxShadow: "0 2px 8px rgba(212,175,55,0.4)", height: 22,
+                background: "#D97706",
+                color: "#ffffff", border: "none",
+                borderRadius: "4px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.2)", height: 22,
               }}
             />
           ) : <Box />}
 
           {connection && (
             <Box sx={{
-              backgroundColor: connection?.direction === "sent" ? "rgba(255,255,255,0.9)" : "#D4AF37",
-              color: connection?.direction === "sent" ? "#0F172A" : "#1E293B",
-              borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "12px", fontWeight: "bold", boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              backgroundColor: connection?.direction === "sent" ? "rgba(255,255,255,0.9)" : "#D97706",
+              color: connection?.direction === "sent" ? "#0F172A" : "#ffffff",
+              borderRadius: "4px", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "12px", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
             }} title={connection?.direction === "sent" ? "Request Sent" : "Request Received"}>
               {connection?.direction === "sent" ? "↑" : "↓"}
             </Box>
           )}
         </Box>
-
-        {/* Name & Age Overlay */}
-        <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16, zIndex: 2 }}>
-          <Typography sx={{ fontWeight: 800, fontSize: "1.3rem", color: "#fff", lineHeight: 1.2, textShadow: '0 2px 4px rgba(0,0,0,0.5)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            {profile?.first_name} {profile?.last_name}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <Typography sx={{ fontSize: "0.8rem", color: "#D4AF37", fontWeight: 700, background: "rgba(212,175,55,0.15)", px: 1.5, py: 0.25, borderRadius: "20px", backdropFilter: 'blur(4px)' }}>
-              {age || "N/A"} yrs
-            </Typography>
-            <Typography sx={{ fontSize: "0.8rem", color: "#cbd5e1" }}>• {profile?.religion || "N/A"}</Typography>
-          </Box>
-        </Box>
-      </Box >
+      </Box>
 
       <CardContent
         sx={{
@@ -160,7 +172,7 @@ const UserCard = ({
             display: "flex",
             justifyContent: "space-around",
             background: "#F8FAFC",
-            borderRadius: "12px",
+            borderRadius: "8px",
             border: "1px solid #E2E8F0",
             py: 1,
             px: 0.5,
@@ -194,7 +206,7 @@ const UserCard = ({
                   borderColor: "#E2E8F0",
                   fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: "50px",
+                  borderRadius: "4px",
                   fontSize: "0.85rem",
                   flex: 1,
                   "&:hover": {
@@ -211,17 +223,15 @@ const UserCard = ({
                 fullWidth
                 variant="contained"
                 sx={{
-                  background: "linear-gradient(135deg, #0B192C, #1A365D)",
+                  backgroundColor: "#0F172A",
                   color: "#fff",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   textTransform: "none",
-                  borderRadius: "50px",
+                  borderRadius: "4px",
                   fontSize: "0.85rem",
                   flex: 1,
-                  boxShadow: "0 4px 12px rgba(11,25,44,0.2)",
                   "&:hover": {
-                    background: "linear-gradient(135deg, #1A365D, #0B192C)",
-                    boxShadow: "0 6px 16px rgba(11,25,44,0.3)",
+                    backgroundColor: "#1E293B",
                   },
                 }}
                 onClick={(e) => { e.stopPropagation(); onResponse(profile?.registration_no, true) }}
@@ -237,18 +247,17 @@ const UserCard = ({
             variant="contained"
             onClick={(e) => { e.stopPropagation(); onViewMore(profile) }}
             sx={{
-              background: showResponseButtons ? "#F1F5F9" : "linear-gradient(135deg, #0B192C 0%, #1A365D 100%)",
+              backgroundColor: showResponseButtons ? "#F1F5F9" : "#0F172A",
               color: showResponseButtons ? "#0F172A" : "#fff",
               "&:hover": {
-                background: showResponseButtons ? "#E2E8F0" : "linear-gradient(135deg, #1A365D 0%, #0B192C 100%)",
-                boxShadow: showResponseButtons ? "none" : "0 8px 20px rgba(11,25,44,0.3)",
+                backgroundColor: showResponseButtons ? "#E2E8F0" : "#1E293B",
               },
-              fontWeight: 700,
-              borderRadius: "50px",
+              fontWeight: 600,
+              borderRadius: "4px",
               py: 1,
               textTransform: "none",
               fontSize: "0.9rem",
-              boxShadow: showResponseButtons ? "none" : "0 4px 12px rgba(11,25,44,0.2)",
+              boxShadow: showResponseButtons ? "none" : "0 2px 4px rgba(15,23,42,0.12)",
             }}
           >
             View Profile
@@ -261,7 +270,7 @@ const UserCard = ({
               onClick={() => onRemoveConnection(interestId)}
               sx={{
                 flex: 1,
-                borderRadius: "10px",
+                borderRadius: "4px",
                 py: 0.9,
                 textTransform: "none",
                 fontWeight: 600,
@@ -285,7 +294,7 @@ const UserCard = ({
               onClick={(e) => { e.stopPropagation(); onCancelRequest(interestId) }}
               sx={{
                 flex: 1,
-                borderRadius: "50px",
+                borderRadius: "4px",
                 py: 0.9,
                 textTransform: "none",
                 fontWeight: 600,

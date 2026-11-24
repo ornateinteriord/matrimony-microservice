@@ -6,8 +6,8 @@ import axios from "axios";
 
 // Get all user profiles
 export const useGetAllUsersProfiles = () => {
-  return useMutation({
-    mutationFn: async ({ page, pageSize }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize }: any) => {
       const response = await post("/api/user/all-users-profiles", {
         page,
         pageSize,
@@ -23,9 +23,9 @@ export const useGetAllUsersProfiles = () => {
 };
 
 export const useDeleteImage = () => {
-  return useMutation({
-    mutationFn: async ({ regNo }) => {
-      const response = await del(`/api/user/delete-image/${regNo}`,);
+  return useMutation<any, any, any>({
+    mutationFn: async ({ regNo }: any) => {
+      const response = await del(`/api/user/delete-image/${regNo}`);
       if (response?.success) {
         return response;
       } else {
@@ -35,8 +35,8 @@ export const useDeleteImage = () => {
   });
 };
 export const useGetMyMatches = () => {
-  return useMutation({
-    mutationFn: async ({ page, pageSize }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize }: any) => {
       const response = await post("/api/user/my-matches", {
         page,
         pageSize,
@@ -50,9 +50,9 @@ export const useGetMyMatches = () => {
     },
   });
 };
-export const useGetSearchProfiles = (input, isAdmin = false) => {
+export const useGetSearchProfiles = (input?: any, isAdmin = false) => {
   return useQuery({
-    queryKey: ["searchProfiles",input],
+    queryKey: ["searchProfiles", input],
     queryFn: async () => {
       const response = await get(isAdmin ? `/api/admin/search?input=${input}` : `/api/user/search?input=${input}`);
       if (response?.success) {
@@ -63,12 +63,12 @@ export const useGetSearchProfiles = (input, isAdmin = false) => {
         );
       }
     },
-    enabled:false,
+    enabled: false,
   });
 };
 
 // Get single member details
-export const useGetMemberDetails = (reg_No) => {
+export const useGetMemberDetails = (reg_No?: any) => {
   return useQuery({
     queryKey: ["userDetails", reg_No],
     queryFn: async () => {
@@ -88,18 +88,18 @@ export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   const reg_No = TokenService.getRegistrationNo();
 
-  return useMutation({
-    mutationFn: async (data) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (data: any) => {
       return await put(`/api/user/update-profile/${reg_No}`, data);
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       if (response?.success) {
-        toast.success(response.message)
+        toast.success(response.message);
         queryClient.invalidateQueries({ queryKey: ["userDetails", reg_No] });
       }
     },
-    onError: (err) => {
-      const errorMessage = err.response?.data?.message;
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Update failed";
       toast.error(errorMessage);
     },
   });
@@ -109,12 +109,12 @@ export const useUpdateProfile = () => {
 export const useExpressInterest = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({
       sender,
       recipient,
       message,
-    }) => {
+    }: any) => {
       const { data } = await post("/api/user/interest", {
         sender,
         recipient,
@@ -124,10 +124,10 @@ export const useExpressInterest = () => {
     },
     onSuccess: () => {
       toast.success('Interest expressed successfully!');
-      queryClient.invalidateQueries(['interestStatus','get-interes']);
+      queryClient.invalidateQueries({ queryKey: ['interestStatus', 'get-interes'] });
     },
-    onError: (error) => {
-      const errorMessage = error?.response?.data?.message || error.message;
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || error?.message || "";
 
       if (errorMessage.includes('already expressed') || errorMessage.includes('Interest already exists')) {
         toast.info('You have already expressed interest to this user.');
@@ -138,10 +138,10 @@ export const useExpressInterest = () => {
   });
 };
 
-export const useGetReceivedInterests = (recipient) => {
-    const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ page, pageSize }) => {
+export const useGetReceivedInterests = (recipient?: any) => {
+  const queryClient = useQueryClient();
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize }: any) => {
       const response = await post(`/api/user/interest/received/${recipient}`, {
         page,
         pageSize,
@@ -153,15 +153,15 @@ export const useGetReceivedInterests = (recipient) => {
         throw new Error(response?.message || "Failed to fetch users");
       }
     },
-    onSuccess: ()=>{
-      queryClient.invalidateQueries(['interestCounts']);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['interestCounts'] });
     }
   });
 };
-export const useGetSentInterests = (sender) => {
-    const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ page, pageSize }) => {
+export const useGetSentInterests = (sender?: any) => {
+  const queryClient = useQueryClient();
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize }: any) => {
       const response = await post(`/api/user/interest/sent/${sender}`, {
         page,
         pageSize,
@@ -174,7 +174,7 @@ export const useGetSentInterests = (sender) => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['interestCounts']);
+      queryClient.invalidateQueries({ queryKey: ['interestCounts'] });
     }
   });
 };
@@ -182,12 +182,12 @@ export const useGetSentInterests = (sender) => {
 export const useUpdateInterestStatus = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({
       sender,
       recipient,
       status,
-    }) => {
+    }: any) => {
       const { data } = await put(`/api/user/interest/${sender}`, {
         recipient,
         status,
@@ -196,19 +196,19 @@ export const useUpdateInterestStatus = () => {
     },
     onSuccess: () => {
       toast.success('Interest updated successfully!');
-      queryClient.invalidateQueries(['interestStatus']);
-      queryClient.invalidateQueries(['interests']);
+      queryClient.invalidateQueries({ queryKey: ['interestStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['interests'] });
     },
-    onError: (error) => {
+    onError: (_error: any) => {
       toast.error('Failed to update interest. Please try again.');
     }
   });
 };
 
-export const useGetAcceptedInterests = (recipient) => {
+export const useGetAcceptedInterests = (recipient?: any) => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ page, pageSize }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize }: any) => {
       const response = await post(`/api/user/interest/accepted/${recipient}`, {
         page,
         pageSize,
@@ -220,15 +220,15 @@ export const useGetAcceptedInterests = (recipient) => {
         throw new Error(response?.message || "Failed to fetch users");
       }
     },
-    onSuccess : () => {
-      queryClient.invalidateQueries(['interestCounts']);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['interestCounts'] });
     }
   });
 };
 
 export const useRemoveAcceptedConnection = () => {
-  return useMutation({
-    mutationFn: ({ sender, recipient }) => {
+  return useMutation<any, any, any>({
+    mutationFn: ({ sender, recipient }: any) => {
       return del("/api/user/remove-connection", {
         data: {
           sender,
@@ -237,18 +237,18 @@ export const useRemoveAcceptedConnection = () => {
         },
       });
     },
-    onSuccess: (data) => {
-      toast.success(data.message)
+    onSuccess: (data: any) => {
+      toast.success(data?.message || "Connection removed");
     },
-    onError: (_error) => {
+    onError: (_error: any) => {
       toast.error("Failed to Remove Connection");
     },
   });
 };
 
 export const useCancelSentInterest = () => {
-  return useMutation({
-    mutationFn: ({ sender, recipient }) => {
+  return useMutation<any, any, any>({
+    mutationFn: ({ sender, recipient }: any) => {
       return del("/api/user/cancel", {
         data: {
           sender,
@@ -256,26 +256,26 @@ export const useCancelSentInterest = () => {
         },
       });
     },
-    onSuccess: (data) => {
-      toast.success(data.message)
+    onSuccess: (data: any) => {
+      toast.success(data?.message || "Interest cancelled");
     },
-    onError: (error) => {
+    onError: (_error: any) => {
       toast.error("Failed to cancel interest");
     },
   });
 };
 
-export const useImageKitUpload = (username) => {
-  return useMutation({
-    mutationFn: async (file) => {
+export const useImageKitUpload = (username?: any) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (file: any) => {
       // 1. Get signature from backend
-      const authRes = await get("/image-kit-auth"); 
+      const authRes: any = await get("/image-kit-auth"); 
       const { signature, expire, token } = authRes;
 
       // 2. Prepare form data
       const data = new FormData();
       data.append("file", file);
-       data.append("fileName", username); 
+      data.append("fileName", username || "photo"); 
       data.append("publicKey", import.meta.env.VITE_IMAGEKIT_PUBLIC_KEY);
       data.append("signature", signature);
       data.append("expire", expire);
@@ -293,7 +293,7 @@ export const useImageKitUpload = (username) => {
   });
 };
 
-const changePasswordAPI = async ({ registrationNo, oldPassword, newPassword }) => {
+const changePasswordAPI = async ({ registrationNo, oldPassword, newPassword }: any) => {
   return await post(`/api/user/change-password/${registrationNo}`, {
     oldPassword,
     newPassword,
@@ -301,24 +301,25 @@ const changePasswordAPI = async ({ registrationNo, oldPassword, newPassword }) =
 };
 
 export const useChangePassword = () => {
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: changePasswordAPI,
   });
 };
 
-export const useGetInterestCounts = (reg_No) => {
+export const useGetInterestCounts = (reg_No?: any) => {
   return useSuspenseQuery({
-    queryKey: ["sentInterests","acceptedInterests","receivedInterests",'interestCounts', reg_No],
+    queryKey: ["sentInterests", "acceptedInterests", "receivedInterests", 'interestCounts', reg_No],
     queryFn: async () => {
       const data = await get(`/api/user/interest-counts/${reg_No}`);
       return data;
     },
   });
 };
+
 export const useGetConnections = () => {
-  return useMutation({
-    mutationFn: async ({ page, pageSize, userId }) => {
-       const response = await get(`/api/user/connections/${userId}`, {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ page, pageSize, userId }: any) => {
+      const response = await get(`/api/user/connections/${userId}`, {
         page,
         pageSize,
         userId

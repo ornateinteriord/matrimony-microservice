@@ -18,9 +18,9 @@ import rawJsonData from "../eduction/jsondata/data.json";
 import { LoadingComponent } from "../../../../App";
 import CustomAutocomplete from "../../../Autocomplete/CustomAutocomplete";
 
-const jsonData = rawJsonData.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+const jsonData: any = (rawJsonData as any[]).reduce((acc: any, curr: any) => ({ ...acc, ...curr }), {});
 
-const Education = () => {
+const Education = ({ render }: any) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const registerNo = TokenService.getRegistrationNo();

@@ -69,3 +69,17 @@ export const usePromoterRegister = () => {
     },
   });
 };
+
+export const useActivateFreeUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (registration_no) => {
+      const response = await put(`/api/promoter/activate-user/${registration_no}`, {});
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["promoterDashboard"] });
+    },
+  });
+};

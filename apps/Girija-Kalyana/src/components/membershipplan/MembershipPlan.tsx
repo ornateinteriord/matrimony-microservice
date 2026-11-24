@@ -133,20 +133,17 @@ const MembershipPlans = () => {
       }}>
         <Box width={'100%'} padding={'20px'}>
           <Typography
-            component="h4"
+            component="h1"
             sx={{
               fontSize: isMobile ? "28px" : "40px",
               textAlign: 'left',
               mt: 1,
               mb: isMobile ? 1 : 3,
-              fontWeight: 500,
-              color: theme.palette.primary.main,
-              background: '#1a4f72',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              fontWeight: 700,
+              color: '#881337',
             }}
           >
-            Find Your Perfect Match
+            Find Your Perfect Match - Membership Plans
           </Typography>
           <Divider sx={{
             height: '1px', my: 1
@@ -437,9 +434,10 @@ const MembershipPlans = () => {
             }
             sx={{
               minWidth: 120,
-              background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
+              borderRadius: "8px",
+              backgroundColor: "#881337",
               "&:hover": {
-                background: "linear-gradient(45deg, #1976D2 30%, #0288D1 90%)",
+                backgroundColor: "#70102e",
               },
             }}
           >

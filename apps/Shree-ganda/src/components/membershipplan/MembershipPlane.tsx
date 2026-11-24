@@ -61,10 +61,7 @@ const MembershipPlans = () => {
               textAlign: 'center',
               mb: 0,
               fontWeight: 700,
-              color: '#7c2d12',
-              background: 'linear-gradient(90deg, #3f51b5, #9c27b0)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              color: '#8B1E1E',
             }}
           >
             Find Your Perfect Match

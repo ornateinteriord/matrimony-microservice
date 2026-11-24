@@ -165,13 +165,36 @@ const getPromoterUserStats = async (req, res) => {
           query.caste = casteFilter;
         }
 
-        // Find all users referred by this promoter (case-insensitive)
-        const users = await ProfileModel.find(query, { type_of_user: 1 });
+        // Find all users referred by this promoter from UserModel (primary user_tbl) and ProfileModel
+        const [usersDb, profileUsers] = await Promise.all([
+          UserModel.find(query, { type_of_user: 1, user_role: 1, ref_no: 1, registration_no: 1 }).lean(),
+          ProfileModel.find(query, { type_of_user: 1, user_role: 1, registration_no: 1, ref_no: 1 }).lean(),
+        ]);
+
+        const seenMap = new Map();
+        for (const u of usersDb) {
+          const key = (u.ref_no || u.registration_no || '').trim().toUpperCase();
+          if (key) seenMap.set(key, u);
+        }
+        for (const p of profileUsers) {
+          const key = (p.registration_no || p.ref_no || '').trim().toUpperCase();
+          if (key && !seenMap.has(key)) seenMap.set(key, p);
+        }
+        const users = Array.from(seenMap.values());
 
         // Count types
-        const freeCount = users.filter(u => u.type_of_user === "FreeUser").length;
-        const silverCount = users.filter(u => u.type_of_user === "SilverUser").length;
-        const premiumCount = users.filter(u => u.type_of_user === "PremiumUser").length;
+        const freeCount = users.filter(u => {
+          const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+          return r === "freeuser" || r === "free" || (!r.includes("silver") && !r.includes("premium"));
+        }).length;
+        const silverCount = users.filter(u => {
+          const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+          return r === "silveruser" || r === "silver";
+        }).length;
+        const premiumCount = users.filter(u => {
+          const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+          return r === "premiumuser" || r === "premium";
+        }).length;
         const totalCount = users.length;
 
         return {
@@ -215,43 +238,67 @@ const getUsersByPromoter = async (req, res) => {
     }
 
     const matchObj = { refered_by: { $regex: new RegExp(`^${resolvedId}$`, "i") } };
-    const casteFilter = getCasteFilter(req);
-    if (casteFilter) {
-      matchObj.caste = casteFilter;
+
+    // Fetch from UserModel (user_tbl - primary source of truth) and ProfileModel
+    const [userTblUsers, profileUsers] = await Promise.all([
+      UserModel.find(matchObj).lean(),
+      ProfileModel.find(matchObj).lean(),
+    ]);
+
+    const userMap = new Map();
+
+    // First populate from ProfileModel
+    for (const p of profileUsers) {
+      const reg = (p.registration_no || p.ref_no || '').trim().toUpperCase();
+      if (!reg) continue;
+      userMap.set(reg, {
+        ...p,
+        registration_no: reg,
+        ref_no: reg,
+        contactinfo: p.mobile_no || p.contactinfo || '',
+        user_role: p.user_role || p.type_of_user || 'FreeUser',
+        type_of_user: p.type_of_user || p.user_role || 'FreeUser',
+        status: p.status || 'Pending',
+      });
     }
 
-    // Aggregation pipeline
-    const users = await ProfileModel.aggregate([
-      {
-        $match: matchObj
-      },
-      {
-        // Add custom order for type_of_user
-        $addFields: {
-          userTypeOrder: {
-            $switch: {
-              branches: [
-                { case: { $eq: ["$type_of_user", "PremiumUser"] }, then: 1 },
-                { case: { $eq: ["$type_of_user", "SilverUser"] }, then: 2 },
-                { case: { $eq: ["$type_of_user", "FreeUser"] }, then: 3 }
-              ],
-              default: 4
-            }
-          }
-        }
-      },
-      {
-        $sort: {
-          _id: -1, // recent first
-          registration_date: -1
-        }
-      },
-      {
-        $project: {
-          userTypeOrder: 0 // hide temp field
-        }
-      }
-    ]);
+    // Overlay / prioritize UserModel (user_tbl)
+    for (const u of userTblUsers) {
+      const reg = (u.ref_no || u.registration_no || '').trim().toUpperCase();
+      if (!reg) continue;
+      const existing = userMap.get(reg) || {};
+      userMap.set(reg, {
+        ...existing,
+        ...u,
+        registration_no: reg,
+        ref_no: reg,
+        contactinfo: u.mobile_no || existing.mobile_no || existing.contactinfo || '',
+        user_role: u.user_role || existing.user_role || u.type_of_user || 'FreeUser',
+        type_of_user: u.type_of_user || u.user_role || existing.type_of_user || 'FreeUser',
+        status: u.status || existing.status || 'Pending',
+        image: u.image || existing.image || '',
+        first_name: u.first_name || existing.first_name || '',
+        last_name: u.last_name || existing.last_name || '',
+        caste: u.caste || existing.caste || '',
+        city: u.city || existing.city || '',
+      });
+    }
+
+    const roleOrder = (r) => {
+      const s = (r || '').toLowerCase();
+      if (s.includes('premium')) return 1;
+      if (s.includes('silver')) return 2;
+      return 3;
+    };
+
+    const users = Array.from(userMap.values()).sort((a, b) => {
+      const orderA = roleOrder(a.user_role || a.type_of_user);
+      const orderB = roleOrder(b.user_role || b.type_of_user);
+      if (orderA !== orderB) return orderA - orderB;
+      const dateA = new Date(a.createdAt || a.registration_date || 0).getTime();
+      const dateB = new Date(b.createdAt || b.registration_date || 0).getTime();
+      return dateB - dateA;
+    });
 
     res.status(200).json({
       success: true,
@@ -464,124 +511,34 @@ const getPromoterUserImageVerification = async (req, res) => {
     }
 
     const { page, pageSize } = getPaginationParams(req);
-    
-    // First, find all users referred by this promoter to limit the scope
     const casteFilter = getCasteFilter(req);
-    const matchObj = { refered_by: { $regex: new RegExp(`^${promoter_id}$`, "i") } };
+    const matchFilter = {
+      refered_by: { $regex: new RegExp(`^${promoter_id}$`, "i") },
+      image_verification: { $in: ["pending", "Pending"] },
+    };
     if (casteFilter) {
-      matchObj.caste = casteFilter;
-    }
-    
-    // Fetch matching registration numbers
-    const profiles = await ProfileModel.find(matchObj, { registration_no: 1 });
-    const userRegNos = profiles.map(p => p.registration_no);
-
-    if (userRegNos.length === 0) {
-      return res.status(200).json({
-        success: true,
-        content: [],
-        currentPage: page,
-        pageSize,
-        totalRecords: 0
-      });
+      matchFilter.caste = casteFilter;
     }
 
-    const [{ metadata, data }] = await UserModel.aggregate([
-      {
-        $match: {
-          ref_no: { $in: userRegNos }
-        }
-      },
-      {
-        $facet: {
-          metadata: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            { $count: "totalRecords" }
-          ],
-          data: [
-            {
-              $lookup: {
-                from: "registration_tbl",
-                localField: "ref_no",
-                foreignField: "registration_no",
-                as: "profileData"
-              }
-            },
-            { $unwind: "$profileData" },
-            {
-              $match: {
-                "profileData.image_verification": "pending"
-              }
-            },
-            {
-              $addFields: {
-                registration_date_parsed: {
-                  $dateFromString: {
-                    dateString: "$profileData.registration_date",
-                    format: "%m/%d/%Y",
-                    onError: new Date(0),
-                    onNull: new Date(0)
-                  }
-                }
-              }
-            },
-            {
-              $replaceRoot: {
-                newRoot: {
-                  $mergeObjects: [
-                    "$$ROOT",
-                    "$profileData",
-                    {
-                      user_role: "$user_role",
-                      status: "$status",
-                      ref_no: "$ref_no"
-                    }
-                  ]
-                }
-              }
-            },
-            { $sort: { registration_date_parsed: -1, _id: -1 } },
-            {
-              $project: {
-                _id: 0,
-                ref_no: 1,
-                registration_no: 1,
-                first_name: 1,
-                last_name: 1,
-                email_id: 1,
-                gender: 1,
-                user_role: 1,
-                image: 1,
-                image_verification: 1,
-                registration_date: 1
-              }
-            },
-            { $skip: page * pageSize },
-            { $limit: pageSize }
-          ]
-        }
-      }
-    ]).exec();
+    const totalRecords = await UserModel.countDocuments(matchFilter);
+    const users = await UserModel.find(matchFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(page * pageSize)
+      .limit(pageSize)
+      .lean();
+
+    const content = users.map((u) => ({
+      ...u,
+      registration_no: u.ref_no || u.registration_no,
+      ref_no: u.ref_no || u.registration_no,
+    }));
 
     return res.status(200).json({
       success: true,
-      content: data,
+      content,
       currentPage: page,
       pageSize,
-      totalRecords: metadata?.[0]?.totalRecords || 0
+      totalRecords,
     });
   } catch (error) {
     console.error("getPromoterUserImageVerification error:", error);
@@ -649,31 +606,69 @@ const getPromoterDashboardData = async (req, res) => {
 
     const resolvedPromoterId = promoter.promoter_id;
 
-    // 2. Fetch referred users
-    const casteFilter = getCasteFilter(req);
+    // 2. Fetch referred users from UserModel (user_tbl) and ProfileModel
     const matchObj = { refered_by: { $regex: new RegExp(`^${resolvedPromoterId}$`, "i") } };
-    if (casteFilter) {
-      matchObj.caste = casteFilter;
-    }
 
-    const users = await ProfileModel.find(matchObj, {
-      registration_no: 1,
-      first_name: 1,
-      last_name: 1,
-      type_of_user: 1,
-      status: 1,
-      created_at: 1,
-      registration_date: 1,
-    }).sort({ _id: -1 });
+    const [userTblList, profileList] = await Promise.all([
+      UserModel.find(matchObj, {
+        ref_no: 1,
+        registration_no: 1,
+        first_name: 1,
+        last_name: 1,
+        type_of_user: 1,
+        user_role: 1,
+        status: 1,
+        createdAt: 1,
+        registration_date: 1,
+      }).lean(),
+      ProfileModel.find(matchObj, {
+        registration_no: 1,
+        ref_no: 1,
+        first_name: 1,
+        last_name: 1,
+        type_of_user: 1,
+        user_role: 1,
+        status: 1,
+        created_at: 1,
+        registration_date: 1,
+      }).lean(),
+    ]);
+
+    const statMap = new Map();
+    for (const p of profileList) {
+      const reg = (p.registration_no || p.ref_no || '').trim().toUpperCase();
+      if (reg) statMap.set(reg, p);
+    }
+    for (const u of userTblList) {
+      const reg = (u.ref_no || u.registration_no || '').trim().toUpperCase();
+      if (reg) statMap.set(reg, { ...(statMap.get(reg) || {}), ...u });
+    }
+    const users = Array.from(statMap.values());
 
     const totalUsers = users.length;
-    const freeUsers = users.filter((u) => u.type_of_user === "FreeUser").length;
-    const silverUsers = users.filter((u) => u.type_of_user === "SilverUser").length;
-    const premiumUsers = users.filter((u) => u.type_of_user === "PremiumUser").length;
-    const activeUsers = users.filter((u) => u.status === "active").length;
-    const pendingUsers = users.filter((u) => u.status === "Pending" || u.status === "pending" || u.type_of_user === "FreeUser").length;
-    const expiredUsers = users.filter((u) => u.status === "Expired" || u.status === "expired").length;
-    const inactiveUsers = users.filter((u) => u.status === "inactive" || u.status === "inActive").length;
+    const isSilv = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "silveruser" || r === "silver";
+    };
+    const isPrem = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "premiumuser" || r === "premium";
+    };
+    const isFree = (u) => {
+      const r = (u.user_role || u.type_of_user || "").toLowerCase().trim();
+      return r === "freeuser" || r === "free" || (!isSilv(u) && !isPrem(u));
+    };
+
+    const freeUsers = users.filter(isFree).length;
+    const silverUsers = users.filter(isSilv).length;
+    const premiumUsers = users.filter(isPrem).length;
+    const activeUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "active").length;
+    const pendingUsers = users.filter((u) => {
+      const s = (u.status || "").toLowerCase().trim();
+      return s === "pending" || s === "approval pending" || s === "approval_pending";
+    }).length;
+    const expiredUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "expired").length;
+    const inactiveUsers = users.filter((u) => (u.status || "").toLowerCase().trim() === "inactive").length;
 
     // 3. Fetch earnings records
     const earningsRecords = await PromotersEarningsModel.find({
@@ -802,6 +797,104 @@ const updatePromoterProfile = async (req, res) => {
   }
 };
 
+const activateFreeUserByPromoter = async (req, res) => {
+  try {
+    const { registration_no } = req.params;
+    const project = (req.headers['x-project'] || req.headers['x-project-name'] || '').toLowerCase().replace(/[-_\s]/g, '');
+
+    // Allow in sangamsathi and girijakalyana only
+    if (project && !project.includes('sangam') && !project.includes('girija')) {
+      return res.status(403).json({
+        success: false,
+        message: 'Promoter activation of users is only supported for Sangam-Sathi and Girija-Kalyana',
+      });
+    }
+
+    if (!registration_no) {
+      return res.status(400).json({ success: false, message: 'Registration number is required' });
+    }
+
+    const profile = await ProfileModel.findOne({ registration_no });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'User profile not found' });
+    }
+
+    // Verify promoter ownership
+    const promoterId = req.user?.promoter_id || req.user?.username;
+    if (promoterId && profile.refered_by) {
+      const isOwner = profile.refered_by.trim().toLowerCase() === promoterId.trim().toLowerCase();
+      if (!isOwner) {
+        const promoterDoc = await PromotersModel.findOne({
+          $or: [
+            { username: promoterId },
+            { promoter_id: promoterId }
+          ]
+        });
+        const matched = promoterDoc && (
+          (profile.refered_by || '').toLowerCase() === (promoterDoc.promoter_id || '').toLowerCase() ||
+          (profile.refered_by || '').toLowerCase() === (promoterDoc.username || '').toLowerCase()
+        );
+        if (!matched) {
+          return res.status(403).json({
+            success: false,
+            message: 'You can only activate users who registered using your referral code',
+          });
+        }
+      }
+    }
+
+    // Only allow for FreeUser
+    const userType = profile.type_of_user || '';
+    if (userType !== 'FreeUser' && userType.toLowerCase() !== 'free') {
+      return res.status(400).json({
+        success: false,
+        message: 'Promoters are only permitted to activate Free Users. Paid membership accounts (Silver/Premium) require Admin verification.',
+      });
+    }
+
+    if ((profile.status || '').toLowerCase().trim() === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: 'User is already active',
+      });
+    }
+
+    // Activate the profile
+    const updatedProfile = await ProfileModel.findOneAndUpdate(
+      { registration_no },
+      { $set: { status: 'active' } },
+      { new: true }
+    );
+
+    await UserModel.findOneAndUpdate(
+      { ref_no: registration_no },
+      { $set: { status: 'active' } }
+    );
+
+    // Send active email notification
+    try {
+      const { getActiveMessage } = require('../../utils/EmailMessages');
+      const { sendMail } = require('../../utils/EmailService');
+      const projectName = req.projectName || process.env.PROJECT_NAME || 'Girija-Kalyana';
+      const { activatedSubject, activatedMessage } = getActiveMessage(updatedProfile, projectName);
+      if (activatedSubject && activatedMessage && updatedProfile.email_id) {
+        await sendMail(updatedProfile.email_id, activatedSubject, activatedMessage, projectName);
+      }
+    } catch (emailErr) {
+      console.error('Error sending activation email:', emailErr);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `User ${updatedProfile.first_name || ''} (${registration_no}) has been activated successfully!`,
+      user: updatedProfile,
+    });
+  } catch (error) {
+    console.error('activateFreeUserByPromoter error:', error);
+    return res.status(500).json({ success: false, message: 'Server error while activating user', error: error.message });
+  }
+};
+
 module.exports = {
   getPromoters,
   getPromotersEarnings,
@@ -817,4 +910,5 @@ module.exports = {
   updatePromoterUserImageVerification,
   getPromoterDashboardData,
   updatePromoterProfile,
+  activateFreeUserByPromoter,
 };

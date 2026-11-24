@@ -1,0 +1,23 @@
+# robots.txt for Sangam Sathi
+User-agent: *
+Allow: /
+Allow: /service
+Allow: /about
+Allow: /privacy-policy
+Allow: /terms
+Allow: /cookie-policy
+Allow: /refund-policy
+Allow: /data-disclosure
+Allow: /contact
+Allow: /register
+Allow: /membership
+
+# Disallow private and administrative areas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /PromotAdmin
+Disallow: /PromotAdmin/
+Disallow: /user/
+Disallow: /api/
+
+Sitemap: https://sangamsathi.com/sitemap.xml

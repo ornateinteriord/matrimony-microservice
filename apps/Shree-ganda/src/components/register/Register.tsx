@@ -56,6 +56,7 @@ const Register = () => {
       return (
         params.get("ref") ||
         params.get("promo") ||
+        params.get("sponsor") ||
         params.get("refered_by") ||
         ""
       ).trim().toUpperCase();
@@ -63,6 +64,10 @@ const Register = () => {
       return "";
     }
   };
+
+  const initialUrlSponsor = getInitialRefCode();
+  const [isSponsorLocked, setIsSponsorLocked] = useState<boolean>(Boolean(initialUrlSponsor));
+  const [isSponsorVerified, setIsSponsorVerified] = useState<boolean>(Boolean(initialUrlSponsor));
 
   const [showScanner, setShowScanner] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -157,12 +162,15 @@ const Register = () => {
     const code = (
       params.get("ref") ||
       params.get("promo") ||
+      params.get("sponsor") ||
       params.get("refered_by") ||
       getInitialRefCode()
     ).trim().toUpperCase();
 
     if (code) {
       setFormData((prev) => ({ ...prev, refered_by: code }));
+      setIsSponsorLocked(true);
+      setIsSponsorVerified(true);
       verifyCode(code);
     }
   }, [location.search, verifyCode]);
@@ -244,13 +252,19 @@ const Register = () => {
       if (response?.success && response?.data?.promoterName) {
         setPromoterName(response.data.promoterName);
         setFormData((prev) => ({ ...prev, refered_name: response.data.promoterName }));
+        setIsSponsorLocked(true);
+        setIsSponsorVerified(true);
         toast.success(`Sponsor verified: ${response.data.promoterName}`);
       } else {
-        setPromoterError(response?.message || "Invalid Sponsor Code");
-        toast.error(response?.message || "Invalid Sponsor Code");
+        setIsSponsorLocked(false);
+        setIsSponsorVerified(false);
+        setPromoterError(response?.message || "Invalid promocode. Please check and try again.");
+        toast.error(response?.message || "Invalid promocode. Please check and try again.");
       }
     } catch (error) {
-      const msg = error?.response?.data?.message || "Invalid Sponsor Code or inactive promoter";
+      setIsSponsorLocked(false);
+      setIsSponsorVerified(false);
+      const msg = error?.response?.data?.message || "Invalid promocode. Please check and try again.";
       setPromoterError(msg);
       toast.error(msg);
     } finally {
@@ -259,8 +273,20 @@ const Register = () => {
   };
 
   const handleClear = () => {
-    setFormData(initialFormState);
-    setPromoterName("");
+    if (isSponsorLocked) {
+      const code = formData.refered_by;
+      const refName = formData.refered_name;
+      setFormData({
+        ...initialFormState,
+        refered_by: code,
+        refered_name: refName,
+      });
+    } else {
+      setFormData(initialFormState);
+      setPromoterName("");
+      setIsSponsorLocked(false);
+      setIsSponsorVerified(false);
+    }
     setPromoterError("");
   };
 
@@ -564,30 +590,36 @@ const Register = () => {
                         onChange={handleChange}
                         placeholder="Promoter ID / Sponsor Code"
                         className="mui-input-custom"
-                        inputProps={{ maxLength: 8 }}
+                        inputProps={{ maxLength: 16 }}
+                        disabled={isSponsorLocked}
                       />
                       <Button
                         type="button"
                         variant="contained"
                         onClick={handleVerifyPromoter}
-                        disabled={isValidatingPromoter || !formData.refered_by}
+                        disabled={isSponsorLocked || isValidatingPromoter || !formData.refered_by}
                         sx={{
-                          bgcolor: "#D4AF37",
-                          color: "#111",
+                          bgcolor: isSponsorLocked ? "#2e7d32" : "#C5A059",
+                          color: "#fff",
                           fontWeight: 700,
-                          "&:hover": { bgcolor: "#b89728" },
+                          "&:hover": { bgcolor: isSponsorLocked ? "#2e7d32" : "#b38c45" },
                           textTransform: "none",
                           minWidth: "85px",
                           borderRadius: "6px",
                           boxShadow: "0 2px 6px rgba(0,0,0,0.2)"
                         }}
                       >
-                        {isValidatingPromoter ? "..." : "Verify"}
+                        {isSponsorLocked ? "Locked" : isValidatingPromoter ? "..." : "Verify"}
                       </Button>
                     </Box>
-                    {promoterError && (
+                    {isSponsorLocked && (
+                      <Typography variant="caption" sx={{ color: "#22c55e", fontWeight: 600, display: "block", mt: 0.5 }}>
+                        Sponsor code locked and verified
+                      </Typography>
+                    )}
+                    {promoterError && !isSponsorLocked && (
                       <Typography variant="caption" sx={{ color: "#ffcdd2", fontWeight: 600, display: "block", mt: 0.5 }}>
-                        ✖ {promoterError}
+                        {promoterError}
                       </Typography>
                     )}
                   </div>
@@ -601,21 +633,18 @@ const Register = () => {
                     <TextField
                       fullWidth
                       name="refered_name"
-                      value={promoterName || ""}
+                      value={promoterName || (isSponsorLocked ? "Verified Partner" : "")}
                       placeholder="Sponsor Name (Auto-filled on verify)"
                       className="mui-input-custom"
                       InputProps={{
                         readOnly: true,
-                        startAdornment: promoterName ? (
-                          <span style={{ color: "#22c55e", fontWeight: "bold", marginRight: "8px" }}>✔</span>
-                        ) : null
                       }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
-                          bgcolor: promoterName ? "#f0fdf4 !important" : "#ffffff !important",
+                          bgcolor: (promoterName || isSponsorLocked) ? "#f0fdf4 !important" : "#ffffff !important",
                           "& input": {
-                            color: promoterName ? "#166534 !important" : "#555 !important",
-                            fontWeight: promoterName ? 600 : 400
+                            color: (promoterName || isSponsorLocked) ? "#166534 !important" : "#555 !important",
+                            fontWeight: (promoterName || isSponsorLocked) ? 700 : 400
                           }
                         }
                       }}
@@ -625,9 +654,18 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="checkbox-row" style={{ marginTop: "12px", marginBottom: "16px" }}>
+            <div className="checkbox-row" style={{ marginTop: "12px", marginBottom: "8px" }}>
               <input type="checkbox" id="terms" required />
-              <label htmlFor="terms">I agree to the Terms &amp; Conditions</label>
+              <label htmlFor="terms">
+                I have read and agree to the <a href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" style={{ color: "#8B1E1E", fontWeight: 600 }}>Terms and Conditions</a> and <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: "#8B1E1E", fontWeight: 600 }}>Privacy Policy</a>.
+              </label>
+            </div>
+
+            <div className="checkbox-row" style={{ marginTop: "4px", marginBottom: "16px" }}>
+              <input type="checkbox" id="consent" required />
+              <label htmlFor="consent">
+                I consent to the collection and processing of my personal matrimonial data in compliance with the Digital Personal Data Protection Act 2023 (DPDP Act 2023).
+              </label>
             </div>
 
             <input type="hidden" name="user_role" value={formData.user_role} />

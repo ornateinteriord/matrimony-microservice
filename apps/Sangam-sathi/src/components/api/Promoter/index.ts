@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, post, put } from "../authHooks";
 
-export const useGetPromoterDashboard = (promoter_id) => {
+export const useGetPromoterDashboard = (promoter_id?: any) => {
   return useQuery({
     queryKey: ["promoterDashboard", promoter_id],
     queryFn: async () => {
@@ -14,11 +14,11 @@ export const useGetPromoterDashboard = (promoter_id) => {
 
 export const useUpdatePromoterProfile = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ promoter_id, data }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ promoter_id, data }: any) => {
       return await put(`/api/promoter/profile/${promoter_id}`, data);
     },
-    onSuccess: (res, variables) => {
+    onSuccess: (res: any, variables: any) => {
       queryClient.invalidateQueries({
         queryKey: ["promoterDashboard", variables.promoter_id],
       });
@@ -26,7 +26,7 @@ export const useUpdatePromoterProfile = () => {
   });
 };
 
-export const useGetMyUsers = (promoter_id) => {
+export const useGetMyUsers = (promoter_id?: any) => {
   return useQuery({
     queryKey: ["myUsers", promoter_id],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const useGetMyUsers = (promoter_id) => {
   });
 };
 
-export const useGetPromoterSentInterests = (promoter_id) => {
+export const useGetPromoterSentInterests = (promoter_id?: any) => {
   return useQuery({
     queryKey: ["promoterSentInterests", promoter_id],
     queryFn: async () => {
@@ -49,7 +49,7 @@ export const useGetPromoterSentInterests = (promoter_id) => {
 };
 
 // Get received interests for users referred by the promoter
-export const useGetPromoterReceivedInterests = (promoter_id) => {
+export const useGetPromoterReceivedInterests = (promoter_id?: any) => {
   return useQuery({
     queryKey: ["promoterReceivedInterests", promoter_id],
     queryFn: async () => {
@@ -64,7 +64,7 @@ export const useGetPromoterReceivedInterests = (promoter_id) => {
 };
 
 // Search profiles via promoter endpoint
-export const useGetPromoterSearchProfiles = (input) => {
+export const useGetPromoterSearchProfiles = (input?: any) => {
   return useQuery({
     queryKey: ["promoterSearchProfiles", input],
     queryFn: async () => {
@@ -80,8 +80,8 @@ export const useGetPromoterSearchProfiles = (input) => {
 };
 
 export const useGetPromoterImageVerification = () => {
-  return useMutation({
-    mutationFn: async ({ promoter_id, page, pageSize }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ promoter_id, page, pageSize }: any) => {
       if (!promoter_id) throw new Error("promoter_id is required");
       const response = await post(`/api/promoter/image-verification/${promoter_id}`, {
         page,
@@ -97,9 +97,8 @@ export const useGetPromoterImageVerification = () => {
 };
 
 export const useUpgradePromoterUserStatus = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ regno, image_verification }) => {
+  return useMutation<any, any, any>({
+    mutationFn: async ({ regno, image_verification }: any) => {
       const response = await put(`/api/promoter/upgrade-user/${regno}`, {
         image_verification,
       });
@@ -109,13 +108,27 @@ export const useUpgradePromoterUserStatus = () => {
 };
 
 export const usePromoterRegister = () => {
-  return useMutation({
-    mutationFn: async (data) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (data: any) => {
       const response = await post("/api/promoter/register", data);
       if (!response?.success) {
         throw new Error(response?.message || "Failed to register promoter");
       }
       return response;
+    },
+  });
+};
+
+export const useActivateFreeUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, any, any>({
+    mutationFn: async (registration_no: any) => {
+      const response = await put(`/api/promoter/activate-user/${registration_no}`, {});
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["promoterDashboard"] });
     },
   });
 };

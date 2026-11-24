@@ -1,0 +1,24 @@
+# Girija Kalyana Matrimony (apps/Girija-Kalyana)
+
+> Girija Kalyana is a premium sacred matrimonial platform dedicated to community-based matrimonial matchmaking in Karnataka and across India, featuring verified profiles, community filters, and high-trust privacy controls.
+
+## Architecture
+- Framework: React 18 with Vite 6 and Material UI (MUI v6)
+- Theme: Sacred Rosewood (#881337) and Antique Gold (#D97706)
+- Data Compliance: Digital Personal Data Protection (DPDP) Act 2023 compliant data governance
+- Backend Service: Express.js + Mongoose matrimony microservice
+
+## Primary Navigation Routes
+- `/`: Home landing page with sacred hero slider, matchmaking steps, and member discovery
+- `/about`: Company background, mission, leadership, and community values
+- `/service`: Matchmaking services, verified astrology matchmaking, and personal assistance
+- `/membership`: Transparent membership packages (Silver and Premium memberships)
+- `/register`: User onboarding with sponsor lock protection and mandatory privacy consent
+- `/contact`: Dedicated member support and grievance redressal contact points
+
+## Legal & Compliance Disclosures
+- `/privacy-policy`: Comprehensive privacy disclosures under DPDP Act 2023
+- `/terms`: Terms and conditions governing matchmaking membership, age eligibility, and conduct
+- `/cookie-policy`: Detailed cookie declaration and tracking consent choices
+- `/refund-policy`: Policy governing digital service activation and subscription cancellations
+- `/data-disclosure`: Detailed user personal data handling and disclosure policy

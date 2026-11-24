@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Box, CircularProgress, Dialog, DialogContent, Typography, ThemeProvider, createTheme } from '@mui/material';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Box, CircularProgress, Dialog, DialogContent, ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './App.css';
 import ProfileProvider from './components/usecontext/ProfileProvider';
@@ -13,87 +13,30 @@ import AdminProfileDialog from './components/Adminprofile/AdminProfile';
 
 import ProfilePage from './components/PromotersDash/ProfilePage/ProfilePage';
 import ReferInvitePage from './components/PromotersDash/RefferInvite/RefferInvitePage';
+import MyReferrals from './components/PromotersDash/myReferals/MyReferrals';
 
 import Pending from './components/PromotersDash/myReferals/Pending';
 import Success from './components/PromotersDash/myReferals/Success';
 import DashboardContent from './components/PromotersDash/dashboardContent/DashboardContent';
-import sidebarData from './components/PromotersDash/sidebar/data';
 import Expired from './components/PromotersDash/myReferals/Expired';
 import InActive from './components/PromotersDash/myReferals/InActive';
 import TeamUsers from './components/PromotersDash/myReferals/TeamUsers';
 import ActivationPending from './components/activationPending/activationPending';
 import ScrollToTop from './components/common/scrollToTop';
-import NotFoundPage from './components/notFound/NotFoundPage';
-
-
+import NotFoundPage from './components/common/NotFoundPage';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import BottomNav from './components/common/BottomNav';
+import CookieConsentBanner from './components/common/CookieConsentBanner';
+import { sacredRosewoodTheme } from './theme/theme';
 
 // Create a query client with default options
 const queryClient = new QueryClient();
-
-// Global theme configuration to disable button hover effects
-const globalTheme = createTheme({
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-            boxShadow: 'none',
-            transform: 'none',
-          },
-          transition: 'none',
-        },
-        contained: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-            boxShadow: 'none',
-          },
-        },
-        outlined: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-            borderColor: 'inherit',
-          },
-        },
-        text: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-          },
-        },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-          },
-          transition: 'none',
-        },
-      },
-    },
-    MuiFab: {
-      styleOverrides: {
-        root: {
-          '&:hover': {
-            backgroundColor: 'transparent',
-          },
-          transition: 'none',
-        },
-      },
-    },
-  },
-  typography: {
-    fontFamily: 'Outfit, sans-serif',
-  },
-});
 
 // Lazy loading components
 const HeroSlider = lazy(() => import('./components/hero/HeroSlider'));
 const Connect = lazy(() => import('./components/howWorks/Connect'));
 const Members = lazy(() => import('./components/members/Member'));
 const AboutUs = lazy(() => import('./components/Aboutus/AboutUs'));
-const Privacy = lazy(() => import('./components/privecy/Privacy'));
 const ContactUs = lazy(() => import('./components/contactus/ContactUs'));
 const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
 const UserTable = lazy(() => import('./components/Admin/UserManagement/UserTable'));
@@ -104,7 +47,6 @@ const ResetPassword = lazy(() => import('./components/Admin/resetpassword/ResetP
 const ImageVerificationData = lazy(() => import('./components/Admin/imageVarify/ImageVerificationdata'));
 const PendingData = lazy(() => import('./components/Admin/pendinData/PendingData'));
 const SuccessData = lazy(() => import('./components/Admin/successData/SuccessData'));
-const PromotersUsersData = lazy(() => import('./components/Admin/PromotersUserData/PromotersUserData'));
 const PayToPromoterData = lazy(() => import('./components/Admin/PromoterManagement/PayToPromoterData'));
 const PromotersEarningsData = lazy(() => import('./components/Admin/PromotersEarnings/PromotersEarningsData'));
 const PromotersData = lazy(() => import('./components/Admin/PromoterData/PromotersData'));
@@ -125,138 +67,155 @@ const Search = lazy(() => import('./components/Userprofile/search/Search'));
 const UserDashboard = lazy(() => import('./components/Userprofile/userdDashboard/UserDashboard'));
 const Profile = lazy(() => import('./components/Userprofile/profile/Profile'));
 const TestPlanSelection = lazy(() => import('./components/TestPlanSelection'));
-
 const IncompletePayments = lazy(() => import('./components/Admin/IncompletePayments/IncompletePayments'));
 const PaymentRedirect = lazy(() => import('./components/PaymentRedirect/PaymentRedirect'));
 
+// Legal & Compliance Pages
+const PrivacyPolicy = lazy(() => import('./components/legal/PrivacyPolicy'));
+const TermsAndConditions = lazy(() => import('./components/legal/TermsAndConditions'));
+const CookiePolicy = lazy(() => import('./components/legal/CookiePolicy'));
+const RefundPolicy = lazy(() => import('./components/legal/RefundPolicy'));
+const DataCollectionDisclosure = lazy(() => import('./components/legal/DataCollectionDisclosure'));
+
 export const LoadingComponent = () => {
   return (
-    <Dialog 
-      open={true}
-      PaperProps={{
-        style: {
-          backgroundColor: 'transparent',
-          boxShadow: 'none',
-          overflow: 'hidden',
-        }
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "50vh",
+        width: "100%",
+        py: 8,
       }}
     >
-      <DialogContent>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          p={6}
-        >
-          <CircularProgress 
-            size={64}  
-            thickness={3.6} 
-            sx={{
-              color:"white",
-              animationDuration: '800ms', 
-            }} 
-          />
-        </Box>
-      </DialogContent>
-    </Dialog>
+      <CircularProgress
+        size={44}
+        thickness={3.6}
+        sx={{
+          color: "#700F2B",
+        }}
+      />
+    </Box>
   );
 };
 
-
-
 const App = () => {
   return (
-    <ThemeProvider theme={globalTheme}>
-    <ProfileProvider>
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={
-          
-    <LoadingComponent />
-  
-      }>
-        <Router>
-            <ScrollToTop />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<><HeroSlider /><Connect /><Members /></>} />
-            <Route path="/service" element={<Servieces />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/privacy-policy" element={<Privacy />} />
-            <Route path="/contact" element={<ContactUs />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/test-plan" element={<TestPlanSelection />} />
-             <Route path="/membership" element={<MembershipPlan />} />
+    <ThemeProvider theme={sacredRosewoodTheme}>
+      <CssBaseline />
+      <ErrorBoundary>
+        <ProfileProvider>
+          <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<LoadingComponent />}>
+              <Router>
+                <ScrollToTop />
+                <Box
+                  sx={{
+                    pb: { xs: '64px', md: 0 }, // Safe area padding so BottomNav never obscures content
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<><HeroSlider /><Connect /><Members /></>} />
+                    <Route path="/service" element={<Servieces />} />
+                    <Route path="/about" element={<AboutUs />} />
+                    <Route path="/contact" element={<ContactUs />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/test-plan" element={<TestPlanSelection />} />
+                    <Route path="/membership" element={<MembershipPlan />} />
 
-            {/* Admin Routes */}
-            <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
-            <Route path="/admin" element={<AdminDashboard />}>
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="user-table" element={<UserTable />} />
-              <Route path="userData" element={<UserData />} />
-              <Route path="renewals" element={<RenewalsData />} />
-              <Route path="resetpass" element={<ResetPassword />} />
-              <Route path="pendingdata" element={<PendingData />} />
-              <Route path="successdata" element={<SuccessData />} />
-              {/* <Route path="promotersdata" element={<PromotersUsersData />} /> */}
-              <Route path="paytopromoters" element={<PayToPromoterData />} />
-              <Route path="promoterearn" element={<PromotersEarningsData />} />
-              <Route path="imageverify" element={<ImageVerificationData />} />
-              <Route path="promoters" element={<PromotersData />} />
-              <Route path="promotersusers" element={<PromotersUsers />} />
-              <Route path="onlinetransaction" element={<OnlineTransactionData />} />
-              <Route path="assistance" element={<AssistanceOnlineTransactionData />} />
-              <Route path="receiptsvocher" element={<ReceiptVoucher />} />
-              <Route path="userreports" element={<UserReports />} />
-              <Route path="renewalreports" element={<RenewalsReportsData />} />
-              <Route path="receiptsreports" element={<ReceiptsReportsData />} />
-              <Route path="notification" element={<NotificationData />} />
-              {/* Add this new route */}
-              <Route path="incomplete-payments" element={<IncompletePayments />} />
-            </Route>
-            </Route>
-           
-             {/* <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}> */}
-            <Route element={<ProtectedRoute allowedRoles={["promoter"]} />}>
-              <Route path="/PromotAdmin" element={<PromotersDashboard />}>
-             <Route index element={<DashboardContent sidebarData={sidebarData} />} />
-              <Route path="admin-profile" element={<AdminProfileDialog />} />
-              <Route path="profilepage" element={<ProfilePage/>}/>
-              <Route path="refer" element={<ReferInvitePage/>}/>
-              <Route path="pending" element={<Pending />} />
-              <Route path="success" element={<Success />} />
-              <Route path="expired" element={<Expired />} />
-              <Route path="inactive" element={<InActive />} />
-              <Route path="team-users" element={<TeamUsers />} />
-              </Route>
-            </Route>
+                    {/* Legal & Compliance Routes */}
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsAndConditions />} />
+                    <Route path="/cookie-policy" element={<CookiePolicy />} />
+                    <Route path="/refund-policy" element={<RefundPolicy />} />
+                    <Route path="/data-disclosure" element={<DataCollectionDisclosure />} />
 
-            {/* User Routes */}
-            <Route element={<ProtectedRoute allowedRoles={["FreeUser","PremiumUser","SilverUser"]} />}>
-            <Route path="/user" element={<UserNavBar />}>
-              <Route path="userDashboard" element={<UserDashboard />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="MyMatches" element={<MyMatches />} />
-              <Route path="myintrest" element={<MyInterest />} />
-              <Route path="viewAll" element={<ViewAll />} />
-              <Route path="search" element={<Search />} />
-            </Route>
-            </Route>
+                    {/* Admin Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={["Admin"]} />}>
+                      <Route path="/admin" element={<AdminDashboard />}>
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="user-table" element={<UserTable />} />
+                        <Route path="userData" element={<UserData />} />
+                        <Route path="renewals" element={<RenewalsData />} />
+                        <Route path="resetpass" element={<ResetPassword />} />
+                        <Route path="pendingdata" element={<PendingData />} />
+                        <Route path="successdata" element={<SuccessData />} />
+                        <Route path="paytopromoters" element={<PayToPromoterData />} />
+                        <Route path="promoterearn" element={<PromotersEarningsData />} />
+                        <Route path="imageverify" element={<ImageVerificationData />} />
+                        <Route path="promoters" element={<PromotersData />} />
+                        <Route path="promotersusers" element={<PromotersUsers />} />
+                        <Route path="onlinetransaction" element={<OnlineTransactionData />} />
+                        <Route path="assistance" element={<AssistanceOnlineTransactionData />} />
+                        <Route path="receiptsvocher" element={<ReceiptVoucher />} />
+                        <Route path="userreports" element={<UserReports />} />
+                        <Route path="renewalreports" element={<RenewalsReportsData />} />
+                        <Route path="receiptsreports" element={<ReceiptsReportsData />} />
+                        <Route path="notification" element={<NotificationData />} />
+                        <Route path="incomplete-payments" element={<IncompletePayments />} />
+                      </Route>
+                    </Route>
+                   
+                    {/* Promoter Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={["promoter"]} />}>
+                      <Route path="/PromotAdmin" element={<PromotersDashboard />}>
+                        <Route index element={<DashboardContent />} />
+                        <Route path="admin-profile" element={<AdminProfileDialog open={true} onClose={() => window.history.back()} />} />
+                        <Route path="profilepage" element={<ProfilePage/>}/>
+                        <Route path="refer" element={<ReferInvitePage/>}/>
+                        <Route path="my-referrals" element={<MyReferrals />} />
+                        <Route path="pending" element={<Pending />} />
+                        <Route path="success" element={<Success />} />
+                        <Route path="expired" element={<Expired />} />
+                        <Route path="inactive" element={<InActive />} />
+                        <Route path="team-users" element={<TeamUsers />} />
+                      </Route>
+                    </Route>
+
+                    {/* User Routes */}
+                    <Route element={<ProtectedRoute allowedRoles={["FreeUser","PremiumUser","SilverUser"]} />}>
+                      <Route path="/user" element={<UserNavBar />}>
+                        <Route index element={<Navigate to="userDashboard" replace />} />
+                        <Route path="userDashboard" element={<UserDashboard />} />
+                        <Route path="userdashboard" element={<Navigate to="userDashboard" replace />} />
+                        <Route path="dashboard" element={<Navigate to="userDashboard" replace />} />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="MyMatches" element={<MyMatches />} />
+                        <Route path="mymatches" element={<Navigate to="MyMatches" replace />} />
+                        <Route path="myintrest" element={<MyInterest />} />
+                        <Route path="myinterest" element={<Navigate to="myintrest" replace />} />
+                        <Route path="viewAll" element={<ViewAll />} />
+                        <Route path="viewall" element={<Navigate to="viewAll" replace />} />
+                        <Route path="search" element={<Search />} />
+                      </Route>
+                    </Route>
+                    
+                    {/* Payment Redirect Route */}
+                    <Route path="/payment-redirect" element={<PaymentRedirect />} />
+                    
+                    {/* 404 Route */}
+                    <Route path="activation-pending" element={<ActivationPending />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                  </Routes>
+
+                  {/* Fixed Mobile Bottom Navigation */}
+                  <BottomNav />
+
+                  {/* Cookie Consent Banner */}
+                  <CookieConsentBanner />
+                </Box>
+              </Router>
             
-            {/* Payment Redirect Route */}
-            <Route path="/payment-redirect" element={<PaymentRedirect />} />
-            
-            {/* 404 Route */}
-            <Route path="activation-pending" element={<ActivationPending />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Router>
-      
-        <ToastContainer position="top-right" autoClose={3000} />
-      </Suspense>
-    </QueryClientProvider>
-
-    {/* <ProfileViewer /> */}
-    </ProfileProvider>
+              <ToastContainer position="top-right" autoClose={3000} />
+            </Suspense>
+          </QueryClientProvider>
+        </ProfileProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 };

@@ -1,11 +1,8 @@
-import React from 'react'
+import React from 'react';
+import ReferralsTable from './ReferralsTable';
 
 function Success() {
-  return (
-    <div>
-      Successs
-    </div>
-  )
+  return <ReferralsTable statusFilter="Success" />;
 }
 
-export default Success
+export default Success;
