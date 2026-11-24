@@ -33,7 +33,7 @@ const PreWelcome = () => {
 
     setLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+      const apiUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_BASE_URL || '').replace(/\/+$/, '');
       const response = await axios.post(`${apiUrl}/api/webenquire`, formData);
       
       if (response.data.success) {

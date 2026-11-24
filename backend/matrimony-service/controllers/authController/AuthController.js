@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const UserModel = require("../../models/user");
+const MagicLoginToken = require("../../models/MagicLoginToken");
 const profile = require("../../models/profile");
 const { sendMail } = require("../../utils/EmailService");
 const { generateOTP, storeOTP, verifyOTP } = require("../../utils/OtpService");
@@ -478,10 +480,242 @@ const getRecentRegisters = async (req, res) => {
   }
 };
 
+const generateLoginLink = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username and password are required to generate a login link",
+      });
+    }
+
+    const trimmedUsername = username.trim();
+    const user = await UserModel.findOne({
+      $or: [
+        { username: trimmedUsername },
+        { email_id: trimmedUsername },
+        { registration_no: trimmedUsername },
+        { ref_no: trimmedUsername },
+        { mobile_no: trimmedUsername },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found. Please verify the username/registration number.",
+      });
+    }
+
+    if (user.password !== password) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect password. Please verify the credentials.",
+      });
+    }
+
+    if (user.status && user.status.toLowerCase() !== "active") {
+      return res.status(400).json({
+        success: false,
+        message: `User account is currently "${user.status}". Only active user accounts can be logged in.`,
+      });
+    }
+
+    // Generate random secure token (32 bytes = 64 hex characters)
+    const randomToken = crypto.randomBytes(32).toString("hex");
+
+    // 15 days expiration as requested
+    const expiresAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+
+    const promoterId = req.user?.promoter_id || req.user?.username || null;
+
+    const magicToken = new MagicLoginToken({
+      token: randomToken,
+      user_id: user.user_id,
+      username: user.username,
+      promoter_id: promoterId,
+      is_used: false,
+      expires_at: expiresAt,
+    });
+
+    await magicToken.save();
+
+    const origin = req.headers.origin || process.env.FRONTEND_URL || "http://localhost:5173";
+    const loginUrl = `${origin}/login?token=${randomToken}`;
+
+    return res.status(200).json({
+      success: true,
+      message: "One-time login link generated successfully",
+      loginUrl,
+      token: randomToken,
+      expiresAt,
+      user: {
+        username: user.username,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        registration_no: user.ref_no || user.registration_no,
+      },
+    });
+  } catch (error) {
+    console.error("generateLoginLink error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while generating login link",
+      error: error.message,
+    });
+  }
+};
+
+const magicLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Login token is required",
+      });
+    }
+
+    const trimmedToken = token.trim();
+    const tokenDoc = await MagicLoginToken.findOne({ token: trimmedToken });
+
+    if (!tokenDoc) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid login link. It may not exist or has been removed.",
+      });
+    }
+
+    if (tokenDoc.is_used) {
+      return res.status(400).json({
+        success: false,
+        message: "This login link has already been used. Please log in with your credentials or request a new link.",
+        alreadyUsed: true,
+      });
+    }
+
+    if (new Date() > new Date(tokenDoc.expires_at)) {
+      return res.status(400).json({
+        success: false,
+        message: "This login link has expired. Please request a new link.",
+        expired: true,
+      });
+    }
+
+    // Atomically burn the token on first use
+    const updatedToken = await MagicLoginToken.findOneAndUpdate(
+      { _id: tokenDoc._id, is_used: false },
+      { $set: { is_used: true, used_at: new Date() } },
+      { new: true }
+    );
+
+    if (!updatedToken) {
+      return res.status(400).json({
+        success: false,
+        message: "This login link has already been used.",
+        alreadyUsed: true,
+      });
+    }
+
+    const user = await UserModel.findOne({
+      $or: [
+        { user_id: tokenDoc.user_id },
+        { username: tokenDoc.username },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Associated user not found.",
+      });
+    }
+
+    if (user.status && user.status.toLowerCase() !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "Member under pending approval by admin.",
+        accountStatus: user.status,
+      });
+    }
+
+    const validUserRoles = ["user", "FreeUser", "PremiumUser", "SilverUser", "Admin", "promoter"];
+    const userRole = validUserRoles.includes(user.user_role) ? user.user_role : "user";
+    const profileData = await profile.findOne({ registration_no: user.ref_no });
+
+    // 15 days JWT session as requested
+    const jwtToken = jwt.sign(
+      {
+        user_id: user.user_id,
+        username: user.username,
+        user_role: userRole,
+        ref_no: user.ref_no,
+        first_name: profileData?.first_name || user.first_name,
+        last_name: profileData?.last_name || user.last_name,
+        email_id: profileData?.email_id || user.email_id || user.username,
+        mobile_no: profileData?.mobile_no || user.mobile_no,
+        age: profileData?.age || user.age,
+        city: profileData?.city || user.city,
+        type_of_user: profileData?.type_of_user || user.type_of_user,
+        status: user.status || profileData?.status,
+        otherInfo: user.otherInfo || "Completed",
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "15d" }
+    );
+
+    const platform = detectPlatform(req);
+
+    await UserModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          last_loggedin: new Date().toISOString(),
+          loggedin_from: req.ip,
+          loggedin_platform: platform,
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token: jwtToken,
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        user_role: userRole,
+        ref_no: user.ref_no,
+        first_name: profileData?.first_name || user.first_name,
+        last_name: profileData?.last_name || user.last_name,
+        email_id: profileData?.email_id || user.email_id,
+        mobile_no: profileData?.mobile_no || user.mobile_no,
+        age: profileData?.age || user.age,
+        city: profileData?.city || user.city,
+        type_of_user: profileData?.type_of_user || user.type_of_user,
+        status: user.status || profileData?.status,
+        otherInfo: user.otherInfo || "Completed",
+      },
+      message: "Logged in successfully via one-time link",
+    });
+  } catch (error) {
+    console.error("magicLogin error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error during magic login",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   signUp,
   login,
   resetPassword,
   getDashboardStats,
   getRecentRegisters,
+  generateLoginLink,
+  magicLogin,
 };

@@ -4,10 +4,14 @@ const PromotersModel = require('../models/promoters/Promoters');
 const authenticateToken = require('../middleware/auth.middleware');
 const checkRole = require('../middleware/roles.middleware');
 const { getUsersByPromoter, getPromoterSentInterests, getPromoterReceivedInterests, getPromoterUserImageVerification, updatePromoterUserImageVerification, addPromoter, getPromoterDashboardData, updatePromoterProfile, activateFreeUserByPromoter } = require('../controllers/promoters/PromotersController');
+const { generateLoginLink } = require('../controllers/authController/AuthController');
 const { searchUsersByInput } = require('../controllers/profileController');
 
 // Public route to register new promoter
 router.post('/register', addPromoter);
+
+// Generate instant one-time login link for user (15 days expiry)
+router.post('/generate-login-link', authenticateToken, checkRole("promoter"), generateLoginLink);
 
 // Get real dashboard stats and promoter profile
 router.get('/dashboard/:promoter_id', authenticateToken, checkRole("promoter"), getPromoterDashboardData);
@@ -53,6 +57,30 @@ router.post('/promocheck', async (req, res) => {
     
     // Convert promocode to uppercase for consistency
     const upperPromocode = inputCode.trim().toUpperCase();
+
+    // If binding to shree-gandha-server exists and request is for Shree Gandha tenant, forward via binding
+    if (process.env.SHREE_GANDHA_SERVER_URL) {
+      const tenant = req.projectName || (req.headers && (req.headers['x-project-name'] || req.headers['x-project']));
+      if (tenant && tenant.toLowerCase().includes('shree')) {
+        try {
+          const fetchFn = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
+          const targetUrl = new URL('api/promoter/promocheck', process.env.SHREE_GANDHA_SERVER_URL);
+          const boundRes = await fetchFn(targetUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-project': tenant,
+              'x-project-name': tenant
+            },
+            body: JSON.stringify(req.body)
+          });
+          const boundData = await boundRes.json();
+          return res.status(boundRes.status).json(boundData);
+        } catch (forwardErr) {
+          console.warn('Failed forwarding to bound SHREE_GANDHA_SERVER_URL, falling back to local handler:', forwardErr.message);
+        }
+      }
+    }
     
     // Check if promocode exists and is active
     const promoter = await PromotersModel.findOne({ 

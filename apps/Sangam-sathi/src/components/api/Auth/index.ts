@@ -161,3 +161,84 @@ export const useGetRecentRegisters = () => {
     },
   });
 };
+
+export const useMagicLoginMutation = () => {
+  const navigate = useNavigate();
+
+  return useMutation<any, any, { token: string }>({
+    mutationFn: async (data: { token: string }) => {
+      return await post("/api/auth/magic-login", data);
+    },
+    onSuccess: (response) => {
+      if (response?.success && response?.token) {
+        const userStatus =
+          response?.user?.status ||
+          response?.status ||
+          TokenService.decodeToken()?.status ||
+          TokenService.decodeToken()?.user_status;
+
+        if (userStatus && userStatus.toString().toLowerCase() !== "active") {
+          TokenService.removeToken();
+          toast.error(
+            response?.message || "Member under pending approval by admin."
+          );
+          return;
+        }
+
+        TokenService.setToken(response.token);
+        window.dispatchEvent(new Event("storage"));
+
+        const role = TokenService.getRole();
+        toast.success(response.message || "Logged in successfully!");
+
+        const roleLower = role?.toString().trim().toLowerCase();
+
+        if (roleLower === "promoter") {
+          navigate("/PromotAdmin");
+        } else if (roleLower === "admin") {
+          navigate("/admin/dashboard");
+        } else if (
+          [
+            "freeuser",
+            "premiumuser",
+            "silveruser",
+            "assistance",
+            "user",
+            "basicuser",
+          ].includes(roleLower)
+        ) {
+          const profileCompletion =
+            response?.user?.otherInfo || TokenService.decodeToken()?.otherInfo;
+
+          if (profileCompletion === "Pending") {
+            navigate("/user/complete-profile");
+          } else {
+            navigate("/user/userDashboard");
+          }
+        } else {
+          navigate("/user/userDashboard");
+        }
+      }
+    },
+  });
+};
+
+export const useGenerateLoginLinkMutation = () => {
+  return useMutation<any, any, { username: string; password: string }>({
+    mutationFn: async (data: { username: string; password: string }) => {
+      return await post("/api/promoter/generate-login-link", data);
+    },
+    onSuccess: (response) => {
+      if (response?.success) {
+        toast.success(response.message || "Login link generated successfully!");
+      }
+    },
+    onError: (error) => {
+      const errorMsg = extractErrorMessage(
+        error,
+        "Failed to generate login link. Please check credentials."
+      );
+      toast.error(errorMsg);
+    },
+  });
+};

@@ -84,6 +84,7 @@ const MyReferrals = lazy(() => import('./components/PromotersDash/myReferals/MyR
 const PromoterImageVerification = lazy(() => import('./components/PromotersDash/ImageVerification/PromoterImageVerification'));
 const PromoterLogin = lazy(() => import('./components/PromotersDash/Auth/PromoterLogin'));
 const PromoterRegister = lazy(() => import('./components/PromotersDash/Auth/PromoterRegister'));
+const LoginPage = lazy(() => import('./components/auth/LoginPage'));
 
 export const LoadingComponent = () => {
   return (
@@ -127,6 +128,8 @@ const App = () => {
                     <Route path="/contact" element={<ContactUs />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/membership" element={<MembershipPlan />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signin" element={<Navigate to="/login" replace />} />
                     <Route path="/promoter/login" element={<PromoterLogin />} />
                     <Route path="/promoter-login" element={<PromoterLogin />} />
                     <Route path="/promoter/register" element={<PromoterRegister />} />

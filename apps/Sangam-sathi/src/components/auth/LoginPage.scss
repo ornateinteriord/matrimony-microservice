@@ -1,0 +1,287 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap");
+
+.user-login-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+              radial-gradient(circle at 90% 80%, rgba(26, 54, 93, 0.3) 0%, transparent 50%),
+              #070F1E;
+  font-family: "Outfit", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  position: relative;
+  overflow-x: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #D4AF37, #FFB200, #D4AF37);
+  }
+
+  .user-login-container {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .login-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #94A3B8;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    align-self: flex-start;
+
+    &:hover {
+      color: #D4AF37;
+      transform: translateX(-3px);
+    }
+  }
+
+  .user-login-card {
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 38px 34px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(212, 175, 55, 0.12);
+    color: #F8FAFC;
+
+    @media (max-width: 600px) {
+      padding: 26px 18px;
+      border-radius: 16px;
+    }
+  }
+
+  /* Header */
+  .user-login-header {
+    text-align: center;
+    margin-bottom: 26px;
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(212, 175, 55, 0.12);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 6px 14px;
+      border-radius: 30px;
+      color: #D4AF37;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+
+      .badge-icon {
+        font-size: 1.1rem;
+      }
+    }
+
+    .auth-title {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0 0 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .auth-subtitle {
+      font-size: 0.95rem;
+      color: #94A3B8;
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+
+  /* Magic Token Status Card */
+  .magic-login-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 16px;
+
+    .magic-icon-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(212, 175, 55, 0.15);
+      border: 2px solid rgba(212, 175, 55, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #D4AF37;
+      margin-bottom: 8px;
+    }
+
+    .magic-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin: 0;
+    }
+
+    .magic-desc {
+      font-size: 0.92rem;
+      color: #94A3B8;
+      max-width: 380px;
+      margin: 0;
+      line-height: 1.5;
+    }
+  }
+
+  /* Form */
+  .user-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label {
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #CBD5E1;
+      }
+    }
+
+    .MuiOutlinedInput-root {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      color: #F8FAFC;
+      transition: all 0.2s ease;
+
+      fieldset {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+
+      &:hover fieldset {
+        border-color: rgba(212, 175, 55, 0.4);
+      }
+
+      &.Mui-focused fieldset {
+        border-color: #D4AF37;
+        border-width: 1.5px;
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
+      }
+
+      input {
+        padding: 13px 14px;
+        font-size: 0.95rem;
+
+        &::placeholder {
+          color: #64748B;
+          opacity: 1;
+        }
+      }
+    }
+
+    .input-icon {
+      color: #64748B;
+      font-size: 1.25rem;
+    }
+
+    .form-row-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: -4px;
+
+      .remember-me {
+        color: #94A3B8;
+
+        .MuiTypography-root {
+          font-size: 0.88rem;
+        }
+
+        .MuiCheckbox-root {
+          color: #64748B;
+          &.Mui-checked {
+            color: #D4AF37;
+          }
+        }
+      }
+
+      .forgot-password-btn {
+        background: none;
+        border: none;
+        color: #D4AF37;
+        font-size: 0.88rem;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 4px;
+        text-decoration: underline;
+
+        &:hover {
+          color: #FFB200;
+        }
+      }
+    }
+
+    .submit-btn {
+      margin-top: 6px;
+      padding: 13px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+      color: #070F1E;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+      transition: all 0.25s ease;
+
+      &:hover {
+        background: linear-gradient(135deg, #FFB200 0%, #D4AF37 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+      }
+
+      &:disabled {
+        background: rgba(255, 255, 255, 0.1);
+        color: #64748B;
+      }
+    }
+  }
+
+  /* Footer */
+  .user-login-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #94A3B8;
+
+      a {
+        color: #D4AF37;
+        text-decoration: none;
+        font-weight: 600;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
