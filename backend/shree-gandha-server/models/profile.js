@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Add these indexes to your Profile schema
 const ProfileSchema = new mongoose.Schema({
-  registration_no: { type: String, required: true, unique: true },
+  registration_no: { type: String, required: true, unique: true, sparse: true },
   registration_date: String,
   expiry_date: String,
   marital_status: String,

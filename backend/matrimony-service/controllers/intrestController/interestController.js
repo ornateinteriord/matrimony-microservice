@@ -38,16 +38,25 @@ const expressInterest = asyncHandler(async (req, res) => {
     });
   }
 
-  const interest = await Interest.create({
-    senderuser: senderuser._id,
-    recipientuser: recipientuser._id,
-    sender,
-    recipient,
-    message,
-    status: 'pending'
-  });
-
-  res.status(201).json(interest);
+  try {
+    const interest = await Interest.create({
+      senderuser: senderuser._id,
+      recipientuser: recipientuser._id,
+      sender,
+      recipient,
+      message,
+      status: 'pending'
+    });
+    return res.status(201).json(interest);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "You have already expressed interest in this profile."
+      });
+    }
+    throw err;
+  }
 });
 
 

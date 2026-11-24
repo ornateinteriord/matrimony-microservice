@@ -6,6 +6,7 @@ const PromoterTransactionSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      sparse: true,
     },
     promocode: {
       type: String,

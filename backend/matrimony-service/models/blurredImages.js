@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const BlurredImagesSchema = new mongoose.Schema({
-  user_id: { type: String, required: true, unique: true },
+  user_id: { type: String, required: true, unique: true, sparse: true },
   blurredImage : { type: String, required: true },
 }, { timestamps: true, collection: "blurredImages" });
 

@@ -7,6 +7,7 @@ const PromotersEarningsModel = require('../models/promoters/PromotersEarnings');
 const IncompletePayment = require('../models/IncompletePayment');
 const PromotersModel = require('../models/promoters/Promoters');
 const PromoterTransactionModel = require('../models/promoters/PromotersTransaction');
+const { handleControllerError } = require('../utils/errorHandler');
 
 
 // Get environment variables
@@ -1652,17 +1653,25 @@ const createPromoterEarning = async ({ promocode, userRegistrationNo, userEmail,
       return existingEarning;
     }
 
-    // Generate ID for the new earning record
+    // Generate numeric ID for the new earning record without string-sort bugs
     let nextId = "1";
     try {
-      const lastEarning = await PromotersEarningsModel.findOne({}, {}, { sort: { 'id': -1 } });
-      if (lastEarning && !isNaN(parseInt(lastEarning.id))) {
-        nextId = (parseInt(lastEarning.id) + 1).toString();
+      const allEarnings = await PromotersEarningsModel.find({}, { id: 1 }).lean();
+      let maxIdNum = 0;
+      for (const e of allEarnings) {
+        const num = parseInt(e.id, 10);
+        if (!isNaN(num) && num > maxIdNum) {
+          maxIdNum = num;
+        }
       }
+      let candidateId = maxIdNum + 1;
+      while (await PromotersEarningsModel.exists({ id: candidateId.toString() })) {
+        candidateId++;
+      }
+      nextId = candidateId.toString();
     } catch (idError) {
       console.error('Error generating ID:', idError);
-      // Fallback to timestamp-based ID
-      nextId = Date.now().toString();
+      nextId = `ERN_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
     }
     
     console.log('Generated ID:', nextId);
@@ -1696,14 +1705,30 @@ const createPromoterEarning = async ({ promocode, userRegistrationNo, userEmail,
       const existingPromoterTxn = await PromoterTransactionModel.findOne({ transaction_no: transactionNo });
       if (!existingPromoterTxn) {
         let nextPromoterTxnId = "1";
-        const lastPromoterTxn = await PromoterTransactionModel.findOne({}, {}, { sort: { 'id': -1 } });
-        if (lastPromoterTxn && !isNaN(parseInt(lastPromoterTxn.id))) {
-          nextPromoterTxnId = (parseInt(lastPromoterTxn.id) + 1).toString();
+        try {
+          const allTxns = await PromoterTransactionModel.find({}, { id: 1 }).lean();
+          let maxTxnNum = 0;
+          for (const t of allTxns) {
+            const num = parseInt(t.id, 10);
+            if (!isNaN(num) && num > maxTxnNum) {
+              maxTxnNum = num;
+            }
+          }
+          let candidateTxnId = maxTxnNum + 1;
+          while (await PromoterTransactionModel.exists({ id: candidateTxnId.toString() })) {
+            candidateTxnId++;
+          }
+          nextPromoterTxnId = candidateTxnId.toString();
+        } catch (e) {
+          nextPromoterTxnId = `PTXN_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
         }
+
+        const safeTxnNo = transactionNo || `PTXN_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
         await PromoterTransactionModel.create({
           id: nextPromoterTxnId,
           promocode: promocode.toUpperCase(),
-          transaction_no: transactionNo || Date.now().toString(),
+          transaction_no: safeTxnNo,
           transaction_date: new Date().toISOString().split('T')[0],
           amount: "100",
           mode_of_payment: "Online/System",
@@ -1772,18 +1797,24 @@ const creditPromoterOnAdminAction = async (profile, transactionNo, userType) => 
         
         const lastTrans = await Transaction.findOne({}).sort({ transaction_id: -1, transcation_id: -1 }).lean();
         const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;
-        const nextId = Number(lastId) + 1;
+        let nextId = Number(lastId) + 1;
+        while (await Transaction.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+          nextId++;
+        }
+
+        const safeOrderNo = transactionNo || `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+        const safePgId = transactionNo || `PG_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
 
         const newTxn = new Transaction({
           registration_no: profile.registration_no,
           transaction_id: nextId,
           transcation_id: nextId,
-          PG_id: transactionNo || Date.now().toString(),
-          bank_ref_num: transactionNo || Date.now().toString(),
+          PG_id: safePgId,
+          bank_ref_num: safePgId,
           mode: "Admin Approval",
           amount: finalAmount,
           status: "SUCCESS",
-          orderno: transactionNo || Date.now().toString(),
+          orderno: safeOrderNo,
           usertype: targetType,
           promocode: profile.refered_by || null,
           discount_applied: 0,

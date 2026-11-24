@@ -6,6 +6,7 @@ const { FormatDate } = require("../../utils/DateFormate");
 const { getCasteFilter } = require("../../utils/casteFilter");
 const InterestModel = require("../../models/Intrest/Intrest");
 const UserModel = require("../../models/user");
+const { handleControllerError } = require("../../utils/errorHandler");
 
 const getPaginationParams = (req) => {
   const page = parseInt(req.body.page, 10) || parseInt(req.query.page, 10) || 0;
@@ -891,7 +892,7 @@ const activateFreeUserByPromoter = async (req, res) => {
     });
   } catch (error) {
     console.error('activateFreeUserByPromoter error:', error);
-    return res.status(500).json({ success: false, message: 'Server error while activating user', error: error.message });
+    return handleControllerError(res, error, 'Server error while activating user');
   }
 };
 

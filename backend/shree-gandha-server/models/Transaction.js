@@ -43,7 +43,8 @@ const TransactionSchema = new mongoose.Schema({
   orderno: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    sparse: true
   },
   usertype: {
     type: String,

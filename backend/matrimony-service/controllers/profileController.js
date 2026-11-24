@@ -9,6 +9,7 @@ const { getPaginationParams } = require("../utils/pagination");
 const { getActiveMessage, getDeactiveMessage, getImageVerifiedMessage } = require("../utils/EmailMessages");
 const { sendMail } = require("../utils/EmailService");
 const { creditPromoterOnAdminAction } = require("./payment.controller");
+const { handleControllerError } = require("../utils/errorHandler");
 
 // Get profile by registration number
 const getProfileByRegistrationNo = async (req, res) => {
@@ -76,7 +77,7 @@ const DeleteImage = async (req, res) => {
       message: "Image deleted successfully",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleControllerError(res, error, "Failed to delete image");
   }
 }
 
@@ -205,7 +206,7 @@ const updateProfile = async (req, res) => {
       message: "Profile Updated Successfully.",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleControllerError(res, error, "Failed to update profile");
   }
 };
 
@@ -737,24 +738,15 @@ const upgradeUser = async (req, res) => {
     const { registration_no } = req.params;
     const { userType, amountPaid, paidType, referenceNumber } = req.body;
 
-    let profile = await Profile.findOne({ registration_no });
-    if (!profile) {
-      // Find in UserModel (user_tbl)
-      const userDoc = await UserModel.findOne({
-        $or: [{ ref_no: registration_no }, { registration_no: registration_no }]
-      }).lean();
+    // Both Profile and UserModel reference user_tbl - query by registration_no or ref_no
+    let profile = await Profile.findOne({
+      $or: [{ registration_no }, { ref_no: registration_no }]
+    });
 
-      if (userDoc) {
-        profile = new Profile({
-          ...userDoc,
-          registration_no: userDoc.ref_no || userDoc.registration_no,
-          ref_no: userDoc.ref_no || userDoc.registration_no,
-          user_role: userType,
-          type_of_user: userType,
-          status: "active",
-        });
-        await profile.save();
-      }
+    if (!profile) {
+      profile = await UserModel.findOne({
+        $or: [{ ref_no: registration_no }, { registration_no: registration_no }]
+      });
     }
 
     if (!profile) {
@@ -763,6 +755,8 @@ const upgradeUser = async (req, res) => {
         message: "Profile not found",
       });
     }
+
+    const effectiveRegNo = profile.registration_no || profile.ref_no || registration_no;
 
     const today = new Date();
     let updatedExpiryDate = new Date();
@@ -782,20 +776,31 @@ const upgradeUser = async (req, res) => {
 
     const lastTrans = await TransactionModel.findOne({}).sort({ transaction_id: -1, transcation_id: -1 }).lean();
     const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;
-    const nextId = Number(lastId) + 1;
+    let nextId = Number(lastId) + 1;
 
-    await TransactionModel.updateMany({ registration_no }, { $set: { is_handled: true } });
+    // Guard against collision with existing transaction ids
+    while (await TransactionModel.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+      nextId++;
+    }
+
+    await TransactionModel.updateMany(
+      { $or: [{ registration_no: effectiveRegNo }, { registration_no }] },
+      { $set: { is_handled: true } }
+    );
+
+    const uniqueOrderNo = `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+    const uniquePgId = `PG_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newTransaction = new TransactionModel({
-      registration_no,
+      registration_no: effectiveRegNo,
       transaction_id: nextId,
       transcation_id: nextId,
-      PG_id: Date.now().toString(),
-      bank_ref_num: referenceNumber || Date.now().toString(),
+      PG_id: uniquePgId,
+      bank_ref_num: referenceNumber || uniquePgId,
       mode: "Admin Approval",
       amount: finalAmount,
       status: "success",
-      orderno: Date.now().toString(),
+      orderno: uniqueOrderNo,
       usertype: userType,
       is_handled: true,
     });
@@ -803,10 +808,13 @@ const upgradeUser = async (req, res) => {
 
     const oldStatus = profile.status;
 
+    // Atomically update user_tbl without duplicating documents
     const updatedProfile = await Profile.findOneAndUpdate(
-      { registration_no },
+      { $or: [{ registration_no: effectiveRegNo }, { ref_no: effectiveRegNo }] },
       {
         $set: {
+          registration_no: effectiveRegNo,
+          ref_no: effectiveRegNo,
           type_of_user: userType,
           user_role: userType,
           expiry_date: updatedExpiryDate,
@@ -816,10 +824,18 @@ const upgradeUser = async (req, res) => {
       { new: true }
     );
 
-    // 6️⃣ Update user_tbl (find by ref_no or registration_no)
     await UserModel.updateOne(
-      { $or: [{ ref_no: registration_no }, { registration_no: registration_no }] },
-      { $set: { user_role: userType, type_of_user: userType, status: "active", expiry_date: updatedExpiryDate } }
+      { $or: [{ ref_no: effectiveRegNo }, { registration_no: effectiveRegNo }] },
+      {
+        $set: {
+          registration_no: effectiveRegNo,
+          ref_no: effectiveRegNo,
+          user_role: userType,
+          type_of_user: userType,
+          status: "active",
+          expiry_date: updatedExpiryDate,
+        }
+      }
     );
 
     if (updatedProfile && oldStatus !== "active") {
@@ -842,7 +858,7 @@ const upgradeUser = async (req, res) => {
       success: true,
       message: "User upgraded successfully",
       data: {
-        registration_no,
+        registration_no: effectiveRegNo,
         userType,
         expiry_date: updatedExpiryDate,
         status: "active",
@@ -850,10 +866,7 @@ const upgradeUser = async (req, res) => {
     });
   } catch (error) {
     console.error("upgradeUser error:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return handleControllerError(res, error, "Failed to upgrade user");
   }
 };
 
@@ -924,7 +937,7 @@ const changePassword = async (req, res) => {
       message: "Password changed successfully.",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleControllerError(res, error, "Failed to change password");
   }
 };
 
@@ -946,23 +959,29 @@ const submitQrPayment = async (req, res) => {
 
     const lastTrans = await TransactionModel.findOne({}).sort({ transaction_id: -1, transcation_id: -1 }).lean();
     const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;
-    const nextId = Number(lastId) + 1;
+    let nextId = Number(lastId) + 1;
+    while (await TransactionModel.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+      nextId++;
+    }
 
     let finalAmount = amount || 999;
     if (planName === "SilverUser" || planName?.includes("Silver")) finalAmount = 799;
     else if (planName === "PremiumUser" || planName?.includes("Premium")) finalAmount = 999;
     else if (planName === "Assistance" || planName?.includes("Assistance")) finalAmount = 1499;
 
+    const uniqueOrderNo = `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+    const uniquePgId = `PG_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+
     const newTransaction = new TransactionModel({
       registration_no: regNo,
       transaction_id: nextId,
       transcation_id: nextId,
-      PG_id: Date.now().toString(),
-      bank_ref_num: Date.now().toString(),
+      PG_id: uniquePgId,
+      bank_ref_num: uniquePgId,
       mode: "Admin Approval",
       amount: finalAmount,
       status: "PENDING",
-      orderno: Date.now().toString(),
+      orderno: uniqueOrderNo,
       usertype: planName || "PremiumUser",
       is_handled: false,
     });
@@ -976,7 +995,7 @@ const submitQrPayment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting QR payment:", error);
-    return res.status(500).json({ success: false, message: error.message });
+    return handleControllerError(res, error, "Failed to submit QR payment");
   }
 };
 

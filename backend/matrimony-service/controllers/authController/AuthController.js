@@ -10,6 +10,7 @@ const PromotersModel = require("../../models/promoters/Promoters");
 const { getWelcomeMessage, getResetPasswordMessage, getPostResetPasswordMessage } = require("../../utils/EmailMessages");
 const { detectPlatform } = require("../../utils/common");
 const { creditPromoterOnAdminAction } = require("../payment.controller");
+const { handleControllerError } = require("../../utils/errorHandler");
 
 const signUp = async (req, res) => {
   try {
@@ -45,16 +46,19 @@ const signUp = async (req, res) => {
             const nextId = Number(lastId) + 1;
             let finalAmount = user_role === "PremiumUser" ? 999 : 799;
 
+            const retryOrderNo = `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+            const retryPgId = `PG_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+
             const newTxn = new TransactionModel({
               registration_no: existingUser.ref_no,
               transaction_id: nextId,
               transcation_id: nextId,
-              PG_id: Date.now().toString(),
-              bank_ref_num: Date.now().toString(),
+              PG_id: retryPgId,
+              bank_ref_num: retryPgId,
               mode: "Admin Approval",
               amount: finalAmount,
               status: "PENDING",
-              orderno: Date.now().toString(),
+              orderno: retryOrderNo,
               usertype: user_role,
               promocode: otherDetails.refered_by || null,
               discount_applied: 0,
@@ -81,17 +85,47 @@ const signUp = async (req, res) => {
       return res.status(409).json({ success: false, message: "Username already exists" });
     }
 
+    // Calculate candidateUserId and candidateRefNo with collision verification
     const lastUser = await UserModel.aggregate([
+      { $match: { user_id: { $type: "number" } } },
       { $sort: { user_id: -1 } },
       { $limit: 1 },
     ]);
-    const newUserId = lastUser.length ? lastUser[0].user_id + 1 : 1;
-    const newRefNo = lastUser.length
-      ? `S${String(parseInt(lastUser[0].ref_no.replace(/\D/g, '')) + 1).padStart(
-        4,
-        "0"
-      )}`
-      : "S0001";
+    let candidateUserId = lastUser.length && !isNaN(lastUser[0].user_id) ? lastUser[0].user_id + 1 : 1;
+
+    let candidateNum = candidateUserId;
+    if (lastUser.length && lastUser[0].ref_no) {
+      const extracted = parseInt(String(lastUser[0].ref_no).replace(/\D/g, ''));
+      if (!isNaN(extracted) && extracted >= candidateNum) {
+        candidateNum = extracted + 1;
+      }
+    }
+    let candidateRefNo = `S${String(candidateNum).padStart(4, "0")}`;
+
+    // Loop until both candidateUserId and candidateRefNo are guaranteed unique
+    let hasCollision = true;
+    let attempts = 0;
+    while (hasCollision && attempts < 200) {
+      attempts++;
+      const existing = await UserModel.findOne({
+        $or: [
+          { user_id: candidateUserId },
+          { ref_no: candidateRefNo },
+          { registration_no: candidateRefNo }
+        ]
+      }).select({ _id: 1, user_id: 1, ref_no: 1 }).lean();
+
+      if (!existing) {
+        hasCollision = false;
+      } else {
+        candidateUserId++;
+        candidateNum++;
+        candidateRefNo = `S${String(candidateNum).padStart(4, "0")}`;
+      }
+    }
+
+    const newUserId = candidateUserId;
+    const newRefNo = candidateRefNo;
 
     // For new users, set initial status to Pending
     const userStatus = status || "Pending";
@@ -126,19 +160,25 @@ const signUp = async (req, res) => {
         const TransactionModel = require("../../models/Transaction");
         const lastTrans = await TransactionModel.findOne({}).sort({ transaction_id: -1, transcation_id: -1 }).lean();
         const lastId = lastTrans?.transaction_id || lastTrans?.transcation_id || 0;
-        const nextId = Number(lastId) + 1;
+        let nextId = Number(lastId) + 1;
+        while (await TransactionModel.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+          nextId++;
+        }
         let finalAmount = newProfile.type_of_user === "PremiumUser" ? 999 : 799;
+
+        const signupOrderNo = `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+        const signupPgId = `PG_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
 
         const newTxn = new TransactionModel({
           registration_no: newRefNo,
           transaction_id: nextId,
           transcation_id: nextId,
-          PG_id: Date.now().toString(),
-          bank_ref_num: Date.now().toString(),
+          PG_id: signupPgId,
+          bank_ref_num: signupPgId,
           mode: "Admin Approval",
           amount: finalAmount,
           status: (newProfile.status === "active" || newProfile.status === "Active") ? "SUCCESS" : "PENDING",
-          orderno: Date.now().toString(),
+          orderno: signupOrderNo,
           usertype: newProfile.type_of_user,
           promocode: otherDetails.refered_by || null,
           discount_applied: 0,
@@ -201,8 +241,8 @@ const signUp = async (req, res) => {
       message: "Signup successful",
     });
   } catch (error) {
-
-    res.status(500).json({ success: false, message: error.message });
+    console.error("signUp error:", error);
+    return handleControllerError(res, error, "Failed to complete signup");
   }
 };
 
@@ -388,7 +428,7 @@ const resetPassword = async (req, res) => {
       .status(400)
       .json({ success: false, message: "Invalid request parameters" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return handleControllerError(res, error, "Failed to reset password");
   }
 };
 
@@ -560,11 +600,7 @@ const generateLoginLink = async (req, res) => {
     });
   } catch (error) {
     console.error("generateLoginLink error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while generating login link",
-      error: error.message,
-    });
+    return handleControllerError(res, error, "Server error while generating login link");
   }
 };
 
@@ -702,11 +738,7 @@ const magicLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("magicLogin error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error during magic login",
-      error: error.message,
-    });
+    return handleControllerError(res, error, "Server error during magic login");
   }
 };
 
