@@ -19,8 +19,27 @@ async function blurAndGetURL(imageUrl,username, blurAmount = 20) {
       .jpeg()
       .toBuffer();
 
-    const authResponse = await fetch(`${process.env.BACKEND_URL}/image-kit-auth`);
-    const { signature, expire, token } = await authResponse.json();
+    let signature, expire, token;
+    if (process.env.BACKEND_URL) {
+      const authResponse = await fetch(`${process.env.BACKEND_URL}/image-kit-auth`);
+      const authData = await authResponse.json();
+      signature = authData.signature;
+      expire = authData.expire;
+      token = authData.token;
+    } else if (process.env.IMAGEKIT_PRIVATE_KEY) {
+      const ImageKit = require('imagekit');
+      const ik = new ImageKit({
+        publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+        privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+      });
+      const authData = ik.getAuthenticationParameters();
+      signature = authData.signature;
+      expire = authData.expire;
+      token = authData.token;
+    } else {
+      throw new Error('ImageKit credentials not configured and BACKEND_URL not set');
+    }
 
    // 3. Create FormData for ImageKit
     const formData = new FormData();

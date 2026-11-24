@@ -1,0 +1,53 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "girija-kalyana": {
+      "root": "apps/Girija-Kalyana",
+      "framework": "vite"
+    },
+    "sangam-sathi": {
+      "root": "apps/Sangam-sathi",
+      "framework": "vite"
+    },
+    "shree-ganda": {
+      "root": "apps/Shree-ganda",
+      "framework": "vite"
+    },
+    "matrimony-service": {
+      "root": "backend/matrimony-service",
+      "framework": "express",
+      "entrypoint": "index.js",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "shree-gandha-server",
+          "format": "url",
+          "env": "SHREE_GANDHA_SERVER_URL"
+        }
+      ]
+    },
+    "shree-gandha-server": {
+      "root": "backend/shree-gandha-server",
+      "framework": "express",
+      "entrypoint": "index.js"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": { "service": "matrimony-service" }
+    },
+    {
+      "source": "/sangam/(.*)",
+      "destination": { "service": "sangam-sathi" }
+    },
+    {
+      "source": "/shree/(.*)",
+      "destination": { "service": "shree-ganda" }
+    },
+    {
+      "source": "/(.*)",
+      "destination": { "service": "girija-kalyana" }
+    }
+  ]
+}
