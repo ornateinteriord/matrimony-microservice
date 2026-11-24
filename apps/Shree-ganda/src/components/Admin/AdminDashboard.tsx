@@ -11,6 +11,8 @@ import { PremiumLoader } from '../../utils/common';
 import { IoMdNotifications } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { getAllUserCounts, getAllUserImageVerification } from '../api/Admin';
+import DynamicSidebar from '../common/DynamicSidebar';
+import ADMIN_SIDEBAR_CONFIG from './adminSidebarConfig';
 
 const AdminDashboard = () => {
   const isLargeScreen = useMediaQuery("(min-width:900px)");
@@ -43,11 +45,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetchImgVer({ page: 0, pageSize: 1 });
+      fetchImgVer();
     }
     const interval = setInterval(() => {
       if (localStorage.getItem('token')) {
-        fetchImgVer({ page: 0, pageSize: 1 });
+        fetchImgVer();
       }
     }, 30000);
     return () => clearInterval(interval);
@@ -287,7 +289,6 @@ const handleConfirmLogout = () => {
             <List sx={{ p: 0 }}>
               {totalPendingImages > 0 ? (
                 <ListItem 
-                  button
                   onClick={handleNotificationItemClick}
                   sx={{ 
                     borderBottom: '1px solid #f5f5f5',
@@ -338,431 +339,26 @@ const handleConfirmLogout = () => {
         </div>
       </nav>
     </div>
-        {/* Sidebar */}
-        <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`} style={{
-          overflowY: 'auto',
-          scrollbarWidth: 'none', 
-          msOverflowStyle: 'none', 
-          '&::-webkit-scrollbar': {
-            display: 'none', 
-          }
-        }}>
-          {!isLargeScreen && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px 15px 10px 15px', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-              <Link to="/" style={{ textDecoration: "none", display: 'inline-flex', alignItems: 'center' }}>
-                <img src="/ShreeLogo.png" alt="Shreeganda Matrimony" style={{ height: "60px", width: "auto", borderRadius: '8px', objectFit: 'contain', transform: 'scale(1.15)' }} />
-              </Link>
-            </div>
-          )}
-          {/* Sidebar Header */}
-          <div className="sidebar-header" style={{ padding: '15px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Avatar 
-                alt="Admin" 
-                src={userProfile.profilePicture || "/path-to-profile-pic.jpg"} 
-                style={{ border: '2px solid rgba(255,255,255,0.5)', width: 40, height: 40 }}
-              />
-              <Typography variant="h6" style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{adminName}</Typography>
-            </div>
-            {/* Removed the redundant toggle button here */}
-          </div>
-
-          <List sx={{ width: '100%', padding: 0 }}>
-          <ListItem
-            onClick={handleProfileDialogOpen}
-            sx={{ 
-              cursor: 'pointer',
-              padding: '8px 20px',
-              color: '#5d2a18',
-              backgroundColor: isActive('/admin/profile') ? '#e6d5b8' : 'transparent',
-              '&:hover': {
-                backgroundColor: '#f0e2cc',
-                color: '#7c2d12'
-              }
-            }}
-          >
-            <CgProfile style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} /> 
-            <Typography style={{ fontSize: '0.95rem', fontWeight: isActive('/admin/profile') ? 'bold' : 'normal' }}>Profile</Typography>
-          </ListItem>
-          <div className="sidebar-divider" />
-
-            <ListItem 
-              onClick={handleDashboard} 
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: isActive('/admin/dashboard') ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                }
-              }}
-            >
-              <FaDashcube style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} /> 
-              <Typography style={{ fontSize: '0.95rem', fontWeight: isActive('/admin/dashboard') ? 'bold' : 'normal' }}>Dashboard</Typography>
-            </ListItem>
-            <div className="sidebar-divider" />
-
-            {/* User Management Dropdown */}
-           <ListItem 
-              button 
-              onClick={toggleUserManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: openUserManagement ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                },
-              }}
-            >
-              <FaUser style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} />
-              <ListItemText primary="User Management" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: openUserManagement ? 'bold' : 'normal' } }} />
-              {openUserManagement ? <FaChevronUp style={{ color: '#7c2d12', fontSize: '14px' }} /> : <FaChevronDown style={{ color: '#7c2d12', fontSize: '14px' }} />}
-            </ListItem>
-            <Collapse in={openUserManagement} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%', backgroundColor: 'rgba(124, 45, 18, 0.05)' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateUserTable}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/user-table') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="User Table" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateUserUpgrade}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/userData') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="User Upgrade" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-      
-                <ListItem 
-                  button 
-                  onClick={navigateRenewals}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/renewals') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Renewal" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>             
-    
-                <ListItem 
-                  button 
-                  onClick={navigateresetpass}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/resetpass') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Password" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateImageVerify}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/imageverify') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Image Verification" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              </List>
-            </Collapse>
-            <div className="sidebar-divider" />
-
-            {/* Assistance Service Dropdown - Commented out for now */}
-            {/*
-            <ListItem 
-              button 
-              onClick={toggleAssistanceService}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: openAssistanceService ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                }
-              }}
-            >
-              <FaServer style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} />
-              <ListItemText primary="Assistance Service" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: openAssistanceService ? 'bold' : 'normal' } }} />
-              {openAssistanceService ? <FaChevronUp style={{ color: '#7c2d12', fontSize: '14px' }} /> : <FaChevronDown style={{ color: '#7c2d12', fontSize: '14px' }} />}
-           </ListItem>
-            <Collapse in={openAssistanceService} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%', backgroundColor: 'rgba(124, 45, 18, 0.05)' }}>
-                <ListItem 
-                  button 
-                  onClick={navigatePendingdata}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/pendingdata') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Pending" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateSuccessdata}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/successdata') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Success" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-           
-                <ListItem 
-                  button 
-                  onClick={navigatePromoterdata}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/promotersdata') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Promoter User" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              </List>
-            </Collapse>
-            <div className="sidebar-divider" />
-            */}
-
-            {/* Promoter Management Dropdown */}
-            <ListItem 
-              button 
-              onClick={togglePromoterManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: openPromoterManagement ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                }
-              }}
-            >
-              <FaUsers style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} />
-              <ListItemText primary="Promoter Management" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: openPromoterManagement ? 'bold' : 'normal' } }} />
-              {openPromoterManagement ? <FaChevronUp style={{ color: '#7c2d12', fontSize: '14px' }} /> : <FaChevronDown style={{ color: '#7c2d12', fontSize: '14px' }} />}
-            </ListItem>
-            <Collapse in={openPromoterManagement} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%', backgroundColor: 'rgba(124, 45, 18, 0.05)' }}>
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersData}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/promoters') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Promoters" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-             
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersUsers}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/promotersusers') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Promoter Users" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersEarn}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/promoterearn') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Promoter Earnings" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-      
-                <ListItem 
-                  button 
-                  onClick={navigatePaytopromoters}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/paytopromoters') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Pay to Promoters" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              </List>
-            </Collapse>
-            <div className="sidebar-divider" />
-           
-             {/* Promoter Receipts Dropdown */}
-            <ListItem 
-              button 
-              onClick={toggleReceiptsManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: openPromoterReceipts ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                }
-              }}
-            >
-              <FaReceipt style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} />
-              <ListItemText primary="Receipts" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: openPromoterReceipts ? 'bold' : 'normal' } }} />
-              {openPromoterReceipts ? <FaChevronUp style={{ color: '#7c2d12', fontSize: '14px' }} /> : <FaChevronDown style={{ color: '#7c2d12', fontSize: '14px' }} />}
-            </ListItem>
-            <Collapse in={openPromoterReceipts} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%', backgroundColor: 'rgba(124, 45, 18, 0.05)' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateOnlineTransaction}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/onlinetransaction') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Online Transaction" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-        
-                {/*
-                <ListItem 
-                  button 
-                  onClick={navigateAssistanceData}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/assistance') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Assistance Online Transaction" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-                */}
-               
-                <ListItem 
-                  button 
-                  onClick={navigateReceiptsvocher}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/receiptsvocher') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Receipt Voucher" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              </List>
-            </Collapse>
-            <div className="sidebar-divider" />
-
-               {/* Reports Dropdown */}
-             <ListItem 
-               button 
-               onClick={toggleReportManagement}
-               sx={{ 
-                 cursor: 'pointer',
-                 padding: '8px 20px',
-                 color: '#5d2a18',
-                 backgroundColor: openPromoterReports ? '#e6d5b8' : 'transparent',
-                 '&:hover': {
-                   backgroundColor: '#f0e2cc',
-                   color: '#7c2d12'
-                 }
-               }}
-             >
-               <TbMessageReportFilled style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} /> 
-              <ListItemText primary="Reports" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: openPromoterReports ? 'bold' : 'normal' } }} />
-              {openPromoterReports ? <FaChevronUp style={{ color: '#7c2d12', fontSize: '14px' }} /> : <FaChevronDown style={{ color: '#7c2d12', fontSize: '14px' }} />}
-            </ListItem>
-            <Collapse in={openPromoterReports} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%', backgroundColor: 'rgba(124, 45, 18, 0.05)' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateUserReports}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/userreports') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Users" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-               
-                <ListItem 
-                  button 
-                  onClick={navigateRenewalReports}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/renewalreports') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Renewals" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              
-                <ListItem 
-                  button 
-                  onClick={navigateReceiptsReportsdata}
-                  sx={{
-                    padding: '5px 20px 5px 50px',
-                    color: isActive('/admin/receiptsreports') ? '#7c2d12' : '#5d2a18',
-                    '&:hover': { color: '#7c2d12', backgroundColor: '#f0e2cc' }
-                  }}
-                >
-                  <ListItemText primary="Receipts" primaryTypographyProps={{ style: { fontSize: '0.9rem' } }} />
-                </ListItem>
-              </List>
-            </Collapse>
-            <div className="sidebar-divider" />
-
-            {/* notification */}
-            <ListItem 
-              button 
-              onClick={navigateNotification}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '8px 20px',
-                color: '#5d2a18',
-                backgroundColor: isActive('/admin/notification') ? '#e6d5b8' : 'transparent',
-                '&:hover': {
-                  backgroundColor: '#f0e2cc',
-                  color: '#7c2d12'
-                }
-              }}
-            >
-              <IoIosNotifications style={{ marginRight: '12px', fontSize: '18px', color: '#7c2d12' }} />
-              <ListItemText primary="Notifications" primaryTypographyProps={{ style: { fontSize: '0.95rem', fontWeight: isActive('/admin/notification') ? 'bold' : 'normal' } }} />
-            </ListItem>
-          </List>
+        {/* Dynamic Sidebar */}
+        <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+          <DynamicSidebar
+            config={ADMIN_SIDEBAR_CONFIG}
+            userRole="admin"
+            headerContent={
+              <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1.5, bgcolor: '#FFFFFF' }}>
+                <Avatar 
+                  alt="Admin" 
+                  src={userProfile.profilePicture || "/path-to-profile-pic.jpg"} 
+                  sx={{ width: 40, height: 40, border: '2px solid #C5A059' }}
+                />
+                <Box>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: '#8B1E1E' }}>{adminName}</Typography>
+                  <Typography variant="caption" sx={{ color: '#5C4033' }}>Administrator</Typography>
+                </Box>
+              </Box>
+            }
+            onClose={() => setIsSidebarOpen(false)}
+          />
         </aside>
 
         {/* Logout Confirmation Dialog */}

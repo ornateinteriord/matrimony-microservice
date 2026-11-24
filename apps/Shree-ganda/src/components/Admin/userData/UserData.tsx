@@ -44,7 +44,7 @@ const UserData = () => {
     refetch: searchUser,
   } = useGetSearchProfiles(search, true);
 
-  // ✅ Normalize API data
+  // Normalize API data
   const users = Array.isArray(allUsersData?.content)
     ? allUsersData.content
     : [];

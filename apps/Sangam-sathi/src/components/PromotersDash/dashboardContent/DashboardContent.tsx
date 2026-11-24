@@ -58,7 +58,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGetPromoterDashboard } from '../../api/Promoter';
 import TokenService from '../../token/tokenService';
 
-const DashboardContent = () => {
+const DashboardContent = ({ sidebarData }: { sidebarData?: any } = {}) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const decodedToken = TokenService.decodeToken();

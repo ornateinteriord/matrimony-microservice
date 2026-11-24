@@ -244,7 +244,7 @@ const UserNavBar = () => {
   // On first render, ensure we're on the dashboard if no specific route is set
   useEffect(() => {
     if (location.pathname === "/user" || location.pathname === "/user/") {
-      navigation("/user/userdashboard");
+      navigation("/user/userDashboard");
     }
   }, [location.pathname, navigation]);
 
@@ -265,8 +265,10 @@ const UserNavBar = () => {
           position="fixed"
           sx={{
             zIndex: (theme) => theme.zIndex.drawer + 1,
-            background: "#1a4f72",
+            background: "#700F2B",
             height: "60px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
           }}
         >
           <Toolbar
@@ -285,7 +287,7 @@ const UserNavBar = () => {
             <Box sx={{ textAlign: "left", width: "100%" }}>
               <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
                 <Typography variant="h6" noWrap component="div">
-                  Girija❤️Kalyana
+                  Girija Kalyana
                 </Typography>
               </Link>
             </Box>
@@ -371,8 +373,9 @@ const UserNavBar = () => {
             [`& .MuiDrawer-paper`]: {
               width: isSidebarOpen ? drawerWidth : 0,
               boxSizing: "border-box",
-              background: "#1a4f72",
+              background: "#700F2B",
               color: "#fff",
+              borderRight: "1px solid rgba(255,255,255,0.08)",
               transition: "width 0.6s ease, opacity 0.6s ease",
               opacity: isSidebarOpen ? 1 : 0,
             },

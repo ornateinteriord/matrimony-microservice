@@ -1,18 +1,70 @@
 import React from "react";
-import { List, ListItem, Box, Button, Typography, Chip } from "@mui/material";
-import {
-  FaTachometerAlt,
-  FaUser,
-  FaUsers,
-  FaHeart,
-  FaSearch,
-  FaSignOutAlt,
-} from "react-icons/fa";
-import { FaUsersViewfinder } from "react-icons/fa6";
-import { Dashboard } from "@mui/icons-material";
+import { Box, Typography, Chip } from "@mui/material";
+import DynamicSidebar from "../common/DynamicSidebar";
+import { SidebarConfig } from "../../types/navigation";
 
-const SidebarMenu = ({
-  selectedItem,
+export interface SidebarMenuProps {
+  selectedItem?: string;
+  handleDashboardClick?: () => void;
+  handleProfileClick?: () => void;
+  handleMatchesClick?: () => void;
+  handleInterestClick?: () => void;
+  handleViewAllClick?: () => void;
+  handleSearchClick?: () => void;
+  handleOpenLogoutDialog?: () => void;
+  userProfile?: any;
+}
+
+const userSidebarConfig: SidebarConfig = {
+  brandTitle: "Girija Kalyana",
+  homePath: "/user/userDashboard",
+  items: [
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      path: "/user/userDashboard",
+      icon: "Dashboard",
+    },
+    {
+      id: "profile",
+      title: "My Profile",
+      path: "/user/profile",
+      icon: "Person",
+    },
+    {
+      id: "matches",
+      title: "My Matches",
+      path: "/user/MyMatches",
+      icon: "Favorite",
+    },
+    {
+      id: "interest",
+      title: "My Interest",
+      path: "/user/myintrest",
+      icon: "Favorite",
+    },
+    {
+      id: "view-all",
+      title: "View All",
+      path: "/user/viewAll",
+      icon: "People",
+    },
+    {
+      id: "search",
+      title: "Search",
+      path: "/user/search",
+      icon: "Search",
+    },
+    {
+      id: "logout",
+      title: "Logout",
+      path: "",
+      icon: "Logout",
+    },
+  ],
+};
+
+const SidebarMenu: React.FC<SidebarMenuProps> = ({
   handleDashboardClick,
   handleProfileClick,
   handleMatchesClick,
@@ -22,114 +74,70 @@ const SidebarMenu = ({
   handleOpenLogoutDialog,
   userProfile,
 }) => {
-  const menuItems = [
-    {
-      text: "Dashboard",
-      icon: <Dashboard />,
-      onClick: handleDashboardClick,
-    },
-    {
-      text: "My Profile",
-      icon: <FaUser />,
-      onClick: handleProfileClick,
-    },
-    {
-      text: "My Matches",
-      icon: <FaUsers />,
-      onClick: handleMatchesClick,
-    },
-    {
-      text: "My Interest",
-      icon: <FaHeart />,
-      onClick: handleInterestClick,
-    },
-    {
-      text: "View All",
-      icon: <FaUsersViewfinder />,
-      onClick: handleViewAllClick,
-    },
-    {
-      text: "Search",
-      icon: <FaSearch />,
-      onClick: handleSearchClick,
-    },
-    {
-      text: "Logout",
-      icon: <FaSignOutAlt />,
-      onClick: handleOpenLogoutDialog,
-    },
-  ];
+  const handleItemClick = (item: any) => {
+    switch (item.id) {
+      case "dashboard":
+        if (handleDashboardClick) handleDashboardClick();
+        break;
+      case "profile":
+        if (handleProfileClick) handleProfileClick();
+        break;
+      case "matches":
+        if (handleMatchesClick) handleMatchesClick();
+        break;
+      case "interest":
+        if (handleInterestClick) handleInterestClick();
+        break;
+      case "view-all":
+        if (handleViewAllClick) handleViewAllClick();
+        break;
+      case "search":
+        if (handleSearchClick) handleSearchClick();
+        break;
+      case "logout":
+        if (handleOpenLogoutDialog) handleOpenLogoutDialog();
+        break;
+      default:
+        break;
+    }
+  };
+
+  const header = (
+    <Box sx={{ textAlign: "center", py: 1 }}>
+      <Typography
+        variant="h6"
+        textTransform="capitalize"
+        sx={{ fontWeight: 700, color: "#700F2B" }}
+      >
+        {userProfile?.first_name || "Member"}
+      </Typography>
+      <Chip
+        label={userProfile?.type_of_user || "FreeUser"}
+        size="small"
+        sx={{
+          mt: 1,
+          fontSize: "0.75rem",
+          backgroundColor:
+            userProfile?.type_of_user === "PremiumUser" ||
+            userProfile?.type_of_user === "SilverUser"
+              ? "#B45309"
+              : "#700F2B",
+          color: "#ffffff",
+          fontWeight: "bold",
+          borderRadius: "4px",
+        }}
+      />
+    </Box>
+  );
 
   return (
-    <Box sx={{ overflow: "auto" }}>
-      <List>
-        <ListItem>
-          <Box sx={{ textAlign: "center", py: 0 }}>
-            <Typography
-              variant="h5"
-              marginLeft={2}
-              textTransform={"capitalize"}
-              sx={{fontSize:"2rem"}}
-            >
-              {userProfile?.first_name}
-            </Typography>
-             <Chip
-                  label={userProfile?.type_of_user || "FreeUser"}
-                  size="small"
-                  sx={{
-                    mt: 1,
-                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                    backgroundColor:
-                      userProfile?.type_of_user === "PremiumUser" ||
-                      userProfile?.type_of_user === "SilverUser"
-                        ? "#FFD700"
-                        : userProfile?.type_of_user === "FreeUser"
-                        ? "#87CEEB"
-                        : "gray",
-                    color: "black",
-                    fontWeight: "bold",
-                  }}
-                />
-          </Box>
-        </ListItem>
-
-        {menuItems.map((item, index) => (
-          <ListItem
-            key={index}
-            disablePadding
-            onClick={item.onClick}
-            sx={{
-              backgroundColor:
-                selectedItem === item.text ? "#4a8fb2" : "transparent",
-              "&:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-              },
-              borderRadius: "2px",
-              mx: 0,
-              my: 2,
-            }}
-          >
-            <Button
-              variant="text"
-              startIcon={item.icon}
-              sx={{
-                color: "#fff",
-                fontSize: "1.2rem",
-                textTransform: "capitalize",
-                marginLeft: "10px",
-                width: "100%",
-                justifyContent: "flex-start",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.1)",
-                },
-              }}
-            >
-              {item.text}
-            </Button>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
+    <DynamicSidebar
+      config={userSidebarConfig}
+      headerContent={header}
+      onItemClick={handleItemClick}
+      width="100%"
+      variant="permanent"
+    />
   );
 };
 

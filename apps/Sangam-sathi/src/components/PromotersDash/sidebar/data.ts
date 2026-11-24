@@ -1,21 +1,108 @@
-// data.js
+import { SidebarConfig, NavItemConfig } from '../../../types/navigation';
+
+export const promoterSidebarConfig: SidebarConfig = {
+  brandTitle: "Sangam Sathi",
+  homePath: "/PromotAdmin",
+  items: [
+    {
+      id: "promoter-dashboard",
+      title: "Dashboard",
+      path: "/PromotAdmin",
+      icon: "Dashboard",
+    },
+    {
+      id: "promoter-profile",
+      title: "My Profile",
+      path: "/PromotAdmin/profilepage",
+      icon: "Person",
+    },
+    {
+      id: "promoter-refer",
+      title: "Refer / Invite",
+      path: "/PromotAdmin/refer",
+      icon: "Share",
+    },
+    {
+      id: "promoter-referrals",
+      title: "My Referrals",
+      path: "/PromotAdmin/my-referrals",
+      icon: "Groups",
+    },
+    {
+      id: "promoter-assistance",
+      title: "Assistance Services",
+      path: "/PromotAdmin/assistance-pending",
+      icon: "SupportAgent",
+      children: [
+        { id: "assistance-pending", title: "Pending", path: "/PromotAdmin/assistance-pending", icon: "Pending" },
+        { id: "assistance-success", title: "Success", path: "/PromotAdmin/assistance-success", icon: "CheckCircle" },
+      ],
+    },
+    {
+      id: "promoter-earnings",
+      title: "My Earnings",
+      path: "",
+      icon: "AttachMoney",
+      children: [
+        { id: "earnings-reg", title: "Registration Earnings", path: "", icon: "HowToReg" },
+        { id: "earnings-assist", title: "Assistance Earnings", path: "", icon: "SupportAgent" },
+        { id: "earnings-renewal", title: "Renewal Earnings", path: "", icon: "Autorenew" },
+      ],
+    },
+    {
+      id: "promoter-interests",
+      title: "User Interests",
+      path: "/PromotAdmin/interests/sent",
+      icon: "Favorite",
+      children: [
+        { id: "interests-sent", title: "Sent", path: "/PromotAdmin/interests/sent", icon: "Send" },
+        { id: "interests-received", title: "Received", path: "/PromotAdmin/interests/received", icon: "Inbox" },
+      ],
+    },
+    {
+      id: "promoter-search",
+      title: "Search Profile",
+      path: "/PromotAdmin/search-profiles",
+      icon: "Search",
+    },
+    {
+      id: "promoter-verify",
+      title: "Image Verification",
+      path: "/PromotAdmin/image-verification",
+      icon: "ImageSearch",
+    },
+    {
+      id: "promoter-boost",
+      title: "Boosted Profiles",
+      path: "",
+      icon: "TrendingUp",
+    },
+    {
+      id: "promoter-logout",
+      title: "Logout",
+      path: "",
+      icon: "Logout",
+    },
+  ],
+};
+
 const sidebarData = {
-  title: "Sangam ❤️ Sathi",
+  title: "Sangam Sathi",
   menuItems: [
     {
       text: "Dashboard",
       icon: "Dashboard",
-      path:"/PromotAdmin"
+      path: "/PromotAdmin"
     },
     {
       text: "My Profile",
       icon: "Person",
-      path:"/PromotAdmin/profilepage"
+      path: "/PromotAdmin/profilepage"
     },
     {
       text: "Refer / Invite",
       icon: "Share",
-       path:"/PromotAdmin/refer"
+      path: "/PromotAdmin/refer"
     },
     {
       text: "My Referrals",
@@ -88,7 +175,7 @@ const sidebarData = {
     {
       title: "My Total Earnings",
       value: "24700.0",
-      color: "#9c27b0",
+      color: "#0B192C",
       icon: "AttachMoney",
     },
     {

@@ -19,9 +19,9 @@ import {
 
 import { Edit, CameraAlt, Close, Lock, Settings } from '@mui/icons-material';
 
-const AdminProfileDialog = ({ open, onClose }) => {
+const AdminProfileDialog = ({ open = true, onClose = () => {} }: { open?: boolean; onClose?: () => void }) => {
   const [editMode, setEditMode] = useState(false);
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useState<any>({
     name: "Admin User",
     email: "admin@example.com",
     phone: "+1 234 567 890",

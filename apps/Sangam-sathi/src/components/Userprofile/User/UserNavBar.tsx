@@ -30,6 +30,7 @@ import {
 import { toast } from "react-toastify";
 import { LoadingComponent } from "../../../App";
 import SidebarMenu from "../../sidebar/SidebarMenu";
+import BottomNav from "../../common/BottomNav";
 
 const drawerWidth = 240;
 
@@ -159,7 +160,7 @@ const UserNavBar = () => {
           toast.success("Password changed successfully");
           handleCloseChangePassword();
         },
-        onError: (error) => {
+        onError: (error: any) => {
           toast.error(
             error?.response?.data?.message || "Failed to change password"
           );
@@ -203,7 +204,7 @@ const UserNavBar = () => {
   // On first render, ensure we're on the dashboard if no specific route is set
   useEffect(() => {
     if (location.pathname === "/user" || location.pathname === "/user/") {
-      navigation("/user/userdashboard");
+      navigation("/user/userDashboard");
     }
   }, [location.pathname, navigation]);
 
@@ -224,8 +225,10 @@ const UserNavBar = () => {
           position="fixed"
           sx={{
             zIndex: (theme) => theme.zIndex.drawer + 1,
-            background: "#0B192C",
-            height: "60px",
+            background: "#0F172A",
+            height: { xs: "52px", sm: "60px" },
+            boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
           }}
         >
           <Toolbar
@@ -233,6 +236,7 @@ const UserNavBar = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              minHeight: { xs: "52px !important", sm: "60px !important" },
             }}
           >
             {!isLargeScreen && (
@@ -244,7 +248,7 @@ const UserNavBar = () => {
             <Box sx={{ textAlign: "left", width: "100%" }}>
               <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
                 <Typography variant="h6" noWrap component="div">
-                  Sangam❤️Sathi
+                  Sangam Sathi
                 </Typography>
               </Link>
             </Box>
@@ -306,8 +310,9 @@ const UserNavBar = () => {
             [`& .MuiDrawer-paper`]: {
               width: isSidebarOpen ? drawerWidth : 0,
               boxSizing: "border-box",
-              background: "#0B192C",
+              background: "#0F172A",
               color: "#fff",
+              borderRight: "1px solid rgba(255, 255, 255, 0.08)",
               transition: "width 0.6s ease, opacity 0.6s ease",
               opacity: isSidebarOpen ? 1 : 0,
             },
@@ -335,12 +340,14 @@ const UserNavBar = () => {
             flexGrow: 1,
             marginTop: 1,
             paddingLeft: isSidebarOpen ? `30px` : "20px",
+            pb: { xs: "64px", md: 2 },
             transition: "padding-left 0.4s ease",
           }}
         >
-          <Toolbar />
+          <Toolbar sx={{ minHeight: { xs: "52px !important", sm: "60px !important" } }} />
           <Outlet />
         </Box>
+        <BottomNav />
 
         <Dialog
           open={openLogoutDialog}

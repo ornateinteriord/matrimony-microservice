@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { LoadingTextSpinner } from "../../../utils/common";
 
 // Reusable Card Component
-const DashboardCard = ({ count, label, icon, link, style }) => {
+const DashboardCard = ({ count, label, icon, link, style }: any) => {
   return (
     <div className="main-div-card">
       <div className="left-div">

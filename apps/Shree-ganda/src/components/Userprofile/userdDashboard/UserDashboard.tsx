@@ -79,23 +79,80 @@ useEffect(() => {
         mt: "0",
       }}
     >
-      <Box sx={{ textAlign: "center", mb: 1 }}>
-        <Typography
-          variant={isSmallScreen ? "h5" : "h4"}
-          fontWeight="500px"
-          color="#212121"
-          textTransform="capitalize"
-          sx={{
-            fontSize: {
-              xs: "1.5rem",
-              sm: "2rem",
-            },
-          }}
-        >
-          Welcome {userProfile?.first_name || "User"} {userProfile?.last_name || ""}
-        </Typography>
-        <Typography color="#424242">({userProfile?.registration_no})</Typography>
-        <Divider sx={{ mt: 1, height: '1px', backgroundColor: '#e0e0e0' }} />
+      <Box sx={{
+        width: "100%",
+        mb: 3,
+        mt: 1,
+        backgroundColor: "#78350f",
+        borderRadius: "6px",
+        border: "1px solid #92400e",
+        padding: { xs: "16px 20px", sm: "24px 28px" },
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        position: "relative",
+      }}>
+        <Box sx={{
+          display: "flex", flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "flex-start", md: "center" },
+          justifyContent: "space-between",
+          gap: 2.5
+        }}>
+          {/* Welcome Text */}
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              variant={isSmallScreen ? "h5" : "h4"}
+              fontWeight="700"
+              color="#ffffff"
+              sx={{
+                fontSize: { xs: "1.4rem", sm: "1.8rem" },
+                letterSpacing: "-0.3px",
+                mb: 1
+              }}
+            >
+              Welcome back,{" "}
+              <span style={{ color: '#fde68a' }}>{userProfile?.first_name || "User"} {userProfile?.last_name || ""}</span>
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography sx={{
+                color: "#78350f",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                backgroundColor: "#fde68a",
+                padding: "3px 10px",
+                borderRadius: "4px",
+                letterSpacing: "0.5px"
+              }}>
+                ID: {userProfile?.registration_no}
+              </Typography>
+              <Typography sx={{ color: "#fef3c7", fontSize: "0.85rem" }}>
+                {userProfile?.city ? `${userProfile.city}, ` : ""}{userProfile?.state || ""}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Quick Stats Card */}
+          <Box sx={{
+            backgroundColor: "rgba(255, 255, 255, 0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: "8px",
+            padding: "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            width: { xs: "100%", sm: "auto" }
+          }}>
+            <Box sx={{ textAlign: "center", px: 1 }}>
+              <Typography sx={{ color: "#fef3c7", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 700, mb: 0.2 }}>Interests Sent</Typography>
+              <Typography sx={{ color: "#ffffff", fontSize: "1.3rem", fontWeight: 800 }}>{connectionsData?.totalRecords || 0}</Typography>
+            </Box>
+            <Divider orientation="vertical" flexItem sx={{ borderColor: "rgba(255,255,255,0.2)" }} />
+            <Box sx={{ textAlign: "center", px: 1 }}>
+              <Typography sx={{ color: "#fef3c7", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 700, mb: 0.2 }}>Membership Tier</Typography>
+              <Typography sx={{ color: "#fde68a", fontSize: "1.1rem", fontWeight: 800 }}>
+                {isSilverOrPremiumUser(userProfile?.type_of_user) ? 'Premium' : 'Free Member'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Box>
 
       <Stack spacing={3}>

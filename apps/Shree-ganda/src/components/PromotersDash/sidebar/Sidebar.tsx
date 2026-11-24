@@ -1,222 +1,117 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Collapse,
-  Drawer,
-  Toolbar,
-} from '@mui/material';
-import {
-  Dashboard,
-  Person,
-  Share,
-  Search,
-  ManageSearch,
-  ImageSearch,
-  TrendingUp,
-  ArrowDropDown as ArrowDropDownIcon,
-  Pending,
-  CheckCircle,
-  TimerOff,
-  Groups,
-  HowToReg,
-  SupportAgent,
-  Autorenew,
-  Send,
-  Inbox,
-  AttachMoney,
-  AccountBalanceWallet,
-  Favorite,
-  GroupAdd,
-  PersonOff,
-  PendingActions,
-  TaskAlt,
-  Event,
-  Settings,
-  Lock,
-  Notifications,
-  Email,
-  Logout,
-} from '@mui/icons-material';
+import React from 'react';
+import { Drawer, Box } from '@mui/material';
+import DynamicSidebar from '../../common/DynamicSidebar';
+import { SidebarConfig } from '../../../types/navigation';
 import { useNavigate } from 'react-router-dom';
 
+export const PROMOTER_SIDEBAR_CONFIG: SidebarConfig = {
+  brandTitle: 'Shree Ganda Promoter',
+  homePath: '/PromotAdmin',
+  items: [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      path: '/PromotAdmin',
+      icon: 'Dashboard',
+    },
+    {
+      id: 'profile',
+      title: 'My Profile',
+      path: '/PromotAdmin/profilepage',
+      icon: 'Person',
+    },
+    {
+      id: 'refer',
+      title: 'Refer / Invite',
+      path: '/PromotAdmin/refer',
+      icon: 'Share',
+    },
+    {
+      id: 'referrals',
+      title: 'My Referrals',
+      path: '/PromotAdmin/my-referrals',
+      icon: 'Groups',
+      children: [
+        { id: 'pending', title: 'Pending', path: '/PromotAdmin/pending', icon: 'Pending' },
+        { id: 'success', title: 'Success', path: '/PromotAdmin/success', icon: 'HowToReg' },
+        { id: 'expired', title: 'Expired', path: '/PromotAdmin/expired', icon: 'Autorenew' },
+        { id: 'inactive', title: 'Inactive', path: '/PromotAdmin/inactive', icon: 'Person' },
+        { id: 'team', title: 'Team Users', path: '/PromotAdmin/team-users', icon: 'Groups' },
+      ],
+    },
+    {
+      id: 'logout',
+      title: 'Logout',
+      path: '/promoter/login',
+      icon: 'Logout',
+    },
+  ],
+};
 
-const Sidebar = ({
+interface SidebarProps {
+  isMobile?: boolean;
+  open?: boolean;
+  toggleDrawer?: () => void;
+  sidebarData?: any;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
   isMobile,
   open,
   toggleDrawer,
-  sidebarData
 }) => {
   const navigate = useNavigate();
-  const [openSubmenus, setOpenSubmenus] = useState({});
-  const [selectedItem, setSelectedItem] = useState(null);
 
-  const handleItemClick = (text, hasSubItems = false, path = null) => {
-    const newOpenSubmenus = {};
-    if (hasSubItems) {
-      newOpenSubmenus[text] = !openSubmenus[text];
-    } else if (path) {
-      navigate(path);
-      console.log(path, "yy")
-    }
-    setOpenSubmenus(newOpenSubmenus);
-    setSelectedItem(text);
-  };
-
-  const handleSubItemClick = (parentText, subItem) => {
-    setSelectedItem(`${parentText}-${subItem.text}`);
-    if (subItem.path) {
-      navigate(subItem.path);
-
+  const handleItemClick = (item: any) => {
+    if (item.id === 'logout') {
+      localStorage.removeItem('promoter_token');
+      localStorage.removeItem('token');
+      navigate('/promoter/login');
+      if (isMobile && toggleDrawer) {
+        toggleDrawer();
+      }
     }
   };
 
-  const getIconComponent = (iconName, props = {}) => {
-    const iconComponents = {
-      Logout,
-      Dashboard,
-      Person,
-      Share,
-      Search,
-      ManageSearch,
-      ImageSearch,
-      TrendingUp,
-      ArrowDropDown: ArrowDropDownIcon,
-      Pending,
-      CheckCircle,
-      TimerOff,
-      Groups,
-      HowToReg,
-      SupportAgent,
-      Autorenew,
-      Send,
-      Inbox,
-      AttachMoney,
-      AccountBalanceWallet,
-      Favorite,
-      GroupAdd,
-      PersonOff,
-      PendingActions,
-      TaskAlt,
-      Event,
-      Settings,
-      Lock,
-      Notifications,
-      Email,
-    };
-
-    const IconComponent = iconComponents[iconName];
-    return IconComponent ? <IconComponent {...props} /> : null;
-  };
-
-  const renderSubItems = (subItems, parentText) => (
-    <Collapse in={openSubmenus[parentText]} timeout="auto" unmountOnExit>
-      <List component="div" disablePadding>
-        {subItems.map((item, index) => (
-          <ListItem
-            key={index}
-            button
-            onClick={() => handleSubItemClick(parentText, item)} // Pass the whole item
-            sx={{
-              pl: 4,
-              py: 0.5,
-              backgroundColor:
-                selectedItem === `${parentText}-${item.text}` ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-            }}
-          >
-            <ListItemText
-              primary={item.text}
-              sx={{
-                color: '#fff',
-                '& .MuiTypography-root': { fontWeight: 'bold' },
-              }}
-              primaryTypographyProps={{ fontSize: '1rem' }}
-            />
-          </ListItem>
-        ))}
-      </List>
-    </Collapse>
+  const content = (
+    <Box sx={{ width: 260, height: '100%' }}>
+      <DynamicSidebar
+        config={PROMOTER_SIDEBAR_CONFIG}
+        onItemClick={handleItemClick}
+        onClose={isMobile ? toggleDrawer : undefined}
+      />
+    </Box>
   );
 
-  return (
+  return isMobile ? (
     <Drawer
-      variant={isMobile ? 'temporary' : 'persistent'}
+      variant="temporary"
+      anchor="left"
       open={open}
       onClose={toggleDrawer}
+      ModalProps={{ keepMounted: true }}
       sx={{
-        width: 250,
-        flexShrink: 0,
         '& .MuiDrawer-paper': {
-          width: 250,
+          width: 260,
           boxSizing: 'border-box',
-          background: '#991b1b',
+          backgroundColor: '#FDFBF7',
         },
       }}
     >
-      <Toolbar />
-      {isMobile && (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-          <img src="/ShreeLogo.png" alt="Shreeganda Matrimony" style={{ height: "60px", width: "auto", borderRadius: '8px', objectFit: 'contain', transform: 'scale(1.15)' }} />
-        </Box>
-      )}
-      <Box sx={{ overflow: 'auto' }}>
-        <List sx={{ mt: '10px' }}>
-          {sidebarData.menuItems.map((item, index,) => (
-            <Box key={index}>
-              <ListItem
-                button
-                onClick={() => handleItemClick(item.text, !!item.subItems, item.path)}
-                sx={{
-                  cursor: 'pointer',
-                  pl: 2,
-                  py: 1,
-                  backgroundColor: selectedItem === item.text ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 35, color: '#fff' }}>
-                  {getIconComponent(item.icon)}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{
-                    cursor: 'pointer',
-                    color: '#fff',
-                    '& .MuiTypography-root': { fontWeight: 'bold' },
-                  }}
-                  primaryTypographyProps={{ fontSize: '1rem' }}
-                />
-                {item.subItems && (
-                  <ArrowDropDownIcon
-                    sx={{
-                      color: '#fff',
-                      transform: openSubmenus[item.text] ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 0.3s',
-                    }}
-                  />
-                )}
-              </ListItem>
-              {item.subItems && (
-                <Box
-                  sx={{
-                    cursor: 'pointer',
-                    backgroundColor: '#7f1d1d',
-                    borderLeft: '3px solid rgba(255, 255, 255, 0.2)',
-                    ml: 0,
-                  }}
-                >
-                  {renderSubItems(item.subItems, item.text)}
-                </Box>
-              )}
-            </Box>
-          ))}
-        </List>
-      </Box>
+      {content}
     </Drawer>
+  ) : (
+    <Box
+      sx={{
+        width: 260,
+        flexShrink: 0,
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+      }}
+    >
+      {content}
+    </Box>
   );
 };
 

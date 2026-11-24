@@ -316,11 +316,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
                 fontSize: '0.875rem',
                 color: '#64748b',
                 '&.Mui-selected': {
-                  color: '#4a148c',
+                  color: '#0F172A',
                 },
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#4a148c',
+                backgroundColor: '#0F172A',
                 height: 3,
               },
             }}
@@ -359,10 +359,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
-                backgroundColor: subFilter === 'all' ? '#4a148c' : '#f1f5f9',
+                borderRadius: '4px',
+                backgroundColor: subFilter === 'all' ? '#0F172A' : '#f1f5f9',
                 color: subFilter === 'all' ? '#ffffff' : '#475569',
                 '&:hover': {
-                  backgroundColor: subFilter === 'all' ? '#3b0f70' : '#e2e8f0',
+                  backgroundColor: subFilter === 'all' ? '#1E293B' : '#e2e8f0',
                 },
               }}
             />
@@ -375,6 +376,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
+                borderRadius: '4px',
                 backgroundColor: subFilter === 'free' ? '#0284c7' : '#f1f5f9',
                 color: subFilter === 'free' ? '#ffffff' : '#475569',
                 '&:hover': {
@@ -391,6 +393,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
+                borderRadius: '4px',
                 backgroundColor: subFilter === 'paid' ? '#d97706' : '#f1f5f9',
                 color: subFilter === 'paid' ? '#ffffff' : '#475569',
                 '&:hover': {

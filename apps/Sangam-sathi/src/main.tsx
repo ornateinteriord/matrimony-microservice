@@ -1,6 +1,8 @@
 import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App"; // Ensure this is correctly imported
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import royalTheme from "./theme/theme";
+import App from "./App";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -8,7 +10,10 @@ const rootElement = document.getElementById("root");
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <ThemeProvider theme={royalTheme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
     </StrictMode>
   );
 } else {

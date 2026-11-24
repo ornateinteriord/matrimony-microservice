@@ -170,7 +170,7 @@ const DashboardContent = () => {
     {
       title: "My Total Earnings",
       value: `₹${Number(stats.totalEarnings ?? 0).toLocaleString()}`,
-      color: "#9c27b0",
+      color: "#881337",
       icon: "AttachMoney",
     },
     {
@@ -193,7 +193,7 @@ const DashboardContent = () => {
         variant="h4" 
         gutterBottom 
         sx={{ 
-          color: '#4a148c',
+          color: '#881337',
           fontWeight: 'bold', 
           textAlign: { xs: 'start', md: 'center' },
           fontSize: { xs: '1.5rem', sm: '2rem' },
@@ -217,18 +217,19 @@ const DashboardContent = () => {
       >
         <Card
           sx={{
-            backgroundColor: '#f3e5f5',
-            borderRadius: '12px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            backgroundColor: '#fff1f2',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(136,19,55,0.08)',
+            border: '1px solid rgba(136,19,55,0.15)',
             flex: 1,
             minWidth: { xs: '100%', sm: '260px' },
           }}
         >
           <CardContent sx={{ textAlign: 'center', p: 2 }}>
-            <Typography variant="body1" sx={{ color: '#6a1b9a', fontWeight: 'bold' }}>
+            <Typography variant="body1" sx={{ color: '#881337', fontWeight: 'bold' }}>
               Promoter Plan
             </Typography>
-            <Typography variant="h5" sx={{ color: '#7b1fa2', fontWeight: 'bold', mt: 1 }}>
+            <Typography variant="h5" sx={{ color: '#881337', fontWeight: 'bold', mt: 1 }}>
               {promoter?.membership_type || "Partner"}
             </Typography>
           </CardContent>
@@ -392,7 +393,7 @@ const DashboardContent = () => {
         variant="h5" 
         gutterBottom 
         sx={{ 
-          color: '#4a148c', 
+          color: '#881337', 
           fontWeight: 'bold', 
           mb: 3,
           textAlign: 'center',

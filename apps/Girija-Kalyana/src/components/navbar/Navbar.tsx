@@ -190,7 +190,7 @@ const Navbar = () => {
               }
             }}
           >
-            Girija❤️Kalyana
+            Girija Kalyana
           </Typography>
 
           {/* Desktop Menu */}
@@ -332,7 +332,7 @@ const Navbar = () => {
               component="div"
               sx={{ fontWeight: "bold", fontSize: "1.3rem" }}
             >
-              Girija❤️Kalyana
+              Girija Kalyana
             </Typography>
             <IconButton onClick={toggleMobileMenu} sx={{ color: "#fff" }}>
               <CloseIcon />
@@ -467,7 +467,7 @@ const Navbar = () => {
             Welcome Back
           </Typography> */}
           <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.8)",fontSize:"1rem" }}>
-            Sign in to your Girija❤️Kalyana account
+            Sign in to your Girija Kalyana account
           </Typography>
         </Box>
 

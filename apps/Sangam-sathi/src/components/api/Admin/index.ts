@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 
 export const useUpgradeUserType = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ userType, amountPaid, paidType, referenceNumber, registration_no }) => {
       const response = await post(`/api/admin/upgrade-user-type/${registration_no}`, {
         userType, amountPaid, paidType, referenceNumber
@@ -36,7 +36,7 @@ export const useUpgradeUserType = () => {
 };
 
 export const getRenewalProfiles = () => {
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ page, pageSize, search = "" }) => {
       const response = await get("/api/admin/renewal-profiles", {
         page,
@@ -54,7 +54,7 @@ export const getRenewalProfiles = () => {
 };
 
 export const getAllUserImageVerification = () => {
-   return useMutation({
+   return useMutation<any, any, any>({
     mutationFn: async ({ page, pageSize }) => {
       const response = await post("/api/admin/image-verification", {
         page,
@@ -71,7 +71,7 @@ export const getAllUserImageVerification = () => {
 };
 
 export const getAllUserProfiles = () => {
-   return useMutation({
+   return useMutation<any, any, any>({
     mutationFn: async ({ page, pageSize }) => {
       const response = await post("/api/admin/all-user-details", {
         page,
@@ -89,7 +89,7 @@ export const getAllUserProfiles = () => {
 
 export const UpgradeUserStatus = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ regno, status, image_verification,isProfileUpdate }) => {
       const response = await put(`/api/admin/upgrade-user/${regno}`, {
         status,
@@ -115,7 +115,7 @@ export const UpgradeUserStatus = () => {
 
 export const UserResetPassword = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ regno, password }) => {
       const response = await put(`/api/admin/reset-password/${regno}`, {
         password,
@@ -164,7 +164,7 @@ export const getAllUserCounts = () => {
   });
 };
 export const getAllAssistancePending = () => {
- return useMutation({
+ return useMutation<any, any, any>({
     mutationFn: async ({ page, pageSize }) => {
       const response = await post("/api/admin/assistance-pending", {
         page,
@@ -180,7 +180,7 @@ export const getAllAssistancePending = () => {
   });
 };
 export const getAllAssistanceSuccess = () => {
-   return useMutation({
+   return useMutation<any, any, any>({
     mutationFn: async ({ page, pageSize }) => {
       const response = await post("/api/admin/assistance-success", {
         page,
@@ -215,7 +215,7 @@ export const useOnlineTransactions = () => {
 
 export const useUpdateOnlineTransactionStatus = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ id, status, activateUser, usertype }) => {
       const response = await put(`/api/admin/online-transactions/${id}/update-status`, {
         status,
@@ -305,7 +305,7 @@ export const usePromoters = () => {
 export const useUpdatePromoterStatus = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async ({ id, status }) => {
       const response = await put(`/api/admin/promoters/${id}/status`, { status });
       return response;
@@ -327,7 +327,7 @@ export const useUpdatePromoterStatus = () => {
 export const useAddPromoter = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async (data) => {
       const response = await post("/api/admin/add-promoter", data);
       if (!response?.success) {
@@ -395,7 +395,7 @@ export const getAllNews = () => {
 
 export const useAddNews = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<any, any, any>({
     mutationFn: async (formData) => {
       const response = await post("/api/admin/add-news",formData);
       return response;

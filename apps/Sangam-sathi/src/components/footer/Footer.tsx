@@ -1,27 +1,25 @@
 import React from "react";
 import "./Footer.scss";
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaYoutube, FaUserTie } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Footer() {
   const navigate = useNavigate();
 
-  const handleSocialClick = (platform) => {
+  const handleSocialClick = (platform: string) => {
     // Optional social links handler
   };
 
   return (
     <footer className="footer">
       <div className="footer-container">
-
         {/* Top Section: Main Content */}
         <div className="footer-top">
-
           {/* Left Column: Brand & Newsletter & Promoter CTA */}
           <div className="footer-brand-section">
             <h2 className="footer-brand-name">Sangam Sathi</h2>
             <p className="footer-brand-description">
-              A Premium Matrimony Service. Connect with your perfect match within your community with trust and elegance.
+              A Premium Matrimony Service. Connect with your life partner within your community with trust, authenticity, and elegance.
             </p>
 
             <div className="footer-promoter-cta">
@@ -50,33 +48,54 @@ function Footer() {
 
           {/* Right Column: Stacked Links Grid */}
           <div className="footer-links-grid">
-
             <div className="footer-link-group">
               <h3 className="footer-heading">Company</h3>
               <ul className="footer-list">
-                <li onClick={() => navigate("/")}>Home</li>
-                <li onClick={() => navigate("/about")}>About Us</li>
-                <li onClick={() => navigate("/service")}>Services</li>
+                <li>
+                  <Link to="/" className="footer-nav-link">Home</Link>
+                </li>
+                <li>
+                  <Link to="/about" className="footer-nav-link">About Us</Link>
+                </li>
+                <li>
+                  <Link to="/service" className="footer-nav-link">Services</Link>
+                </li>
+                <li>
+                  <Link to="/membership" className="footer-nav-link">Membership Plans</Link>
+                </li>
               </ul>
             </div>
 
             <div className="footer-link-group">
               <h3 className="footer-heading">Partner Program</h3>
               <ul className="footer-list">
-                <li onClick={() => navigate("/promoter/login")} className="promoter-nav-link">
-                  Promoter Login
+                <li>
+                  <Link to="/promoter/login" className="footer-nav-link">Promoter Login</Link>
                 </li>
-                <li onClick={() => navigate("/promoter/register")}>
-                  Become a Promoter
+                <li>
+                  <Link to="/promoter/register" className="footer-nav-link">Become a Promoter</Link>
                 </li>
               </ul>
             </div>
 
             <div className="footer-link-group">
-              <h3 className="footer-heading">Legal</h3>
+              <h3 className="footer-heading">Legal &amp; Compliance</h3>
               <ul className="footer-list">
-                <li onClick={() => navigate("/privacy-policy")}>Privacy Policy</li>
-                <li>Terms of Service</li>
+                <li>
+                  <Link to="/privacy-policy" className="footer-nav-link">Privacy Policy (DPDP 2023)</Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="footer-nav-link">Terms and Conditions</Link>
+                </li>
+                <li>
+                  <Link to="/cookie-policy" className="footer-nav-link">Cookie Policy</Link>
+                </li>
+                <li>
+                  <Link to="/refund-policy" className="footer-nav-link">Refund &amp; Cancellation</Link>
+                </li>
+                <li>
+                  <Link to="/data-disclosure" className="footer-nav-link">Data Collection Disclosure</Link>
+                </li>
               </ul>
             </div>
 
@@ -85,17 +104,18 @@ function Footer() {
               <ul className="footer-list contact-list">
                 <li><span className="accent-text">Email:</span> ornateinteriord@gmail.com</li>
                 <li><span className="accent-text">Call:</span> +91 91488 24442</li>
-                <li onClick={() => navigate("/contact")} className="contact-link">Contact Support →</li>
+                <li>
+                  <Link to="/contact" className="contact-link">Contact Support →</Link>
+                </li>
               </ul>
             </div>
-
           </div>
         </div>
 
         {/* Bottom Section: Socials & Copyright */}
         <div className="footer-bottom">
           <div className="footer-copyright">
-            Copyright © {new Date().getFullYear()} Ornate Pvt Ltd. All rights reserved.
+            Copyright © {new Date().getFullYear()} Sangam Sathi. All rights reserved.
           </div>
 
           <div className="social-icons">
@@ -113,7 +133,6 @@ function Footer() {
             </span>
           </div>
         </div>
-
       </div>
     </footer>
   );

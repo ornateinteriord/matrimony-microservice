@@ -1,5 +1,5 @@
 import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
-import { styled } from "@mui/system";
+import { styled } from "@mui/material/styles";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -22,7 +22,7 @@ const HeroWrapper = styled(Box)({
   overflow: "hidden",
 });
 
-const SlideImage = styled(Box)({
+const SlideImage = styled("img")({
   width: "100%",
   height: "100vh",
   objectFit: "cover",
@@ -39,7 +39,7 @@ const Overlay = styled(Box)({
   zIndex: 1,
 });
 
-const Content = styled(Box)(({ theme }) => ({
+const Content = styled(Box)(({ theme }: any) => ({
   position: "absolute",
   top: "50%",
   left: "50%",
@@ -48,13 +48,16 @@ const Content = styled(Box)(({ theme }) => ({
   textAlign: "center",
   width: "90%",
   maxWidth: "600px",
-  padding: { xs: theme.spacing(3, 2), md: theme.spacing(5, 6) },
+  padding: "24px 16px",
   background: "rgba(11, 25, 44, 0.6)", // Navy background
   backdropFilter: "blur(12px)",
   WebkitBackdropFilter: "blur(12px)",
   borderRadius: "24px",
   border: "1px solid rgba(255, 255, 255, 0.1)",
   boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
+  [theme.breakpoints.up("md")]: {
+    padding: "40px 48px",
+  },
 }));
 
 const HeroSlider = () => {
@@ -92,7 +95,6 @@ const HeroSlider = () => {
           {images.map((image, index) => (
             <Box key={index}>
               <SlideImage
-                component="img"
                 src={image.src}
                 alt={image.alt}
               />

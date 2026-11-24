@@ -1,10 +1,10 @@
 import React from "react";
 import { Box, Tabs, Tab } from "@mui/material";
-import AboutPop from "./popupContent/abouPop/AboutPop";
-import FamilyPop from "./popupContent/familyPop/FamilyPop";
-import EducationPop from "./popupContent/educationPop/EducationPop";
-import LifeStylePop from "./popupContent/lifeStylePop/LifeStylePop";
-import PreferencePop from "./popupContent/preferencePop/PreferencePop";
+import AboutPop from "../Userprofile/viewAll/popupContent/abouPop/AboutPop";
+import FamilyPop from "../Userprofile/viewAll/popupContent/familyPop/FamilyPop";
+import EducationPop from "../Userprofile/viewAll/popupContent/educationPop/EducationPop";
+import LifeStylePop from "../Userprofile/viewAll/popupContent/lifeStylePop/LifeStylePop";
+import PreferencePop from "../Userprofile/viewAll/popupContent/preferencePop/PreferencePop";
 
 const RenderContents = ({ selectedCardDetails, userDetails, handleChange }) => {
   if (!userDetails) return null;

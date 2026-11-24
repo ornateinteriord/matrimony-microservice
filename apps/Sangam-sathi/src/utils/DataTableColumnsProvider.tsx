@@ -335,7 +335,7 @@ export const getResetPasswordColumns = (handleOpenDialog) =>  [
   ];
 
 
-  export const getPromotersUserDataColumns = (handleAction) => [
+  export const getPromotersUserDataColumns = (handleAction?: any) => [
     {
       name: "Promoter Name",
       selector: (row) => row.name,
@@ -621,7 +621,7 @@ export const getTransactionDetailsDialogColumns = () => [
   },
 ];
 
-export const getUserUpgradeColumns = (handleUpgrade) => [
+export const getUserUpgradeColumns = (handleUpgrade?: any, setUpgradeDialogOpen?: any) => [
     {
       name: "Registration No",
       selector: row => row.registration_no,
@@ -1040,9 +1040,9 @@ export const getOnlineTransactionColumns = (onUpdateClick) => [
       name: "Status",
       cell: (row) => (
         <Typography
-          color={row.id % 2 === 0 ? "#4caf50" : "#f44336"}>
+          color={row.id % 2 === 0 ? "#4caf50" : "#f44336"}
           sx={{ fontFamily: "Outfit sans-serif", fontSize: "17px" }}
-        
+        >
           {row.id % 2 === 0 ? "Success" : "Pending"}
         </Typography>
       ),

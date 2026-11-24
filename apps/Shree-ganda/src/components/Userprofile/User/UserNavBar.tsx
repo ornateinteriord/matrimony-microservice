@@ -31,6 +31,7 @@ import { toast } from "react-toastify";
 import { LoadingComponent } from "../../../App";
 import { PremiumLoader } from "../../../utils/common";
 import SidebarMenu from "../../sidebar/SidebarMenu";
+import BottomNav from "../../common/BottomNav";
 
 const drawerWidth = 240;
 
@@ -200,7 +201,7 @@ const UserNavBar = () => {
   // On first render, ensure we're on the dashboard if no specific route is set
   useEffect(() => {
     if (location.pathname === "/user" || location.pathname === "/user/") {
-      navigation("/user/userdashboard");
+      navigation("/user/userDashboard");
     }
   }, [location.pathname, navigation]);
 
@@ -220,37 +221,39 @@ const UserNavBar = () => {
         position="fixed"
         sx={{
           zIndex: 1201,
-          background: "#991b1b",
-          height: "60px",
+          background: "#78350F",
+          height: isLargeScreen ? "60px" : "52px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <Toolbar
           sx={{
+            minHeight: isLargeScreen ? "60px !important" : "52px !important",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            px: { xs: 1.5, sm: 2 },
           }}
         >
           {!isLargeScreen && (
-            <IconButton edge="start" color="inherit" onClick={toggleSidebar}>
-              <FaBars style={{ fontSize: "20px" }} />
+            <IconButton edge="start" color="inherit" onClick={toggleSidebar} sx={{ mr: 1 }}>
+              <FaBars style={{ fontSize: "18px" }} />
             </IconButton>
           )}
 
-          <Box sx={{ textAlign: "left", width: "100%", display: 'flex', alignItems: 'center', ml: 1 }}>
-            {isLargeScreen && (
-              <Link to="/" style={{ textDecoration: "none", color: "inherit", display: 'inline-flex', alignItems: 'center' }}>
-                <img src="/ShreeLogo.png" alt="Shreeganda Matrimony" style={{ height: "65px", width: "auto", borderRadius: '8px', objectFit: 'contain', display: 'block', transform: 'scale(1.2)', transformOrigin: 'left center' }} />
-              </Link>
-            )}
+          <Box sx={{ textAlign: "left", width: "100%", display: 'flex', alignItems: 'center', ml: 0.5 }}>
+            <Link to="/" style={{ textDecoration: "none", color: "inherit", display: 'inline-flex', alignItems: 'center' }}>
+              <img src="/ShreeLogo.png" alt="Shreeganda Matrimony" style={{ height: isLargeScreen ? "50px" : "40px", width: "auto", borderRadius: '6px', objectFit: 'contain' }} />
+            </Link>
           </Box>
 
           <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
             <Typography
               color="#fff"
-              fontFamily={"Outfit sans-serif"}
-              fontSize={"20px"}
-              marginRight={"10px"}
+              fontFamily={"Outfit, sans-serif"}
+              fontSize={isLargeScreen ? "18px" : "15px"}
+              marginRight={"8px"}
               textTransform={"capitalize"}
             >
               {userProfile?.first_name}
@@ -258,12 +261,15 @@ const UserNavBar = () => {
             <Avatar
               src={userProfile?.image}
               sx={{
-                color: "black",
-                fontWeight: "500px",
-                textTransform: "uppercase",
+                width: isLargeScreen ? 36 : 30,
+                height: isLargeScreen ? 36 : 30,
+                bgcolor: "#C5A059",
+                color: "#2D1810",
+                fontWeight: 700,
+                fontSize: "0.9rem",
               }}
             >
-              {userProfile?.first_name[0] || ""}
+              {userProfile?.first_name ? userProfile.first_name[0].toUpperCase() : "U"}
             </Avatar>
           </IconButton>
 
@@ -294,29 +300,23 @@ const UserNavBar = () => {
       </AppBar>
 
       <Drawer
-        variant="persistent"
+        variant={isLargeScreen ? "persistent" : "temporary"}
         open={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        ModalProps={{ keepMounted: true }}
         sx={{
           width: isSidebarOpen ? drawerWidth : 0,
           flexShrink: 0,
           [`& .MuiDrawer-paper`]: {
-            width: isSidebarOpen ? drawerWidth : 0,
+            width: drawerWidth,
             boxSizing: "border-box",
-            background: "#991b1b",
-            color: "#fff",
-            transition: "width 0.6s ease, opacity 0.6s ease",
-            opacity: isSidebarOpen ? 1 : 0,
+            backgroundColor: "#FDFBF7",
+            borderRight: "1px solid rgba(197, 160, 89, 0.25)",
+            boxShadow: isLargeScreen ? "none" : "4px 0 16px rgba(0,0,0,0.25)",
           },
         }}
       >
-        <Toolbar />
-        {!isLargeScreen && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1.5, borderBottom: '1px solid rgba(255,255,255,0.2)' }}>
-            <Link to="/" style={{ textDecoration: "none", display: 'inline-flex', alignItems: 'center' }}>
-              <img src="/ShreeLogo.png" alt="Shreeganda Matrimony" style={{ height: "60px", width: "auto", borderRadius: '8px', objectFit: 'contain', transform: 'scale(1.15)' }} />
-            </Link>
-          </Box>
-        )}
+        <Toolbar sx={{ minHeight: isLargeScreen ? "60px !important" : "52px !important" }} />
         <SidebarMenu
           selectedItem={selectedItem}
           handleDashboardClick={() =>
@@ -329,6 +329,7 @@ const UserNavBar = () => {
           handleSearchClick={() => handleMenuItemClick(handleSearchClick)}
           handleOpenLogoutDialog={handleOpenLogoutDialog}
           userProfile={userProfile}
+          onClose={() => !isLargeScreen && setIsSidebarOpen(false)}
         />
       </Drawer>
 
@@ -337,17 +338,24 @@ const UserNavBar = () => {
         sx={{
           flexGrow: 1,
           marginTop: 1,
-          paddingLeft: isSidebarOpen ? `30px` : "20px",
+          paddingLeft: isLargeScreen ? (isSidebarOpen ? "30px" : "20px") : "12px",
+          paddingRight: isLargeScreen ? "20px" : "12px",
+          paddingBottom: isLargeScreen ? "20px" : "calc(65px + env(safe-area-inset-bottom, 12px))",
           transition: "padding-left 0.4s ease",
+          minHeight: "100vh",
+          backgroundColor: "#FDFBF7",
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: isLargeScreen ? "60px !important" : "52px !important" }} />
         <Suspense fallback={
           <PremiumLoader />
         }>
           <Outlet />
         </Suspense>
       </Box>
+
+      {/* Fixed Native-like Bottom Navigation for mobile screens */}
+      <BottomNav />
 
       <Dialog
         open={openLogoutDialog}

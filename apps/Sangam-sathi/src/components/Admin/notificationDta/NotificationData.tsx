@@ -26,7 +26,7 @@ const NotificationData = () => {
   const { data: records = [], isLoading, isError, error } = getAllNews();
   const [search, setSearch] = useState("");
   const [showAddNews, setShowAddNews] = useState(false);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState<any>({});
   const [errors, setErrors] = useState({
     news_details: false,
     from_date: false,
@@ -136,7 +136,7 @@ const NotificationData = () => {
           sx={{ width: { xs: "100%", sm: "auto", md: "auto" }, mb: "20px" }}
           InputProps={{
             startAdornment: (
-              <InputAdornment>
+              <InputAdornment position="start">
                 <FaSearch />
               </InputAdornment>
             ),

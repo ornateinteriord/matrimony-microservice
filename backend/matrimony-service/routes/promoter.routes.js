@@ -40,10 +40,11 @@ router.put('/activate-user/:registration_no', authenticateToken, checkRole("prom
 // Check promocode validity
 router.post('/promocheck', async (req, res) => {
   try {
-    const { promocode, planType } = req.body;
+    const { promocode, code, sponsorCode, planType } = req.body;
+    const inputCode = promocode || code || sponsorCode;
     
     // Validate input
-    if (!promocode || !promocode.trim()) {
+    if (!inputCode || !inputCode.trim()) {
       return res.status(400).json({
         success: false,
         message: 'Promocode is required'
@@ -51,7 +52,7 @@ router.post('/promocheck', async (req, res) => {
     }
     
     // Convert promocode to uppercase for consistency
-    const upperPromocode = promocode.trim().toUpperCase();
+    const upperPromocode = inputCode.trim().toUpperCase();
     
     // Check if promocode exists and is active
     const promoter = await PromotersModel.findOne({ 
@@ -66,15 +67,17 @@ router.post('/promocheck', async (req, res) => {
       });
     }
     
-    // Promocode is valid - return success with discount info
+    // Promocode is valid - return success with discount info and promoter details
     return res.status(200).json({
       success: true,
       message: 'Promocode applied successfully! ₹100 discount applied.',
       data: {
         promocode: upperPromocode,
+        code: upperPromocode,
         discount: 100,
         promoterName: promoter.promoter_name,
-        isValid: true
+        isValid: true,
+        status: promoter.status
       }
     });
     

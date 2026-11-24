@@ -68,7 +68,7 @@ api.interceptors.response.use(
  
 
 
-export const post = async (path, data) => {
+export const post = async (path: string, data?: any) => {
 
   try {
 
@@ -84,7 +84,7 @@ export const post = async (path, data) => {
 
 };
  
-export const get = async (path, params) => {
+export const get = async (path: string, params?: any) => {
 
   try {
 
@@ -100,7 +100,7 @@ export const get = async (path, params) => {
 
 };
  
-export const put = async (path, data) => {
+export const put = async (path: string, data?: any) => {
 
   try {
 
@@ -115,7 +115,7 @@ export const put = async (path, data) => {
   }
 
 };
-export const del = async (path, data) => {
+export const del = async (path: string, data?: any) => {
 
   try {
 

@@ -243,7 +243,7 @@ const PromotersData = () => {
           rangeSeparatorText: "of",
         }}
         customStyles={customStyles}
-        progressPending={isLoading || updateStatusMutation.isLoading}
+        progressPending={isLoading || (updateStatusMutation as any).isPending}
         progressComponent={<LoadingTextSpinner />}
         noDataComponent={
           <Typography padding={3} textAlign="center">
@@ -628,7 +628,7 @@ const PromotersData = () => {
             <Button
               type="submit"
               variant="contained"
-              disabled={addPromoterMutation.isLoading || addPromoterMutation.isPending}
+              disabled={(addPromoterMutation as any).isPending}
               sx={{
                 background: "linear-gradient(135deg, #0B192C 0%, #1A365D 100%)",
                 color: "#ffffff",
@@ -647,7 +647,7 @@ const PromotersData = () => {
                 },
               }}
             >
-              {addPromoterMutation.isLoading || addPromoterMutation.isPending ? "Creating Profile..." : "Submit"}
+              {(addPromoterMutation as any).isPending ? "Creating Profile..." : "Submit"}
             </Button>
           </DialogActions>
         </form>

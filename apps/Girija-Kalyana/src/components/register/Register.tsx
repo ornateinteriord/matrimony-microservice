@@ -20,14 +20,29 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+  Visibility,
+  VisibilityOff,
+  CheckCircle,
+  Lock,
+  Star,
+  WorkspacePremium,
+  LocalOffer,
+  Add as AddIcon,
+  DeleteOutline as DeleteIcon,
+  PersonAdd as PersonAddIcon,
+} from "@mui/icons-material";
 import rawJsonData from "../Userprofile/profile/eduction/jsondata/data.json";
 import Navbar from "../navbar/Navbar";
 import Footer from "../footer/Footer";
+import SEOHead from "../common/SEOHead";
 import { toast } from "react-toastify";
 import { useSignupMutation, useCheckPromocode } from "../api/Auth";
+import useSponsorCode from "../../hooks/useSponsorCode";
 
 import { useLocation, useNavigate } from "react-router-dom";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -54,6 +69,10 @@ const Register = () => {
   const [planType] = useState(() => searchParams.get("type") || null);
 
 
+
+  // Sponsor / referral code lock state hook
+  const sponsor = useSponsorCode();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Promo code state
   const [promocode, setPromocode] = useState(searchParams.get("promocode") || "");
@@ -95,6 +114,10 @@ const Register = () => {
     mother_tongue: "",
     name_of_parent: "",
     parent_name: "",
+    parents: [
+      { relation: "Father", name: "" },
+      { relation: "Mother", name: "" },
+    ],
     religion: "Hindu",
     caste: "",
     address: "",
@@ -123,6 +146,10 @@ const Register = () => {
     mother_tongue: "",
     name_of_parent: "",
     parent_name: "",
+    parents: [
+      { relation: "Father", name: "" },
+      { relation: "Mother", name: "" },
+    ],
     religion: "Hindu",
     caste: "",
     address: "",
@@ -201,11 +228,58 @@ const Register = () => {
     }
   };
 
-  const calculateAge = (dob) => {
-    const birthDate = new Date(dob);
-    const difference = Date.now() - birthDate.getTime();
-    const ageDate = new Date(difference);
-    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  const handleParentChange = (index: number, field: "relation" | "name", val: string) => {
+    setFormData((prev: any) => {
+      const updated = [...(prev.parents || [])];
+      if (!updated[index]) updated[index] = { relation: "Father", name: "" };
+      updated[index][field] = val;
+
+      const validParents = updated.filter((p: any) => p.name?.trim());
+      const parentNames = validParents.map((p: any) => `${p.relation}: ${p.name.trim()}`).join(", ");
+      const primaryParent = updated[0]?.relation || "Father";
+
+      return {
+        ...prev,
+        parents: updated,
+        name_of_parent: primaryParent,
+        parent_name: parentNames || updated[0]?.name || "",
+      };
+    });
+  };
+
+  const handleAddParent = () => {
+    setFormData((prev: any) => {
+      const current = prev.parents || [];
+      const defaultNext = current.some((p: any) => p.relation === "Father") && !current.some((p: any) => p.relation === "Mother")
+        ? "Mother"
+        : "Guardian";
+      return {
+        ...prev,
+        parents: [...current, { relation: defaultNext, name: "" }],
+      };
+    });
+  };
+
+  const handleRemoveParent = (index: number) => {
+    setFormData((prev: any) => {
+      const updated = (prev.parents || []).filter((_: any, i: number) => i !== index);
+      const finalParents = updated.length > 0 ? updated : [{ relation: "Father", name: "" }];
+      const validParents = finalParents.filter((p: any) => p.name?.trim());
+      const parentNames = validParents.map((p: any) => `${p.relation}: ${p.name.trim()}`).join(", ");
+      return {
+        ...prev,
+        parents: finalParents,
+        name_of_parent: finalParents[0]?.relation || "",
+        parent_name: parentNames || finalParents[0]?.name || "",
+      };
+    });
+  };
+
+  const calculateAge = (dob: any) => {
+    if (!dob) return 0;
+    const birthDayjs = dayjs(dob);
+    if (!birthDayjs.isValid()) return 0;
+    return dayjs().diff(birthDayjs, "year");
   };
 
   const handleClear = () => {
@@ -214,6 +288,11 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!agreedToTerms) {
+      toast.error("Please agree to the Terms & Conditions and Privacy Policy (DPDP Act 2023) to continue.");
+      return;
+    }
 
     if (!/^[0-9]{10}$/.test(formData.mobile_no)) {
       toast.error("Please enter a valid 10-digit mobile number");
@@ -234,7 +313,10 @@ const Register = () => {
     } else {
       // For free users, proceed with normal registration
       try {
-        mutate(formData, {
+        mutate({
+          ...formData,
+          refered_by: sponsor.code || undefined,
+        }, {
           onSuccess: () => {
             toast.success("Registration successful");
           },
@@ -259,6 +341,8 @@ const Register = () => {
       const finalAmount = isPromoApplied ? Math.max(originalAmount - 100, 0) : originalAmount;
       const planTypeCode = planType === "PremiumUser" ? 'premium' : 'silver';
 
+      const promoToUse = sponsor.code || promocode || null;
+
       const orderResponse = await post("/api/payment/create-order", {
         orderId,
         orderAmount: finalAmount,
@@ -266,7 +350,7 @@ const Register = () => {
         customerEmail: formData.username,
         customerPhone: formData.mobile_no,
         planType: planTypeCode,
-        promocode: promocode || null,
+        promocode: promoToUse,
         originalAmount,
         context: "registration"
       });
@@ -278,6 +362,7 @@ const Register = () => {
       // Step 2: Order created successfully — now register user as inactive
       const registrationResponse = await post("/api/auth/signup", {
         ...formData,
+        refered_by: sponsor.code || undefined,
         status: "inactive"
       });
 
@@ -475,12 +560,12 @@ const Register = () => {
               sx={{
                 mb: 3,
                 p: { xs: 2, sm: 3 },
-                borderRadius: 3,
+                borderRadius: 2,
                 background: planType === "PremiumUser"
-                  ? "linear-gradient(135deg, #6a1b9a 0%, #9c27b0 100%)"
-                  : "linear-gradient(135deg, #1a4f72 0%, #1976d2 100%)",
+                  ? "linear-gradient(135deg, #881337 0%, #9f1239 100%)"
+                  : "linear-gradient(135deg, #b45309 0%, #D97706 100%)",
                 color: "#fff",
-                boxShadow: 4,
+                boxShadow: "0 4px 16px rgba(136, 19, 55, 0.2)",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -498,8 +583,16 @@ const Register = () => {
                   <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5, textTransform: "uppercase", letterSpacing: 1 }}>
                     Selected Plan
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                    {planType === "PremiumUser" ? "⭐ Premium Membership" : "🥈 Silver Membership"}
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                    {planType === "PremiumUser" ? (
+                      <>
+                        <Star sx={{ color: "#F59E0B", fontSize: 24 }} /> Premium Membership
+                      </>
+                    ) : (
+                      <>
+                        <WorkspacePremium sx={{ color: "#F3F4F6", fontSize: 24 }} /> Silver Membership
+                      </>
+                    )}
                   </Typography>
 
                   {/* Pricing */}
@@ -530,6 +623,7 @@ const Register = () => {
                     <Button
                       size="small"
                       onClick={handleOpenPromoDialog}
+                      startIcon={<LocalOffer sx={{ fontSize: 16 }} />}
                       sx={{
                         color: "#fff",
                         border: "1px solid rgba(255,255,255,0.6)",
@@ -539,7 +633,7 @@ const Register = () => {
                         "&:hover": { bgcolor: "rgba(255,255,255,0.15)" }
                       }}
                     >
-                      🏷️ Apply Promocode
+                      Apply Promocode
                     </Button>
                   ) : (
                     <Button
@@ -645,17 +739,20 @@ const Register = () => {
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   label="Date of Birth"
+                  format="DD/MM/YYYY"
                   value={
                     formData.date_of_birth
                       ? dayjs(formData.date_of_birth)
                       : null
                   }
                   onChange={(newValue) => {
-                    const dob = newValue
-                      ? newValue.toISOString().split("T")[0]
-                      : "";
-                    const age = dob ? calculateAge(dob) : "";
-                    setFormData((prev) => ({
+                    if (!newValue || !newValue.isValid()) {
+                      setFormData((prev: any) => ({ ...prev, date_of_birth: "", age: "" }));
+                      return;
+                    }
+                    const dob = newValue.format("YYYY-MM-DD");
+                    const age = calculateAge(dob);
+                    setFormData((prev: any) => ({
                       ...prev,
                       date_of_birth: dob,
                       age: age.toString(),
@@ -666,6 +763,7 @@ const Register = () => {
                     textField: {
                       fullWidth: true,
                       required: true,
+                      helperText: "Format: DD/MM/YYYY",
                       sx: { mb: 3 },
                     },
                   }}
@@ -763,28 +861,83 @@ const Register = () => {
                 FAMILY DETAILS
               </Typography>
 
-              <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel>Select Parents</InputLabel>
-                <Select
-                  label="Select Parents"
-                  name="name_of_parent"
-                  value={formData.name_of_parent}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Father">Father</MenuItem>
-                  <MenuItem value="Mother">Mother</MenuItem>
-                  <MenuItem value="Guardian">Guardian</MenuItem>
-                </Select>
-              </FormControl>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#334155" }}>
+                    Parents / Guardians Details
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={handleAddParent}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                      borderRadius: "4px",
+                      py: 0.4,
+                      px: 1.2,
+                      "&:hover": { borderColor: "primary.dark", backgroundColor: "rgba(112, 15, 43, 0.05)" },
+                    }}
+                  >
+                    Add Parent
+                  </Button>
+                </Box>
 
-              <TextField
-                fullWidth
-                label="Please enter name"
-                name="parent_name"
-                sx={{ mb: 3 }}
-                value={formData.parent_name}
-                onChange={handleChange}
-              />
+                {(formData.parents || [{ relation: "Father", name: "" }]).map((parentItem: any, pIdx: number) => (
+                  <Box
+                    key={`parent-field-${pIdx}`}
+                    sx={{
+                      display: "flex",
+                      gap: 1.5,
+                      alignItems: "center",
+                      mb: 1.5,
+                      p: 1.5,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "6px",
+                      backgroundColor: "#f8fafc",
+                    }}
+                  >
+                    <FormControl size="small" sx={{ width: { xs: "120px", sm: "140px" } }}>
+                      <InputLabel>Relation</InputLabel>
+                      <Select
+                        label="Relation"
+                        value={parentItem.relation || "Father"}
+                        onChange={(e) => handleParentChange(pIdx, "relation", e.target.value)}
+                      >
+                        <MenuItem value="Father">Father</MenuItem>
+                        <MenuItem value="Mother">Mother</MenuItem>
+                        <MenuItem value="Step-Father">Step-Father</MenuItem>
+                        <MenuItem value="Step-Mother">Step-Mother</MenuItem>
+                        <MenuItem value="Guardian">Guardian</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={`${parentItem.relation || "Parent"} Name`}
+                      placeholder="Enter full name"
+                      value={parentItem.name || ""}
+                      onChange={(e) => handleParentChange(pIdx, "name", e.target.value)}
+                    />
+
+                    {(formData.parents || []).length > 1 && (
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleRemoveParent(pIdx)}
+                        title="Remove"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </Box>
+                ))}
+              </Box>
 
               <TextField
                 fullWidth
@@ -964,6 +1117,128 @@ const Register = () => {
             />
           </Box>
 
+          {/* Sponsor / Referral Code Field */}
+          <Box sx={{ width: "100%", mt: 1, mb: 1.5 }}>
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+              <TextField
+                fullWidth
+                label="Referral / Sponsor Code"
+                name="refered_by"
+                value={sponsor.code}
+                onChange={(e) => sponsor.setCode(e.target.value)}
+                disabled={sponsor.isLocked}
+                placeholder="e.g. PROMO100"
+                helperText={
+                  sponsor.isLocked && sponsor.isAutoPopulated
+                    ? "Referral code auto-applied and locked from referral link"
+                    : sponsor.error
+                    ? sponsor.error
+                    : "Enter an authorized community referral or sponsor code (optional)"
+                }
+                error={Boolean(sponsor.error)}
+                InputProps={{
+                  startAdornment: sponsor.isLocked ? (
+                    <InputAdornment position="start">
+                      <Lock sx={{ color: "#D97706", fontSize: 20 }} />
+                    </InputAdornment>
+                  ) : undefined,
+                  endAdornment: sponsor.isVerified ? (
+                    <InputAdornment position="end">
+                      <CheckCircle sx={{ color: "#16a34a", fontSize: 22 }} />
+                    </InputAdornment>
+                  ) : undefined,
+                }}
+              />
+
+              {!sponsor.isLocked && (
+                <Button
+                  variant="contained"
+                  onClick={() => sponsor.verifyCode()}
+                  disabled={sponsor.isVerifying || !sponsor.code.trim()}
+                  sx={{
+                    height: 56,
+                    px: 3,
+                    whiteSpace: "nowrap",
+                    backgroundColor: "#881337",
+                    borderRadius: "8px",
+                    "&:hover": { backgroundColor: "#70102e" },
+                  }}
+                >
+                  {sponsor.isVerifying ? <CircularProgress size={20} color="inherit" /> : "Verify"}
+                </Button>
+              )}
+            </Box>
+
+            {/* Verified sponsor banner */}
+            {sponsor.isVerified && sponsor.promoterName && (
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 1.25,
+                  borderRadius: "6px",
+                  backgroundColor: "rgba(22, 163, 74, 0.08)",
+                  border: "1px solid rgba(22, 163, 74, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <CheckCircle sx={{ color: "#16a34a", fontSize: 18 }} />
+                <Typography variant="body2" sx={{ color: "#15803d", fontWeight: 600 }}>
+                  Verified Sponsor: {sponsor.promoterName}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* Mandatory DPDP Act 2023 Consent Checkbox */}
+          <Box sx={{ width: "100%", mt: 1, mb: 3 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  required
+                  sx={{
+                    color: "#881337",
+                    "&.Mui-checked": { color: "#881337" },
+                  }}
+                />
+              }
+              label={
+                <Typography variant="body2" sx={{ color: "#374151", fontSize: "0.85rem", lineHeight: 1.5 }}>
+                  I agree to the{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#881337", fontWeight: 600, textDecoration: "underline" }}
+                  >
+                    Terms & Conditions
+                  </a>{" "}
+                  and affirm my matrimonial eligibility. I consent to my personal data being processed under the{" "}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#881337", fontWeight: 600, textDecoration: "underline" }}
+                  >
+                    Privacy Policy (DPDP Act 2023 compliant)
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/data-disclosure"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#881337", fontWeight: 600, textDecoration: "underline" }}
+                  >
+                    Data Collection Disclosure
+                  </a>.
+                </Typography>
+              }
+            />
+          </Box>
+
           <Box
             sx={{
               width: "100%",
@@ -984,10 +1259,12 @@ const Register = () => {
                 fontWeight: 600,
                 width: { xs: "100%", sm: "50%", md: "20%" },
                 textTransform: "capitalize",
-                color: "#fff",
-                background: "#1a4f72",
+                color: "#881337",
+                borderColor: "#881337",
+                borderRadius: "8px",
                 "&:hover": {
-                  background: "#245a7e",
+                  borderColor: "#70102e",
+                  backgroundColor: "rgba(136, 19, 55, 0.04)",
                 },
               }}
             >
@@ -997,16 +1274,18 @@ const Register = () => {
               type="submit"
               variant="contained"
               size="large"
-              disabled={isPending || isProcessingPayment}
+              disabled={isPending || isProcessingPayment || !agreedToTerms}
               sx={{
-                backgroundColor: "#27ae60",
-                "&:hover": { backgroundColor: "#1e8449" },
+                backgroundColor: "#881337",
+                "&:hover": { backgroundColor: "#70102e" },
                 fontWeight: 600,
                 width: { xs: "100%", sm: "50%", md: "20%" },
                 textTransform: "capitalize",
+                borderRadius: "8px",
+                opacity: agreedToTerms ? 1 : 0.6,
               }}
             >
-              {isProcessingPayment ? <CircularProgress size={24} /> : "Submit"}
+              {isProcessingPayment ? <CircularProgress size={24} color="inherit" /> : "Submit"}
             </Button>
           </Box>
         </Box>
@@ -1018,10 +1297,18 @@ const Register = () => {
         <DialogTitle sx={{ fontWeight: 600, color: 'primary.main' }}>Confirm Payment</DialogTitle>
         <DialogContent>
           {/* Plan Summary */}
-          <Box sx={{ mb: 2, p: 2, bgcolor: '#f5f9ff', borderRadius: 2, border: '1px solid #d0e4f7' }}>
+          <Box sx={{ mb: 2, p: 2, bgcolor: '#fff1f2', borderRadius: 2, border: '1px solid rgba(136, 19, 55, 0.2)' }}>
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>Selected Plan</Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1.5 }}>
-              {planType === "PremiumUser" ? "⭐ Premium Membership" : "🥈 Silver Membership"}
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1.5, display: "flex", alignItems: "center", gap: 0.75 }}>
+              {planType === "PremiumUser" ? (
+                <>
+                  <Star sx={{ color: "#D97706", fontSize: 22 }} /> Premium Membership
+                </>
+              ) : (
+                <>
+                  <WorkspacePremium sx={{ color: "#6B7280", fontSize: 22 }} /> Silver Membership
+                </>
+              )}
             </Typography>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -1057,9 +1344,8 @@ const Register = () => {
           <Button
             onClick={handlePaymentConfirm}
             variant="contained"
-            // color="primary"
             fullWidth
-            sx={{ fontWeight: 600,bgcolor: "#27ae60", "&:hover": { backgroundColor: "#1e8449" } }}
+            sx={{ fontWeight: 600, bgcolor: "#881337", "&:hover": { backgroundColor: "#70102e" }, borderRadius: "8px" }}
           >
             Pay ₹{discountedPrice}
           </Button>
@@ -1091,6 +1377,7 @@ const Register = () => {
             variant="outlined"
             onClick={handleClosePromoDialog}
             disabled={checkPromocodeMutation.isPending}
+            sx={{ borderRadius: "8px", borderColor: "#881337", color: "#881337" }}
           >
             Cancel
           </Button>
@@ -1100,14 +1387,15 @@ const Register = () => {
             disabled={!promocode.trim() || checkPromocodeMutation.isPending}
             startIcon={
               checkPromocodeMutation.isPending ? (
-                <CircularProgress size={20} />
+                <CircularProgress size={20} color="inherit" />
               ) : null
             }
             sx={{
               minWidth: 120,
-              background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)",
+              borderRadius: "8px",
+              backgroundColor: "#881337",
               "&:hover": {
-                background: "linear-gradient(45deg, #1976D2 30%, #0288D1 90%)",
+                backgroundColor: "#70102e",
               },
             }}
           >

@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from "react";
 import "./ContactUs.scss";
 import Navbar from "../navbar/Navbar";
+import usePageMetadata from "../../hooks/usePageMetadata";
 
 import { FaMapMarkerAlt, FaEnvelope, FaPhoneAlt } from "react-icons/fa";
 
 const ContactUs = () => {
+  usePageMetadata({
+    title: "Contact Us - Shree Ganda Matrimony",
+    description: "Get in touch with Shree Ganda Matrimony customer support team for inquiries, registration assistance, and match counseling.",
+    canonicalUrl: "https://shreegandha.com/contact",
+  });
+
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
 
   useEffect(() => {
@@ -32,7 +39,7 @@ const ContactUs = () => {
       <div className="contact-container">
         {/* Header Section */}
         <div className="contact-header">
-          <h2>Get In Touch</h2>
+          <h1 className="contact-main-heading">Get In Touch</h1>
           <p>
             We're here to assist you! Feel free to reach out to us with any
             questions, concerns, or feedback.
@@ -118,6 +125,13 @@ const ContactUs = () => {
                 <div className="form-group">
                   <label htmlFor="message">Your Message</label>
                   <textarea id="message" placeholder="Type your message here..." rows="5" value={formData.message} onChange={handleChange}></textarea>
+                </div>
+
+                <div className="form-group consent-group" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', margin: '14px 0' }}>
+                  <input type="checkbox" id="contact-consent" required style={{ marginTop: '4px' }} />
+                  <label htmlFor="contact-consent" style={{ fontSize: '0.85rem', color: '#5C4033', lineHeight: 1.4 }}>
+                    I agree to the processing of my contact information to respond to my inquiry as detailed in the <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#8B1E1E', fontWeight: 600 }}>Privacy Policy</a>.
+                  </label>
                 </div>
 
                 <div className="button-group">

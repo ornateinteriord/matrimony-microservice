@@ -147,8 +147,8 @@ const Navbar = () => {
           toast.success("OTP sent successfully");
         }
       },
-      onError: (error) => {
-        toast.error(error.response?.data?.message || "Failed to send OTP");
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || "Failed to send OTP");
       }
     });
   };
@@ -173,8 +173,8 @@ const Navbar = () => {
         toast.success("Password reset successfully");
         handleCloseForgotPassword();
       },
-      onError: (error) => {
-        toast.error(error.response?.data?.message);
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || "Failed to reset password");
       }
     });
   };
@@ -213,7 +213,7 @@ const Navbar = () => {
               }
             }}
           >
-            Sangam ❤️ Sathi
+            Sangam Sathi
           </Typography>
 
           {/* Desktop Menu */}
@@ -353,7 +353,7 @@ const Navbar = () => {
               component="div"
               sx={{ fontWeight: "bold", fontSize: "1.3rem" }}
             >
-              Sangam ❤️ Sathi
+              Sangam Sathi
             </Typography>
             <IconButton onClick={toggleMobileMenu} sx={{ color: "#fff" }}>
               <CloseIcon />
@@ -448,9 +448,9 @@ const Navbar = () => {
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "20px",
+            borderRadius: "16px",
             overflow: "hidden",
-            boxShadow: "0 24px 60px rgba(94,4,118,0.25)",
+            boxShadow: "0 24px 60px rgba(11,25,44,0.3)",
             padding: "0px",
           }
         }}
@@ -536,7 +536,7 @@ const Navbar = () => {
                   "&:hover fieldset": { borderColor: "#0B192C" },
                   "&.Mui-focused fieldset": {
                     borderColor: "#0B192C",
-                    boxShadow: "0 0 0 3px rgba(94,4,118,0.1)",
+                    boxShadow: "0 0 0 3px rgba(11,25,44,0.12)",
                   },
                 },
                 "& label.Mui-focused": { color: "#0B192C" },
@@ -577,7 +577,7 @@ const Navbar = () => {
                   "&:hover fieldset": { borderColor: "#0B192C" },
                   "&.Mui-focused fieldset": {
                     borderColor: "#0B192C",
-                    boxShadow: "0 0 0 3px rgba(94,4,118,0.1)",
+                    boxShadow: "0 0 0 3px rgba(11,25,44,0.12)",
                   },
                 },
                 "& label.Mui-focused": { color: "#0B192C" },
@@ -626,10 +626,10 @@ const Navbar = () => {
               fontSize: "1rem",
               letterSpacing: "0.3px",
               background: "linear-gradient(135deg, #0B192C 0%, #1A365D 100%)",
-              boxShadow: "0 4px 14px rgba(94,4,118,0.35)",
+              boxShadow: "0 4px 14px rgba(11,25,44,0.35)",
               "&:hover": {
                 background: "linear-gradient(135deg, #1A365D 0%, #0B192C 100%)",
-                boxShadow: "0 6px 20px rgba(94,4,118,0.45)",
+                boxShadow: "0 6px 20px rgba(11,25,44,0.45)",
                 transform: "translateY(-1px)",
               },
               transition: "all 0.25s ease",
@@ -807,7 +807,7 @@ const Navbar = () => {
               fontSize: "1rem",
               backgroundColor: "#0B192C",
               "&:hover": {
-                backgroundColor: "#6c1b83",
+                backgroundColor: "#1A365D",
               },
             }}
           >
@@ -835,9 +835,9 @@ const Navbar = () => {
               color: "#0B192C",
               borderColor: "#0B192C",
               "&:hover": {
-                borderColor: "#6c1b83",
-                backgroundColor: "#e3d2e7ff",
-                color: "#6c1b83",
+                borderColor: "#1A365D",
+                backgroundColor: "#F1F5F9",
+                color: "#1A365D",
               },
             }}
           >

@@ -45,6 +45,11 @@ const UserSchema = new mongoose.Schema({
   registration_no: { type: String },
   type_of_user: { type: String },
   image: { type: String },
+  images: [{ type: String }],
+  parents: [{
+    relation: { type: String },
+    name: { type: String }
+  }],
   image_verification: { type: String, default: "pending" },
   secure_image: { type: String, default: "disable" },
   otherInfo: { type: String, default: "Pending" }
@@ -84,6 +89,10 @@ UserSchema.index({ status: 1 });
 UserSchema.index({ user_role: 1 });
 UserSchema.index({ type_of_user: 1 });
 UserSchema.index({ refered_by: 1 });
+UserSchema.index({ refered_by: 1, status: 1 });
+UserSchema.index({ image_verification: 1 });
+UserSchema.index({ caste: 1 });
+UserSchema.index({ gender: 1, age: 1 });
 
 const UserModel = mongoose.model("user_tbl", UserSchema);
 module.exports = UserModel;

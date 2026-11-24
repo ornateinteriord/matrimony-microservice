@@ -5,7 +5,8 @@ import { TbMessageReportFilled } from 'react-icons/tb';
 import { IoIosNotifications } from 'react-icons/io';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { Collapse, List, ListItem, ListItemText, IconButton, Typography, Menu, MenuItem, Avatar, Badge, Dialog, DialogTitle, DialogContent, TextField, Button, DialogActions } from '@mui/material';
+import { Collapse, List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton, Typography, Menu, MenuItem, Avatar, Badge, Dialog, DialogTitle, DialogContent, TextField, Button, DialogActions } from '@mui/material';
+import { SidebarConfig, NavItemConfig } from '../../types/navigation';
 import { IoMdNotifications } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { getAllUserCounts, getAllUserImageVerification } from '../api/Admin';
@@ -27,6 +28,75 @@ const AdminDashboard = () => {
     profilePicture: null,
   });
   const [activePath, setActivePath] = useState('');
+  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
+
+  const adminSidebarConfig: SidebarConfig = {
+    brandTitle: "Admin Panel",
+    homePath: "/admin/dashboard",
+    items: [
+      { id: "profile", title: "Profile", path: "/admin/profile", icon: CgProfile },
+      { id: "dashboard", title: "Dashboard", path: "/admin/dashboard", icon: FaDashcube },
+      {
+        id: "user-management",
+        title: "User Management",
+        path: "",
+        icon: FaUser,
+        children: [
+          { id: "user-table", title: "User Table", path: "/admin/user-table", icon: FaUser },
+          { id: "userData", title: "User Upgrade", path: "/admin/userData", icon: FaUser },
+          { id: "renewals", title: "Renewal", path: "/admin/renewals", icon: FaUser },
+          { id: "resetpass", title: "Password", path: "/admin/resetpass", icon: FaUser },
+          { id: "imageverify", title: "Image Verification", path: "/admin/imageverify", icon: FaUser },
+        ],
+      },
+      {
+        id: "assistance-service",
+        title: "Assistance Service",
+        path: "",
+        icon: FaServer,
+        children: [
+          { id: "pendingdata", title: "Pending", path: "/admin/pendingdata", icon: FaServer },
+          { id: "successdata", title: "Success", path: "/admin/successdata", icon: FaServer },
+          { id: "promotersdata", title: "Promoter User", path: "/admin/promotersdata", icon: FaServer },
+        ],
+      },
+      {
+        id: "promoter-management",
+        title: "Promoter Management",
+        path: "",
+        icon: FaUsers,
+        children: [
+          { id: "promoters", title: "Promoters", path: "/admin/promoters", icon: FaUsers },
+          { id: "promotersusers", title: "Promoter Users", path: "/admin/promotersusers", icon: FaUsers },
+          { id: "promoterearn", title: "Promoter Earnings", path: "/admin/promoterearn", icon: FaUsers },
+          { id: "paytopromoters", title: "Pay to Promoters", path: "/admin/paytopromoters", icon: FaUsers },
+        ],
+      },
+      {
+        id: "receipts",
+        title: "Receipts",
+        path: "",
+        icon: FaReceipt,
+        children: [
+          { id: "onlinetransaction", title: "Online Transaction", path: "/admin/onlinetransaction", icon: FaReceipt },
+          { id: "assistance", title: "Assistance Online Transaction", path: "/admin/assistance", icon: FaReceipt },
+          { id: "receiptsvocher", title: "Receipt Voucher", path: "/admin/receiptsvocher", icon: FaReceipt },
+        ],
+      },
+      {
+        id: "reports",
+        title: "Reports",
+        path: "",
+        icon: TbMessageReportFilled,
+        children: [
+          { id: "userreports", title: "Users", path: "/admin/userreports", icon: TbMessageReportFilled },
+          { id: "renewalreports", title: "Renewals", path: "/admin/renewalreports", icon: TbMessageReportFilled },
+          { id: "receiptsreports", title: "Receipts", path: "/admin/receiptsreports", icon: TbMessageReportFilled },
+        ],
+      },
+      { id: "notification", title: "Notifications", path: "/admin/notification", icon: IoIosNotifications },
+    ],
+  };
   const location = useLocation();
   
   const navigate = useNavigate();
@@ -249,472 +319,100 @@ const handleConfirmLogout = () => {
         </div>
       </nav>
     </div>
-        {/* Sidebar */}
+        {/* Dynamic Data-Driven Sidebar */}
         <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`} style={{
           overflowY: 'auto',
           scrollbarWidth: 'none', 
-          msOverflowStyle: 'none', 
-          '&::-webkit-scrollbar': {
-            display: 'none', 
-          }
+          msOverflowStyle: 'none',
+          backgroundColor: '#0B192C',
         }}>
-          <List sx={{ width: '100%' }}>
-          <ListItem
-            onClick={handleProfileDialogOpen}
-            sx={{ 
-              cursor: 'pointer',
-              padding: '10px',
-              backgroundColor: isActive('/admin/profile') ? '#800000' : 'transparent',
-              '&:hover': {
-                backgroundColor: isActive('/admin/profile') ? '#800000' : 'rgba(0, 0, 0, 0.04)',
-                color: '#FFD700'
-              }
-            }}
-          >
-            <CgProfile /> Profile
-          </ListItem>
+          <List sx={{ width: '100%', py: 1 }}>
+            {adminSidebarConfig.items.map((item) => {
+              const hasChildren = Boolean(item.children && item.children.length > 0);
+              const isSubOpen = Boolean(openSubmenus[item.id]);
+              const itemActive = item.path ? isActive(item.path) : false;
+              const IconComponent = item.icon;
 
-            <ListItem 
-              onClick={handleDashboard} 
-              sx={{ 
-                cursor: 'pointer',
-                padding: '14px',
-                borderRadius:'4px',
-                backgroundColor: isActive('/admin/dashboard') ? '#800000' : 'transparent',
-                '&:hover': {
-                  backgroundColor: isActive('/admin/dashboard') ? '#800000' : 'rgba(0, 0, 0, 0.04)',
-                  color: '#FFD700'
-                }
-              }}
-            >
-              <FaDashcube /> Dashboard
-            </ListItem>
+              return (
+                <React.Fragment key={item.id}>
+                  <ListItem disablePadding sx={{ my: 0.25 }}>
+                    <ListItemButton
+                      onClick={() => {
+                        if (item.id === 'profile') {
+                          handleProfileDialogOpen();
+                        } else if (hasChildren) {
+                          setOpenSubmenus(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                        } else if (item.path) {
+                          navigate(item.path);
+                        }
+                      }}
+                      sx={{
+                        mx: 1,
+                        borderRadius: '6px',
+                        py: 0.9,
+                        backgroundColor: (itemActive || (hasChildren && isSubOpen)) ? 'rgba(212, 175, 55, 0.2)' : 'transparent',
+                        borderLeft: itemActive ? '3px solid #D4AF37' : '3px solid transparent',
+                        color: (itemActive || (hasChildren && isSubOpen)) ? '#D4AF37' : '#FFFFFF',
+                        '&:hover': {
+                          backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                          color: '#D4AF37',
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 32, color: (itemActive || (hasChildren && isSubOpen)) ? '#D4AF37' : 'rgba(255, 255, 255, 0.85)' }}>
+                        {IconComponent && <IconComponent style={{ fontSize: '1.1rem' }} />}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={item.title}
+                        primaryTypographyProps={{
+                          fontSize: '0.92rem',
+                          fontWeight: itemActive ? 700 : 500,
+                        }}
+                      />
+                      {hasChildren && (isSubOpen ? <FaChevronUp style={{ fontSize: '0.8rem' }} /> : <FaChevronDown style={{ fontSize: '0.8rem' }} />)}
+                    </ListItemButton>
+                  </ListItem>
 
-            {/* User Management Dropdown */}
-           <ListItem 
-              button 
-              onClick={toggleUserManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '10px',
-                borderRadius: '4px',
-                backgroundColor: openUserManagement ? '#800000' : 'transparent',
-                color: openUserManagement ? '#fff' : 'inherit',
-                '&:hover': {
-                  backgroundColor: openUserManagement ? '#A52A2A' : 'transparent',
-                  color: '#FFD700'
-                },
-              }}
-            >
-              <FaUser />
-              <ListItemText primary="User Management" />
-              {openUserManagement ? <FaChevronUp /> : <FaChevronDown />}
-            </ListItem>
-            <Collapse in={openUserManagement} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%',marginLeft:'20px' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateUserTable}
-                  sx={{
-                    padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/user-table') ? '#FFD700' : '',
-                    '&:hover': {
-                    color: isActive('/admin/user-table') ?  '#E8A54B' : '#FFD700',
-                   
-                    }
-                  }}
-                >
-                  <ListItemText primary="User Table" />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateUserUpgrade}
-                  sx={{
-                    padding: '0px ',
-                    borderRadius:'2px',
-                    color: isActive('/admin/userData') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/userData') ? '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="User Upgrade" />
-                </ListItem>
-     
-                <ListItem 
-                  button 
-                  onClick={navigateRenewals}
-                  sx={{
-                 padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/renewals') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/renewals') ? '#E8A54B' : '#FFD700',
-                      
-                    }
-                  }}
-                >
-                  <ListItemText primary="Renewal" />
-                </ListItem>             
-          
-                <ListItem 
-                  button 
-                  onClick={navigateresetpass}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/resetpass') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/resetpass') ? '#E8A54B' : '#FFD700',
-                   
-                    }
-                  }}
-                >
-                  <ListItemText primary="Password" />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateImageVerify}
-                  sx={{
-                    padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/imageverify') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/imageverify') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Image Verification" />
-                </ListItem>
-              </List>
-            </Collapse>
-
-            {/* Assistance Service Dropdown */}
-            <ListItem 
-              button 
-              onClick={toggleAssistanceService}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '10px',
-                borderRadius: '4px',
-                backgroundColor: openAssistanceService ? '#800000' : 'transparent',
-                color: openAssistanceService ? '#fff' : 'inherit',
-                '&:hover': {
-                  backgroundColor: openAssistanceService ? '#A52A2A' : 'rgba(0, 0, 0, 0.04)',
-                  color: '#FFD700'
-                }
-              }}
-            >
-              <FaServer />
-              <ListItemText primary="Assistance Service" />
-              {openAssistanceService ? <FaChevronUp /> : <FaChevronDown />}
-           </ListItem>
-            <Collapse in={openAssistanceService} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%',marginLeft:'20px' }}>
-                <ListItem 
-                  button 
-                  onClick={navigatePendingdata}
-                  sx={{
-                    padding: '0',
-                    borderRadius:'2px',
-                  color: isActive('/admin/pendingdata') ? '#FFD700' : '',
-                    '&:hover': {
-                     color: isActive('/admin/pendingdata') ?  '#E8A54B' : '#FFD700',
-                    
-                    }
-                  }}
-                >
-                  <ListItemText primary="Pending" />
-                </ListItem>
-          
-                <ListItem 
-                  button 
-                  onClick={navigateSuccessdata}
-                  sx={{
-                  padding: '0',
-                    borderRadius:'2px',
-                  color: isActive('/admin/successdata') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/successdata') ? '#E8A54B' : '#FFD700',
-                      
-                    }
-                  }}
-                >
-                  <ListItemText primary="Success" />
-                </ListItem>
-           
-                <ListItem 
-                  button 
-                  onClick={navigatePromoterdata}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/promotersdata') ? '#FFD700' : '',
-                    '&:hover': {
-                   color: isActive('/admin/promotersdata') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Promoter User" />
-                </ListItem>
-              </List>
-            </Collapse>
-
-            {/* Promoter Management Dropdown */}
-            <ListItem 
-              button 
-              onClick={togglePromoterManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '10px',
-                borderRadius: '4px',
-                backgroundColor: openPromoterManagement ? '#800000' : 'transparent',
-                color: openPromoterManagement ? '#fff' : 'inherit',
-                '&:hover': {
-                  backgroundColor: openPromoterManagement ? '#A52A2A' : 'rgba(0, 0, 0, 0.04)',
-                  color: '#FFD700'
-                }
-              }}
-            >
-              <FaUsers />
-              <ListItemText primary="Promoter Management" />
-              {openPromoterManagement ? <FaChevronUp /> : <FaChevronDown />}
-            </ListItem>
-            <Collapse in={openPromoterManagement} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%',marginLeft:'20px' }}>
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersData}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/promoters') ? '#FFD700' : '',
-                    '&:hover': {
-                  color: isActive('/admin/promoters') ?  '#E8A54B' : '#FFD700',
-                      
-                    }
-                  }}
-                >
-                  <ListItemText primary="Promoters" />
-                </ListItem>
-             
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersUsers}
-                  sx={{
-                  padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/promotersusers') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/promotersusers') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Promoter Users" />
-                </ListItem>
-              
-                <ListItem 
-                  button 
-                  onClick={navigatePromotersEarn}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/promoterearn') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/promoterearn') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Promoter Earnings" />
-                </ListItem>
-      
-                <ListItem 
-                  button 
-                  onClick={navigatePaytopromoters}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                   color: isActive('/admin/paytopromoters') ? '#FFD700' : '',
-                    '&:hover': {
-                     color: isActive('/admin/paytopromoters') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Pay to Promoters" />
-                </ListItem>
-              </List>
-            </Collapse>
-           
-             {/* Promoter Receipts Dropdown */}
-            <ListItem 
-              button 
-              onClick={toggleReceiptsManagement}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '10px',
-                borderRadius: '4px',
-                backgroundColor: openPromoterReceipts ? '#800000' : 'transparent',
-                color: openPromoterReceipts ? '#fff' : 'inherit',
-                '&:hover': {
-                  backgroundColor: openPromoterReceipts ? '#A52A2A' : 'rgba(0, 0, 0, 0.04)',
-                  color: '#FFD700'
-                }
-              }}
-            >
-              <FaReceipt />
-              <ListItemText primary="Receipts" />
-              {openPromoterReceipts ? <FaChevronUp /> : <FaChevronDown />}
-            </ListItem>
-            <Collapse in={openPromoterReceipts} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%',marginLeft:'20px' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateOnlineTransaction}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                  color: isActive('/admin/onlinetransaction') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/onlinetransaction') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Online Transaction" />
-                </ListItem>
-       
-                <ListItem 
-                  button 
-                  onClick={navigateAssistanceData}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                color: isActive('/admin/assistance') ? '#FFD700' : '',
-                    '&:hover': {
-                    color: isActive('/admin/assistance') ? '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Assistance Online Transaction" />
-                </ListItem>
-               
-                <ListItem 
-                  button 
-                  onClick={navigateReceiptsvocher}
-                  sx={{
-                   padding: '0',
-                    borderRadius:'2px',
-                   color: isActive('/admin/receiptsvocher') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/receiptsvocher') ?  '#E8A54B' : '#FFD700',
-                    
-                    }
-                  }}
-                >
-                  <ListItemText primary="Receipt Voucher" />
-                </ListItem>
-              </List>
-            </Collapse>
-
-               {/* Reports Dropdown */}
-             <ListItem 
-               button 
-               onClick={toggleReportManagement}
-               sx={{ 
-                 cursor: 'pointer',
-                 padding: '10px',
-                 borderRadius: '4px',
-                 backgroundColor: openPromoterReports ? '#800000' : 'transparent',
-                 color: openPromoterReports ? '#fff' : 'inherit',
-                 '&:hover': {
-                   backgroundColor: openPromoterReports ? '#A52A2A' : 'rgba(0, 0, 0, 0.04)',
-                   color: '#FFD700'
-                 }
-               }}
-             >
-               <TbMessageReportFilled /> 
-              <ListItemText primary="Reports" />
-              {openPromoterReports ? <FaChevronUp /> : <FaChevronDown />}
-            </ListItem>
-            <Collapse in={openPromoterReports} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding sx={{ width: '100%',marginLeft:'20px' }}>
-                <ListItem 
-                  button 
-                  onClick={navigateUserReports}
-                  sx={{
-                    padding: '0',
-                    borderRadius:'2px',
-                  color: isActive('/admin/userreports') ? '#FFD700' : '',
-                    '&:hover': {
-                      color: isActive('/admin/userreports') ? '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Users" />
-                </ListItem>
-               
-                <ListItem 
-                  button 
-                  onClick={navigateRenewalReports}
-                  sx={{
-                    padding: '0',
-                    borderRadius:'2px',
-                    color: isActive('/admin/renewalreports') ? '#FFD700' : '',
-                    '&:hover': {
-                   color: isActive('/admin/renewalreports') ?  '#E8A54B' : '#FFD700',
-                    
-                    }
-                  }}
-                >
-                  <ListItemText primary="Renewals" />
-                </ListItem>
-              
-                <ListItem 
-                  button 
-                  onClick={navigateReceiptsReportsdata}
-                  sx={{
-                  padding: '0',
-                    borderRadius:'2px',
-                 color: isActive('/admin/receiptsreports') ? '#FFD700' : '',
-                    '&:hover': {
-                     color: isActive('/admin/receiptsreports') ?  '#E8A54B' : '#FFD700',
-                     
-                    }
-                  }}
-                >
-                  <ListItemText primary="Receipts" />
-                </ListItem>
-              </List>
-            </Collapse>
-            {/* notification */}
-            <ListItem 
-              button 
-              onClick={navigateNotification}
-              sx={{ 
-                cursor: 'pointer',
-                padding: '10px',
-                borderRadius:'4px',
-                backgroundColor: isActive('/admin/notification') ? '#800000' : 'transparent',
-                '&:hover': {
-                  backgroundColor: isActive('/admin/notification') ? '#800000' : 'rgba(0, 0, 0, 0.04)',
-                  color: '#FFD700'
-                }
-              }}
-            >
-              <IoIosNotifications />
-              <ListItemText primary="Notifications" />
-            </ListItem>
+                  {hasChildren && item.children && (
+                    <Collapse in={isSubOpen} timeout="auto" unmountOnExit>
+                      <List component="div" disablePadding sx={{ pl: 2 }}>
+                        {item.children.map((sub) => {
+                          const subActive = sub.path ? isActive(sub.path) : false;
+                          return (
+                            <ListItem key={sub.id} disablePadding sx={{ my: 0.2 }}>
+                              <ListItemButton
+                                onClick={() => {
+                                  if (sub.path) navigate(sub.path);
+                                }}
+                                sx={{
+                                  borderRadius: '4px',
+                                  py: 0.6,
+                                  color: subActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.75)',
+                                  backgroundColor: subActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                                  borderLeft: subActive ? '2px solid #D4AF37' : '2px solid transparent',
+                                  '&:hover': {
+                                    color: '#D4AF37',
+                                    backgroundColor: 'rgba(212, 175, 55, 0.08)',
+                                  },
+                                }}
+                              >
+                                <ListItemText
+                                  primary={sub.title}
+                                  primaryTypographyProps={{
+                                    fontSize: '0.88rem',
+                                    fontWeight: subActive ? 700 : 400,
+                                  }}
+                                />
+                              </ListItemButton>
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    </Collapse>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </List>
         </aside>
 

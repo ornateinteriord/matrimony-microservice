@@ -31,7 +31,7 @@ const PaymentSuccessScanner = ({ open, onClose, userType, buttonText }) => {
     } catch (err) {
       console.log("Error submitting QR payment:", err);
     }
-    toast.success(`🎉 Payment request submitted for ${planName}! Admin will verify your transaction and activate your account shortly.`);
+    toast.success(`Payment request submitted for ${planName}! Admin will verify your transaction and activate your account shortly.`);
     if (onClose) {
       onClose();
     }

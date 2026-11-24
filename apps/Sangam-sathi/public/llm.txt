@@ -1,0 +1,29 @@
+# Sangam Sathi - Premium Matrimony Microservice Platform
+
+> Sangam Sathi is a trusted, elegant matrimony application designed to connect prospective brides and grooms within communities with security, authenticity, and cultural dignity.
+
+## Platform Features
+- Verified Profiles: Rigorous photo and identity verification for authentic matchmaking.
+- Community Centric: Filter candidates by caste, religion, education, occupation, and geographical locations.
+- Membership Tiers: Transparent Free, Silver, and Premium memberships.
+- Sponsor & Referral Ecosystem: Integrated promoter attribution and referral rewards with cryptographic registration locking.
+- Privacy & DPDP Act 2023 Compliance: User-controlled profile visibility, grievance redressal, and full consent lifecycle management.
+
+## Available Routes
+- Home / Landing: `/`
+- Services: `/service`
+- About Us: `/about`
+- Contact Support: `/contact`
+- Membership Plans: `/membership`
+- Registration: `/register`
+- Privacy Policy: `/privacy-policy`
+- Terms & Conditions: `/terms`
+- Cookie Policy: `/cookie-policy`
+- Refund Policy: `/refund-policy`
+- Data Collection Disclosure: `/data-disclosure`
+- Promoter Portal: `/promoter/login`, `/promoter/register`
+
+## Technological Foundation
+- Frontend: React 18, TypeScript, MUI v7, Vite 6, Capacitor v7
+- Backend: Express.js, MongoDB / Mongoose microservice
+- Aesthetics: Midnight Imperial Navy (`#0B192C`) and Champagne Gold (`#D4AF37`)

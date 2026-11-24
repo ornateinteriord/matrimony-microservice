@@ -1,0 +1,17 @@
+# Shree Ganda Architecture Overview
+
+## System Overview
+Shree Ganda is an authentic cultural matrimony application featuring Sandalwood Gold (#C5A059) and Deep Sindoor Red (#8B1E1E) themes on warm cream ivory backgrounds. It provides trusted matrimonial matchmaking across Karnataka and Kannada-speaking communities, emphasizing cultural values, verified profiles, and seamless native mobile interactions.
+
+## Architecture
+Vite React 18 frontend with Capacitor v6 mobile packaging and Express backend. Single page application architecture with declarative routing, modular dynamic navigation sidebars, and progressive mobile layouts.
+
+## Tech Stack
+TypeScript, Material UI v7, Mongoose, Express.js microservice, TanStack Query, and Capacitor native runtimes.
+
+## API Endpoints
+- POST /api/promoter/promocheck: Validate promoter codes and compute promotional discounts
+- POST /api/auth/register: Candidate registration with immutable sponsor binding
+- POST /api/auth/login: User authentication and JWT issuance
+- GET /api/user/profile: Fetch candidate profile data
+- GET /api/user/matches: Retrieve verified community matches

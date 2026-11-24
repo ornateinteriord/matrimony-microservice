@@ -1,6 +1,6 @@
 // data.js
 const sidebarData = {
-  title: "ShreeGanda ❤️ Matrimony",
+  title: "ShreeGanda Matrimony",
   menuItems: [
     {
       text: "Dashboard",
@@ -84,7 +84,7 @@ const sidebarData = {
     {
       title: "My Total Earnings",
       value: "24700.0",
-      color: "#9c27b0",
+      color: "#C5A059",
       icon: "AttachMoney",
     },
     {

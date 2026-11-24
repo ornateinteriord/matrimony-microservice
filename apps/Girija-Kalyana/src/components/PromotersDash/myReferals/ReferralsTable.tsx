@@ -222,7 +222,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 8 }}>
-        <CircularProgress sx={{ color: '#4a148c' }} />
+        <CircularProgress sx={{ color: '#881337' }} />
         <Typography sx={{ mt: 2, color: 'text.secondary', fontSize: '0.9rem' }}>
           Loading your referrals...
         </Typography>
@@ -298,11 +298,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
                 fontSize: '0.875rem',
                 color: '#64748b',
                 '&.Mui-selected': {
-                  color: '#4a148c',
+                  color: '#881337',
                 },
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#4a148c',
+                backgroundColor: '#881337',
                 height: 3,
               },
             }}
@@ -340,10 +340,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
-                backgroundColor: subFilter === 'all' ? '#4a148c' : '#f1f5f9',
+                borderRadius: '4px',
+                backgroundColor: subFilter === 'all' ? '#700F2B' : '#f1f5f9',
                 color: subFilter === 'all' ? '#ffffff' : '#475569',
                 '&:hover': {
-                  backgroundColor: subFilter === 'all' ? '#3b0f70' : '#e2e8f0',
+                  backgroundColor: subFilter === 'all' ? '#590a21' : '#e2e8f0',
                 },
               }}
             />
@@ -356,6 +357,7 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
+                borderRadius: '4px',
                 backgroundColor: subFilter === 'free' ? '#0284c7' : '#f1f5f9',
                 color: subFilter === 'free' ? '#ffffff' : '#475569',
                 '&:hover': {
@@ -372,10 +374,11 @@ const ReferralsTable: React.FC<ReferralsTableProps> = ({ statusFilter, initialTa
               sx={{
                 fontWeight: 600,
                 fontSize: '0.75rem',
-                backgroundColor: subFilter === 'paid' ? '#d97706' : '#f1f5f9',
+                borderRadius: '4px',
+                backgroundColor: subFilter === 'paid' ? '#B45309' : '#f1f5f9',
                 color: subFilter === 'paid' ? '#ffffff' : '#475569',
                 '&:hover': {
-                  backgroundColor: subFilter === 'paid' ? '#b45309' : '#e2e8f0',
+                  backgroundColor: subFilter === 'paid' ? '#92400e' : '#e2e8f0',
                 },
               }}
             />

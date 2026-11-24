@@ -28,8 +28,8 @@ export const extractErrorMessage = (error, defaultMsg = "An error occurred. Plea
 
 export const useSignupMutation = ()=>{
   const navigate = useNavigate();
-  return useMutation({
-      mutationFn: async (data) => {
+  return useMutation<any, any, any>({
+      mutationFn: async (data: any) => {
         return await post("/api/auth/signup", data);
       },
       onSuccess: (response) => {
@@ -50,8 +50,8 @@ export const useSignupMutation = ()=>{
 export const useLoginMutation = () => {
   const navigate = useNavigate();
 
-  return useMutation({
-    mutationFn: async (data) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (data: any) => {
       return await post("/api/auth/login", data);
     },
 
@@ -124,18 +124,18 @@ export const useLoginMutation = () => {
 
 
 export const useResetpassword = () => {
-  return useMutation({
-    mutationFn: async (data) => {
+  return useMutation<any, any, any>({
+    mutationFn: async (data: any) => {
       const response = await post("/api/auth/reset-password", data);
       if (!response.success) {
         throw new Error(response.message);
       }
       return response;
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       toast.success(response.message);
     },
-   onError: (error) => {
+   onError: (error: any) => {
   const errorMessage =
     error?.response?.data?.message || "Something went wrong";
   toast.error(errorMessage);

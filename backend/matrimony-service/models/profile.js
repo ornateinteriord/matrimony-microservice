@@ -51,6 +51,11 @@ const ProfileSchema = new mongoose.Schema({
   bloodgroup: String,
   mobile_verification: String,
   image: String,
+  images: [String],
+  parents: [{
+    relation: String,
+    name: String
+  }],
   image_verification: { type: String,default: "pending" },
   secure_image: {type: String, 
     enum: ['disable', 'enable', 'Premiumuser', 'requestuser'], 

@@ -1,8 +1,13 @@
-const profile = require("../../models/profile");
 const UserModel = require("../../models/user");
 
 const getUserCounts = async (req, res) => {
   try {
+    const isFree = { $or: [{ type_of_user: 'FreeUser' }, { user_role: 'FreeUser' }], status: { $in: ['active', 'Active'] } };
+    const isSilver = { $or: [{ type_of_user: 'SilverUser' }, { user_role: 'SilverUser' }], status: { $in: ['active', 'Active'] } };
+    const isPremium = { $or: [{ type_of_user: 'PremiumUser' }, { user_role: 'PremiumUser' }], status: { $in: ['active', 'Active'] } };
+    const isPending = { status: { $in: ['pending', 'Pending', 'inactive', 'Inactive'] }, user_role: { $ne: 'admin' } };
+    const isSuccess = { status: { $in: ['active', 'Active'] }, user_role: { $ne: 'admin' } };
+
     const [
       freeUserCount,
       silverUserCount,
@@ -10,11 +15,11 @@ const getUserCounts = async (req, res) => {
       assistancePendingCount,
       assistanceSuccessCount
     ] = await Promise.all([
-      profile.countDocuments({ type_of_user: 'FreeUser', status: { $in: ['active', 'Active'] } }),
-      profile.countDocuments({ type_of_user: 'SilverUser', status: { $in: ['active', 'Active'] } }),
-      profile.countDocuments({ type_of_user: 'PremiumUser', status: { $in: ['active', 'Active'] } }),
-      profile.countDocuments({ status: { $in: ['pending', 'Pending', 'inactive', 'Inactive'] } }),
-      profile.countDocuments({ status: { $in: ['active', 'Active'] } })
+      UserModel.countDocuments(isFree),
+      UserModel.countDocuments(isSilver),
+      UserModel.countDocuments(isPremium),
+      UserModel.countDocuments(isPending),
+      UserModel.countDocuments(isSuccess)
     ]);
 
     const totalPaidUsers = silverUserCount + premiumUserCount;

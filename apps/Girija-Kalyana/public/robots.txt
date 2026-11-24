@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /service
+Allow: /membership
+Allow: /register
+Allow: /contact
+Allow: /privacy-policy
+Allow: /terms
+Allow: /cookie-policy
+Allow: /refund-policy
+Allow: /data-disclosure
+Disallow: /admin/
+Disallow: /PromotAdmin/
+Disallow: /user/
+Disallow: /api/
+
+Sitemap: https://girijakalyana.com/sitemap.xml

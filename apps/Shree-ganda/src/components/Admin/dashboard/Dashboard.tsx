@@ -57,7 +57,7 @@ const Dashboard = () => {
               <div className="stat-value">₹25,25,000</div>
             </div>
 
-            <div className="stat-card purple">
+            <div className="stat-card sandalwood">
               <div className="stat-icon-wrapper">
                 <FaGift />
                 <span className="stat-label">Active Packages</span>

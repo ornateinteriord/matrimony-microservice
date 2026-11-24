@@ -15,6 +15,7 @@ import { useGetAcceptedInterests, useRemoveAcceptedConnection } from "../../../.
 import ProfileDialog from "../../../ProfileDialog/ProfileDialog";
 import { LoadingTextSpinner } from "../../../../../utils/common";
 import UserCard from "../../../../common/UserCard";
+import { toast } from "react-toastify";
 
 const Accepted = ({refetchCounts}) => {
   const registrationNo = TokenService.getRegistrationNo();

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-const ProfileContext = createContext({ 
+const ProfileContext = createContext<any>({ 
   profile: null, 
   getProfileByRegistrationNo: async () => null,
   setProfile: () => {}

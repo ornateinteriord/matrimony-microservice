@@ -151,28 +151,28 @@
 }
 
 .search-btn {
-  background: linear-gradient(180deg, #e65c00 0%, #b32d00 100%);
+  background: #8B1E1E;
   color: #ffffff;
-  border: 1px solid #ffb380;
-  padding: 8px 25px; /* Reduced from 10px 30px */
-  border-radius: 20px; /* Pill shape */
-  font-size: 14px; /* Reduced from 16px */
-  font-weight: bold;
+  border: 1px solid #C5A059;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .search-btn:hover {
-  background: linear-gradient(180deg, #ff6600 0%, #cc3300 100%);
+  background: #6B1717;
+  border-color: #D4AF37;
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .search-btn:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .search-btn:disabled {
@@ -187,28 +187,29 @@
   position: absolute;
   top: 20px;
   right: 30px;
-  background: linear-gradient(180deg, #e65c00 0%, #b32d00 100%);
+  background: #8B1E1E;
   color: #ffffff;
-  border: 1px solid #ffb380;
-  padding: 12px 32px; /* Bigger padding */
-  border-radius: 25px; /* Adjust radius for bigger button */
-  font-size: 22px; /* Much bigger text as requested */
-  font-weight: bold;
+  border: 1px solid #C5A059;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   z-index: 10;
 }
 
 .top-register-btn:hover {
-  background: linear-gradient(180deg, #ff6600 0%, #cc3300 100%);
+  background: #6B1717;
+  border-color: #D4AF37;
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 
 .top-register-btn:active {
   transform: translateY(1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Success Dialog Styles */
@@ -260,20 +261,21 @@
 }
 
 .dialog-btn {
-  background: linear-gradient(180deg, #e65c00 0%, #b32d00 100%);
+  background: #8B1E1E;
   color: #ffffff;
-  border: 1px solid #ffb380;
-  padding: 12px 25px;
-  border-radius: 25px;
+  border: 1px solid #C5A059;
+  padding: 10px 24px;
+  border-radius: 6px;
   font-size: 16px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .dialog-btn:hover {
-  background: linear-gradient(180deg, #ff6600 0%, #cc3300 100%);
+  background: #6B1717;
+  border-color: #D4AF37;
   transform: translateY(-2px);
 }
 
