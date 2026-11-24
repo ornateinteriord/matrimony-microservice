@@ -4,26 +4,26 @@ import {
   Typography,
   TextField,
   Button,
-  Paper,
-  IconButton,
   Divider,
   Grid,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Tooltip,
-  Card
+  Card,
+  CircularProgress
 } from '@mui/material';
-import { Add, Delete, Send, ContentCopy, WhatsApp, PersonAdd, Check, Link as LinkIcon, Share } from '@mui/icons-material';
+import { Send, ContentCopy, WhatsApp, Check, Link as LinkIcon } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import TokenService from '../../token/tokenService';
+import { useReferUser } from '../../api/Promoter';
 
 const ReferInvitePage = () => {
   const decodedToken = TokenService.decodeToken();
   const promoCode = decodedToken?.promoter_id || "";
   const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/register?ref=${promoCode}` : "";
   const [copied, setCopied] = useState(false);
+
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  const { mutate: referUser, isPending } = useReferUser();
 
   const handleCopyLink = () => {
     if (!promoCode) {
@@ -44,53 +44,38 @@ const ReferInvitePage = () => {
     window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
   };
 
-  const [entries, setEntries] = useState([{
-    email: '',
-    mobile: '',
-    name: '',
-    relationship: '',
-    channel: 'email'
-  }]);
-
-  const handleAddEntry = () => {
-    setEntries([...entries, {
-      email: '',
-      mobile: '',
-      name: '',
-      relationship: '',
-      channel: 'email'
-    }]);
-  };
-
-  const handleDeleteEntry = (index) => {
-    if (entries.length > 1) {
-      const newEntries = [...entries];
-      newEntries.splice(index, 1);
-      setEntries(newEntries);
+  const handleRefer = () => {
+    if (!email.trim() || !phone.trim()) {
+      toast.error("Please enter both email and phone number.");
+      return;
     }
-  };
 
-  const handleInputChange = (index, field, value) => {
-    const newEntries = [...entries];
-    newEntries[index][field] = value;
-    setEntries(newEntries);
-  };
-
-  const handleSubmit = () => {
-    console.log('Submitted entries:', entries);
-    // Add your submission logic here
+    referUser(
+      { email: email.trim(), phone: phone.trim() },
+      {
+        onSuccess: (res: any) => {
+          toast.success(res?.message || "User referred successfully!");
+          setEmail('');
+          setPhone('');
+        },
+        onError: (err: any) => {
+          const errMsg = err?.response?.data?.message || err?.message || "Failed to refer user.";
+          toast.error(errMsg);
+        },
+      }
+    );
   };
 
   return (
     <Box sx={{
       p: 0,
-      ml:{xs:0, md:2},
-      mt:{xs:1, md:2}, 
+      ml: { xs: 0, md: 2 },
+      mt: { xs: 1, md: 2 }, 
       maxWidth: 900,
       borderRadius: 2
     }}>
 
-     <Typography
+      <Typography
         variant="h4"
         sx={{
           fontWeight: 700,
@@ -190,110 +175,82 @@ const ReferInvitePage = () => {
         </Box>
       </Card>
 
-      {/* Subheading */}
-      <Typography
-        variant="h5"
+      {/* Refer Form Card */}
+      <Card
         sx={{
-          fontWeight: 600,
-          mb: 3,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-          textAlign:  'center' 
+          mb: 4,
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          backgroundColor: "#ffffff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         }}
       >
-        <Send fontSize="large" /> Refer / Invite
-      </Typography>
-
-      <Divider sx={{ mb: 4 }} />
-
-      {entries.map((entry, index) => (
-        <React.Fragment key={index}>
-            <Grid item xs={12} sm={3} mb={2}>
-              <TextField
-               sx={{width:'80%'}}
-                label="Full Name"
-                variant="outlined"
-                value={entry.name}
-                onChange={(e) => handleInputChange(index, 'name', e.target.value)}
-              />
-            </Grid>
-             <Grid item xs={12} sm={3} mb={2}>
-              <TextField
-               sx={{width:'80%'}}
-                fullWidth
-                label="Email ID"
-                variant="outlined"
-                placeholder="example@domain.com"
-                value={entry.email}
-                onChange={(e) => handleInputChange(index, 'email', e.target.value)}
-              />
-            </Grid>
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            
-            
-            <Grid item xs={12} sm={2}>
-              <TextField
-                fullWidth
-                label="Mobile No"
-                variant="outlined"
-                placeholder="9876543210"
-                value={entry.mobile}
-                onChange={(e) => handleInputChange(index, 'mobile', e.target.value)}
-              />
-            </Grid>
-
-            
-            <Grid item xs={12} sm={1} sx={{ display: 'flex', justifyContent: 'center' }}>
-              <IconButton
-                onClick={() => handleDeleteEntry(index)}
-                disabled={entries.length <= 1}
-                size='large'
-                sx={{
-                  '&:hover': {
-                    background:'transparent',
-                    color: 'red'
-                  }
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
-            </Grid>
-          </Grid>
-          
-          {index < entries.length - 1 && <Divider sx={{ my: 2 }} />}
-        </React.Fragment>
-      ))}
-
-      <Box sx={{ display: 'flex',
-         justifyContent: 'flex-start',
-          mt: 3, gap:1.5 }}>
-        <Button
-          variant="outlined"
-          startIcon={<Add />}
-          onClick={handleAddEntry}
-           sx={{
-            p:{xs:'10px', md:'10px'},
-            textTransform:'capitalize',
-                  '&:hover': {
-                    background: 'transparent'
-                }
-              }}
-        >
-          Add Contact
-        </Button>
-        
-        <Button
-          variant="contained"
-          endIcon={<Send />}
-          onClick={handleSubmit}
-          sx={{ px: 4, textTransform:'capitalize', 
-             p:{xs:'10px', md:' 10px 15px'},
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: 600,
+            mb: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            color: '#0f172a'
           }}
         >
-          Submit
-        </Button>
-      </Box>
+          <Send sx={{ color: 'primary.main' }} /> Refer
+        </Typography>
+
+        <Divider sx={{ mb: 3 }} />
+
+        <Grid container spacing={2.5}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Email ID"
+              variant="outlined"
+              placeholder="example@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isPending}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              label="Mobile No"
+              variant="outlined"
+              placeholder="9876543210"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={isPending}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
+              <Button
+                variant="contained"
+                onClick={handleRefer}
+                disabled={isPending}
+                startIcon={isPending ? <CircularProgress size={20} color="inherit" /> : <Send />}
+                sx={{
+                  px: 4,
+                  py: 1.2,
+                  textTransform: 'capitalize',
+                  fontWeight: 600,
+                  borderRadius: '8px',
+                  backgroundColor: '#0B192C',
+                  '&:hover': {
+                    backgroundColor: '#1e293b',
+                  },
+                }}
+              >
+                {isPending ? 'Referring...' : 'Refer'}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Card>
     </Box>
   );
 };

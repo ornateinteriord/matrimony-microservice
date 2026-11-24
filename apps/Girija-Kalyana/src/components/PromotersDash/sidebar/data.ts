@@ -13,7 +13,7 @@ const sidebarData = {
       path:"/PromotAdmin/profilepage"
     },
     {
-      text: "Refer / Invite",
+      text: "Refer",
       icon: "Share",
        path:"/PromotAdmin/refer"
     },

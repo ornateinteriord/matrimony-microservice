@@ -83,3 +83,17 @@ export const useActivateFreeUser = () => {
     },
   });
 };
+
+export const useReferUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, any, { email: string; phone: string }>({
+    mutationFn: async ({ email, phone }: { email: string; phone: string }) => {
+      const response = await post("/api/promoter/refer-user", { email, phone });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["promoterDashboard"] });
+    },
+  });
+};

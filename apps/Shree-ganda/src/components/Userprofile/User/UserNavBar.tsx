@@ -256,7 +256,7 @@ const UserNavBar = () => {
               marginRight={"8px"}
               textTransform={"capitalize"}
             >
-              {userProfile?.first_name}
+              {userProfile?.full_name || userProfile?.fullname || userProfile?.first_name || "User"}
             </Typography>
             <Avatar
               src={userProfile?.image}
@@ -269,7 +269,7 @@ const UserNavBar = () => {
                 fontSize: "0.9rem",
               }}
             >
-              {userProfile?.first_name ? userProfile.first_name[0].toUpperCase() : "U"}
+              {(userProfile?.full_name || userProfile?.fullname || userProfile?.first_name || "U")[0].toUpperCase()}
             </Avatar>
           </IconButton>
 

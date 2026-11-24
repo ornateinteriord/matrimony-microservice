@@ -5,7 +5,7 @@ const IncompletePaymentSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    index: true
+    sparse: true,
   },
   transactionId: {
     type: String,

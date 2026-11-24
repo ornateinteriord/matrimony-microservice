@@ -27,7 +27,7 @@ const defaultPromoterConfig: SidebarConfig = {
     },
     {
       id: "refer",
-      title: "Refer / Invite",
+      title: "Refer",
       path: "/PromotAdmin/refer",
       icon: "Share",
     },

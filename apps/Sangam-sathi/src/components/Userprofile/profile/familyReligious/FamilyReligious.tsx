@@ -41,9 +41,9 @@ const FamilyReligious = ({ render }: any) => {
     sister_elder_married: ''
   });
 
-  const [parents, setParents] = useState<Array<{ relation: string; name: string }>>([
-    { relation: "Father", name: "" },
-    { relation: "Mother", name: "" },
+  const [parents, setParents] = useState<Array<{ relation: string; name: string; contact?: string; mobile_no?: string }>>([
+    { relation: "Father", name: "", contact: "" },
+    { relation: "Mother", name: "", contact: "" },
   ]);
 
   const { data: userProfile, isLoading, isError, error } = useGetMemberDetails(registerNo);
@@ -77,7 +77,7 @@ const FamilyReligious = ({ render }: any) => {
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleParentChange = (index: number, field: "relation" | "name", value: string) => {
+  const handleParentChange = (index: number, field: "relation" | "name" | "contact", value: string) => {
     setParents((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
@@ -86,7 +86,7 @@ const FamilyReligious = ({ render }: any) => {
   };
 
   const handleAddParent = () => {
-    setParents((prev) => [...prev, { relation: "Other", name: "" }]);
+    setParents((prev) => [...prev, { relation: "Other", name: "", contact: "" }]);
   };
 
   const handleRemoveParent = (index: number) => {
@@ -230,6 +230,21 @@ const FamilyReligious = ({ render }: any) => {
                   value={p.name}
                   onChange={(e) => handleParentChange(pIdx, "name", e.target.value)}
                   placeholder={`Enter ${p.relation.toLowerCase()}'s full name`}
+                  fullWidth
+                />
+
+                <TextField
+                  label={`${p.relation || 'Parent'} Contact (Optional)`}
+                  size="small"
+                  value={p.contact || (p as any).mobile_no || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d{0,10}$/.test(val)) {
+                      handleParentChange(pIdx, "contact", val);
+                    }
+                  }}
+                  placeholder="10-digit number"
+                  inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
                   fullWidth
                 />
 

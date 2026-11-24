@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  user_id: { type: Number, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
+  user_id: { type: Number, required: true, unique: true, sparse: true },
+  username: { type: String, required: true, unique: true, sparse: true },
   password: { type: String, required: true },
-  ref_no: { type: String, required: true,  },
+  ref_no: { type: String, required: true, unique: true, sparse: true },
   user_role: { 
     type: String, 
     required: true,
@@ -17,10 +17,13 @@ const UserSchema = new mongoose.Schema({
   loggedin_from: { type: String }, // IP address
   loggedin_platform: { type: String }, // "mobile", "desktop", etc.
   mobile_no: { type: String },
+  mobile_numbers: [{ type: String }],
   refered_by: { type: String },
   refered_name: { type: String },
   first_name: { type: String },
   last_name: { type: String },
+  full_name: { type: String },
+  fullname: { type: String },
   gender: { type: String },
   date_of_birth: { type: String },
   age: { type: Number },
@@ -41,8 +44,89 @@ const UserSchema = new mongoose.Schema({
   caste: { type: String },
   subcaste: { type: String },
   gotra: { type: String },
-  rashi: { type: String }
+  rashi: { type: String },
+  registration_no: { type: String, unique: true, sparse: true },
+  parents: [{
+    relation: { type: String },
+    name: { type: String },
+    contact: { type: String },
+    mobile_no: { type: String }
+  }],
+  father_contact: { type: String },
+  mother_contact: { type: String }
 }, { timestamps: true, collection: "user_tbl", strict: false });
+
+UserSchema.pre('save', function(next) {
+  if (this.registration_no && !this.ref_no) this.ref_no = this.registration_no;
+  if (this.ref_no && !this.registration_no) this.registration_no = this.ref_no;
+  if (this.type_of_user && !this.user_role) this.user_role = this.type_of_user;
+  if (this.user_role && !this.type_of_user) this.type_of_user = this.user_role;
+  if (this.email_id && !this.username) this.username = this.email_id;
+  if (this.username && !this.email_id) this.email_id = this.username;
+
+  // Split full_name into first_name and last_name, keep full_name & fullname
+  const nameToSplit = this.full_name || this.fullname;
+  if (nameToSplit && typeof nameToSplit === 'string') {
+    const parts = nameToSplit.trim().split(/\s+/);
+    if (!this.first_name) this.first_name = parts[0] || '';
+    if (!this.last_name) this.last_name = parts.slice(1).join(' ') || '';
+    if (!this.full_name) this.full_name = nameToSplit.trim();
+    if (!this.fullname) this.fullname = nameToSplit.trim();
+  } else if (this.first_name || this.last_name) {
+    const combined = `${this.first_name || ''} ${this.last_name || ''}`.trim();
+    if (!this.full_name) this.full_name = combined;
+    if (!this.fullname) this.fullname = combined;
+  }
+
+  // Handle multiple mobile numbers synchronization
+  if (Array.isArray(this.mobile_numbers) && this.mobile_numbers.length > 0) {
+    if (!this.mobile_no) this.mobile_no = this.mobile_numbers[0];
+  } else if (this.mobile_no) {
+    this.mobile_numbers = [this.mobile_no];
+  }
+
+  next();
+});
+
+const syncUserUpdateFields = function(next) {
+  const update = this.getUpdate();
+  if (!update) return next();
+  const setObj = update.$set || update;
+  if (setObj.user_role && !setObj.type_of_user) setObj.type_of_user = setObj.user_role;
+  if (setObj.type_of_user && !setObj.user_role) setObj.user_role = setObj.type_of_user;
+  if (setObj.registration_no && !setObj.ref_no) setObj.ref_no = setObj.registration_no;
+  if (setObj.ref_no && !setObj.registration_no) setObj.registration_no = setObj.ref_no;
+  if (setObj.email_id && !setObj.username) setObj.username = setObj.email_id;
+  if (setObj.username && !setObj.email_id) setObj.email_id = setObj.username;
+
+  const nameToSplit = setObj.full_name || setObj.fullname;
+  if (nameToSplit && typeof nameToSplit === 'string') {
+    const parts = nameToSplit.trim().split(/\s+/);
+    if (!setObj.first_name) setObj.first_name = parts[0] || '';
+    if (!setObj.last_name) setObj.last_name = parts.slice(1).join(' ') || '';
+    setObj.full_name = nameToSplit.trim();
+    setObj.fullname = nameToSplit.trim();
+  } else if (setObj.first_name || setObj.last_name) {
+    const combined = `${setObj.first_name || ''} ${setObj.last_name || ''}`.trim();
+    if (!setObj.full_name) setObj.full_name = combined;
+    if (!setObj.fullname) setObj.fullname = combined;
+  }
+
+  if (Array.isArray(setObj.mobile_numbers) && setObj.mobile_numbers.length > 0) {
+    if (!setObj.mobile_no) setObj.mobile_no = setObj.mobile_numbers[0];
+  } else if (setObj.mobile_no && !setObj.mobile_numbers) {
+    setObj.mobile_numbers = [setObj.mobile_no];
+  }
+
+  next();
+};
+
+UserSchema.pre('findOneAndUpdate', syncUserUpdateFields);
+UserSchema.pre('updateOne', syncUserUpdateFields);
+UserSchema.pre('updateMany', syncUserUpdateFields);
+
+UserSchema.index({ ref_no: 1 }, { unique: true, sparse: true });
+UserSchema.index({ registration_no: 1 }, { unique: true, sparse: true });
 
 const UserModel = mongoose.model("user_tbl", UserSchema);
 module.exports = UserModel;

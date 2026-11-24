@@ -6,6 +6,7 @@ const PromoterDetailsSchema = new mongoose.Schema(
       type: Number,
       required: true,
       unique: true,
+      sparse: true,
     },
     registration_date: {
       type: String,
@@ -19,10 +20,12 @@ const PromoterDetailsSchema = new mongoose.Schema(
     promoter_id: {
       type: String,
       unique: true,
+      sparse: true,
     },
     email: {
       type: String,
       unique: true,
+      sparse: true,
     },
     mobile: {
       type: String,

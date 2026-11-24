@@ -43,7 +43,8 @@ const TransactionSchema = new mongoose.Schema({
   orderno: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    sparse: true
   },
   usertype: {
     type: String,
@@ -70,22 +71,43 @@ const TransactionSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Auto-increment transaction_id and transcation_id
+// Auto-increment transaction_id and transcation_id with race-condition prevention
 TransactionSchema.pre('save', async function(next) {
-  if (this.isNew && (!this.transcation_id || !this.transaction_id)) {
+  if (this.isNew) {
     try {
-      const lastTransaction = await this.constructor.findOne({}, {}, { sort: { 'transcation_id': -1, 'transaction_id': -1 } });
-      const lastId = lastTransaction?.transcation_id || lastTransaction?.transaction_id || 0;
-      const nextId = Number(lastId) + 1;
-      this.transcation_id = nextId;
-      this.transaction_id = nextId;
-      console.log(`Generated transaction ID: ${this.transcation_id}`);
+      if (!this.transcation_id || !this.transaction_id) {
+        const lastTransaction = await this.constructor.findOne({}, {}, { sort: { 'transcation_id': -1, 'transaction_id': -1 } });
+        const lastId = lastTransaction?.transcation_id || lastTransaction?.transaction_id || 0;
+        let nextId = Number(lastId) + 1;
+        while (await this.constructor.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+          nextId++;
+        }
+        this.transcation_id = nextId;
+        this.transaction_id = nextId;
+      } else {
+        const exists = await this.constructor.exists({
+          $or: [{ transaction_id: this.transaction_id }, { transcation_id: this.transcation_id }]
+        });
+        if (exists) {
+          const lastTransaction = await this.constructor.findOne({}, {}, { sort: { 'transcation_id': -1, 'transaction_id': -1 } });
+          const lastId = lastTransaction?.transcation_id || lastTransaction?.transaction_id || 0;
+          let nextId = Math.max(Number(lastId), Number(this.transaction_id)) + 1;
+          while (await this.constructor.exists({ $or: [{ transaction_id: nextId }, { transcation_id: nextId }] })) {
+            nextId++;
+          }
+          this.transcation_id = nextId;
+          this.transaction_id = nextId;
+        }
+      }
+
+      if (!this.orderno || this.orderno.length < 5) {
+        this.orderno = `ORD_${Date.now()}_${Math.floor(100000 + Math.random() * 900000)}`;
+      }
     } catch (error) {
       console.error('Error generating transaction ID:', error);
-      // Fallback to timestamp if there's an error
       const fallbackId = Date.now();
-      this.transcation_id = fallbackId;
-      this.transaction_id = fallbackId;
+      if (!this.transcation_id) this.transcation_id = fallbackId;
+      if (!this.transaction_id) this.transaction_id = fallbackId;
     }
   }
   next();

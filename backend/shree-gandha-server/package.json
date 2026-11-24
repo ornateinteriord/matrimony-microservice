@@ -24,7 +24,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "migrate:registration-to-user": "node scripts/mergeRegistrationToUser.js"
   },
   "name": "shree-gandha-server",
   "version": "1.0.0",

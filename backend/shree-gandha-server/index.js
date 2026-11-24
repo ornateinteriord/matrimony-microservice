@@ -17,6 +17,7 @@ const paymentRoutes = require('./routes/payment.routes');
 const promoterRoutes = require('./routes/promoter.routes')
 const webenquireRoutes = require('./routes/WebEnquireRoutes')
 const ImageKit = require('imagekit');
+const { duplicateKeyErrorMiddleware, isDuplicateKeyError, formatDuplicateKeyError } = require('./utils/errorHandler');
 const projectName = process.env.PROJECT_NAME
 
 const app = express();
@@ -79,10 +80,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
+// Intercept and cleanly handle MongoDB E11000 duplicate key errors before any 500 error
+app.use(duplicateKeyErrorMiddleware);
+
 // Global error handler - this will catch the 500 errors from malformed Cashfree redirects
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   
+  if (isDuplicateKeyError(err)) {
+    const { field, message } = formatDuplicateKeyError(err);
+    return res.status(409).json({ 
+      success: false,
+      error: 'DuplicateRecordConflict',
+      field,
+      message 
+    });
+  }
+
   // If this is a Cashfree redirect error, redirect to the frontend dashboard
   if (req.path.includes('thankyou') || req.path.includes('cashfree') || req.path.includes('checkout')) {
     console.log('Cashfree redirect error, redirecting to frontend dashboard');
