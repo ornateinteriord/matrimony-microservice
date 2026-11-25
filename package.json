@@ -21,6 +21,8 @@
     "deploy:girija": "npm run deploy --workspace=girija-kalyana",
     "deploy:sangam": "npm run deploy --workspace=sangam-sathi",
     "deploy:shree": "npm run deploy --workspace=shree-ganda",
+    "deploy:matrimony": "npm run deploy --workspace=matrimony-service",
+    "deploy:shree-server": "npm run deploy --workspace=shree-gandha-server",
     "dev:girija": "npm run dev --workspace=girija-kalyana",
     "dev:sangam": "npm run dev --workspace=sangam-sathi",
     "dev:shree": "npm run dev --workspace=shree-ganda",
