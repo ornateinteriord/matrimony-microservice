@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "//": "Add your custom scripts here"
+    "deploy": "npx --yes wrangler deploy"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
