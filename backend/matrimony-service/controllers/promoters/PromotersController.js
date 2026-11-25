@@ -29,7 +29,7 @@ const getPromotersEarnings = async (req, res) => {
     const Earnings = await PromotersEarningsModel.aggregate([
       {
         $match: {
-          referal_by: { $exists: true, $ne: null, $ne: "" }
+          referal_by: { $exists: true, $nin: [null, ""] }
         }
       },
       {
