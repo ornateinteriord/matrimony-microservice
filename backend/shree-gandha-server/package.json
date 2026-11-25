@@ -25,7 +25,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "migrate:registration-to-user": "node scripts/mergeRegistrationToUser.js"
+    "migrate:registration-to-user": "node scripts/mergeRegistrationToUser.js",
+    "deploy": "npx --yes wrangler deploy"
   },
   "name": "shree-gandha-server",
   "version": "1.0.0",
